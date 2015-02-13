@@ -12,6 +12,7 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
         stop(paste0("'", output_dir, "' is not a valid path"))
     }
 
+    cat("Reading main abundance estimates\n")
     exp_fname <- file.path(output_dir, "expression.txt")
     if (!file.exists( exp_fname )) {
         stop("'", exp_fname, "' does not exists. Are you sure you have the right kallisto output directory?")
@@ -24,8 +25,14 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
     if (read_bootstrap) {
         bs_fnames <- Sys.glob(file.path(output_dir, "bs_expression_*"))
         if (length(bs_fnames) > 0) {
-            bs_samples <- lapply(bs_fnames, function(fname)
+            cat("Found",length(bs_fnames), "bootstrap files. Reading them in.\n")
+            bs_samples <- lapply(seq_along(bs_fnames), function(b)
                 {
+                    cat(".")
+                    if (b %% 50 == 0 && b > 0) {
+                        cat("\n")
+                    }
+                    fname <- bs_fnames[b]
                     suppressWarnings(fread(fname, data.table = FALSE))
                 })
         } else {
