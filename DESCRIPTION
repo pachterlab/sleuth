@@ -6,6 +6,8 @@ Description: Investigate transcript abundance from "kallisto" and differential e
 Depends: R (>= 3.1.2)
 License: GPL-2
 LazyData: true
+URL: https://github.com/pimentel/sleuth
+BugReports: https://github.com/pimentel/sleuth/issues
 Imports:
     data.table,
     dplyr,
