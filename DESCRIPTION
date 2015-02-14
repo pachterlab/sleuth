@@ -11,6 +11,7 @@ BugReports: https://github.com/pimentel/sleuth/issues
 Imports:
     data.table,
     dplyr,
-    ggplot2
+    ggplot2,
+    tidyr
 Suggests:
     testthat

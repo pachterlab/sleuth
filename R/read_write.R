@@ -18,7 +18,8 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
         stop("'", exp_fname, "' does not exists. Are you sure you have the right kallisto output directory?")
     }
 
-    trans_abund <- suppressWarnings(fread(exp_fname, data.table = FALSE))
+    trans_abund <- suppressWarnings(fread(exp_fname, data.table = FALSE)) %>%
+        arrange(target_id)
 
     bs_samples <- NULL
 
@@ -33,13 +34,16 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
                         cat("\n")
                     }
                     fname <- bs_fnames[b]
-                    suppressWarnings(fread(fname, data.table = FALSE))
+                    suppressWarnings(fread(fname, data.table = FALSE)) %>%
+                        arrange(target_id)
                 })
         } else {
             warning("No bootstrap samples found!")
         }
     }
+    # XXX: should we check that all targets are identical?
 
     invisible(structure(list(abundance = trans_abund, bootstrap = bs_samples),
         class = "kallisto"))
 }
+
