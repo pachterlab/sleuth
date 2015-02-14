@@ -70,15 +70,15 @@ summarize_bootstrap <- function(kal, column = "tpm")
     bs <- bs %>%
         group_by(target_id) %>%
         summarise_(.dots = setNames(list(
-                    lazyeval::interp(quote(mean(x)), x = as.name(column)),
-                    lazyeval::interp(quote(sd(x)), x = as.name(column)),
-                    lazyeval::interp(quote(var(x)), x = as.name(column))
+                    interp(quote(mean(x)), x = as.name(column)),
+                    interp(quote(sd(x)), x = as.name(column)),
+                    interp(quote(var(x)), x = as.name(column))
                     ),
                 c(mean_col, sd_col, var_col)))
 
     bs <- bs %>%
         mutate_(.dots = setNames(list(
-                    lazyeval::interp(quote(x / y),
+                    interp(quote(x / y),
                         x = as.name(sd_col), y = as.name(mean_col))),
                 c(cv_col)
                 ))
