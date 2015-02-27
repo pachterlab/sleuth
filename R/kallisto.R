@@ -4,8 +4,7 @@
 #'
 #' @param kal a kallisto object
 #' @return a data.frame with the coefficient of variation
-coef_var <- function(kal)
-{
+coef_var <- function(kal) {
     stopifnot(is(kal, "kallisto"))
 
 }

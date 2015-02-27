@@ -36,6 +36,7 @@ bootstrap2mat <- function(kal, column = "tpm")
 melt_bootstrap <- function(kal, column = "tpm")
 {
     stopifnot(is(kal, "kallisto"))
+  stopifnot(length(kal$bootstrap) > 0)
 
     all_boot <- kal$bootstrap
     boot <- data.frame(lapply(all_boot, select_, .dots = list(column)))
@@ -60,10 +61,10 @@ summarize_bootstrap <- function(kal, column = "tpm")
     stopifnot(is(kal, "kallisto"))
     bs <- melt_bootstrap(kal, column)
 
-    mean_col <- paste0("mean_", column)
-    sd_col <- paste0("sd_", column)
-    var_col <- paste0("var_", column)
-    cv_col <- paste0("cv_", column)
+    mean_col <- paste0("bs_mean_", column)
+    sd_col <- paste0("bs_sd_", column)
+    var_col <- paste0("bs_var_", column)
+    cv_col <- paste0("bs_cv_", column)
 
     print(cv_col)
 
