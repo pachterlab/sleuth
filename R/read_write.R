@@ -21,7 +21,7 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
     trans_abund <- suppressWarnings(fread(exp_fname, data.table = FALSE)) %>%
         arrange(target_id)
 
-    bs_samples <- NULL
+    bs_samples <- list()
 
     if (read_bootstrap) {
         bs_fnames <- Sys.glob(file.path(output_dir, "bs_expression_*"))
