@@ -3,14 +3,15 @@ Title: Investigate RNA-Seq Abundance
 Version: 0.0.0.9000
 Authors@R: c(person("Harold", "Pimentel", , "haroldpimentel@gmail.com", role = c("aut", "cre")))
 Description: Investigate transcript abundance from "kallisto" and differential expression analysis from RNA-Seq data.
-Depends: R (>= 3.1.2)
 License: GPL-2
 LazyData: true
 URL: https://github.com/pimentel/sleuth
 BugReports: https://github.com/pimentel/sleuth/issues
+Depends:
+    R (>= 3.1.2),
+    dplyr
 Imports:
     data.table,
-    dplyr,
     ggplot2,
     tidyr
 Suggests:

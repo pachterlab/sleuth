@@ -34,7 +34,7 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
                         cat("\n")
                     }
                     fname <- bs_fnames[b]
-                    suppressWarnings(fread(fname, data.table = FALSE)) %>%
+                    suppressWarnings(data.table::fread(fname, data.table = FALSE)) %>%
                         arrange(target_id)
                 })
         } else {
@@ -47,3 +47,72 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
         class = "kallisto"))
 }
 
+
+#' @export
+kv_vec_to_df <- function(x, cols = c("gene_id", "transcript_id")) {
+  stopifnot(length(x) %% 2 == 0)
+
+  key_idx <- seq(1, length(x), 2)
+  val_idx <- key_idx + 1
+
+  vals <- x[val_idx]
+  vals <- vals %>%
+    gsub('"', "", .) %>%
+    gsub(";", "", .)
+
+  res <- setNames(as.list(vals), x[key_idx])
+  res[cols]
+}
+
+#' @export
+gtf_attributes_to_gene_trans <- function(gtf_attr) {
+  stopifnot(is(gtf_attr, "character"))
+
+  lapply(strsplit(gtf_attr, " "), kv_vec_to_df) %>%
+    rbind_all()
+}
+
+#' @export
+gtf_gene_names <- function(gtf_attr) {
+  stopifnot(is(gtf_attr, "character"))
+  all_attr <- strsplit(gtf_attr, " ")
+
+  gene_id <- vector("character", length(all_attr))
+  trans_id <- vector("character", length(all_attr))
+
+  for (i in 1:length(all_attr)) {
+    j <- 1
+    while ((nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
+      j <= length(all_attr[[i]]) ) {
+      if (all_attr[[i]][j] == "gene_id") {
+        gene_id[i] <- all_attr[[i]][j+1] %>%
+          gsub('"', "", .) %>%
+          sub(";", "", .)
+        j <- j + 2
+      } else if (all_attr[[i]][j] == "transcript_id") {
+        trans_id[i] <- all_attr[[i]][j+1] %>%
+          gsub('"', "", .) %>%
+          sub(";", "", .)
+        j <- j + 2
+      } else {
+        j <- j + 1
+      }
+    }
+  }
+
+  data.frame(gene_id = gene_id, transcript_id = trans_id)
+}
+
+#' @export
+read_gtf <- function(fname) {
+  gtf <- data.table::fread(fname, sep = "\t", header = FALSE,
+    data.table = FALSE)
+
+  gtf_colnames <- c("seqname", "source", "feature", "start", "end", "score",
+    "strand", "frame", "attribute")
+
+  data.table::setnames(gtf, colnames(gtf), gtf_colnames)
+
+
+  gtf
+}
