@@ -85,3 +85,31 @@ summarize_bootstrap <- function(kal, column = "tpm")
                 ))
     bs
 }
+
+#' Normalize bootstrap samples
+#'
+#' Normalize by dividing by the "size factor" for each TPM and estimated counts
+#'
+#' @param kal a kallisto object
+#' @param tpm_size_factor the size factor (numeric length 1)
+#' @param est_counts_size_factor the size factor (numeric length 1)
+#' @export
+normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
+  stopifnot(is(kal, "kallisto"))
+  stopifnot(length(tpm_size_factor) == 1 && length(est_counts_size_factor) == 1)
+
+  calc_norm_tpm <- !missing(tpm_size_factor)
+  calc_norm_counts <- !missing(est_counts_size_factor)
+  bs <- lapply(kal$bootstrap, function(bs_tbl)
+    {
+      if (calc_norm_tpm)
+        bs_tbl$tpm <- bs_tbl$tpm / tpm_size_factor
+      if (calc_norm_counts)
+        bs_tbl$est_counts <- bs_tbl$est_counts / est_counts_size_factor
+
+      bs_tbl
+    })
+  kal$bootstrap <- bs
+
+  kal
+}
