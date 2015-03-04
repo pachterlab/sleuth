@@ -56,7 +56,7 @@ melt_bootstrap <- function(kal, column = "tpm")
 #' @param column the column to select (rho, tpm, est_counts
 #' @return a summarized data.frame
 #' @export
-summarize_bootstrap <- function(kal, column = "tpm")
+summarize_bootstrap <- function(kal, column = "tpm", force = FALSE)
 {
     stopifnot(is(kal, "kallisto"))
     bs <- melt_bootstrap(kal, column)

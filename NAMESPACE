@@ -2,6 +2,7 @@
 
 S3method(print,kallisto)
 export(bootstrap2mat)
+export(fit_bootstrap_bio)
 export(gtf_attributes_to_gene_trans)
 export(gtf_gene_names)
 export(kv_vec_to_df)

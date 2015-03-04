@@ -4,7 +4,7 @@
 \alias{summarize_bootstrap}
 \title{Summarize bootstrap values}
 \usage{
-summarize_bootstrap(kal, column = "tpm")
+summarize_bootstrap(kal, column = "tpm", force = FALSE)
 }
 \arguments{
 \item{kal}{a kallisto object with a non-null bootstrap list}

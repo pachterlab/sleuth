@@ -85,10 +85,31 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
     class = "sleuth")
 }
 
+#' Summarize many bootstrap objects
+#'
+
+#' Summarize all the bootstrap samples from a kallisto run. The summarized
+#' values are then all put into a data.frame and stored in the \code{sleuth}
+#' object.
+#'
+#' @param obj a \code{sleuth} object
+#' @param force if \code{FALSE}, then will only compute the summary if it has
+#' not yet been set.
+#' @param verbose if \code{TRUE}, print verbosely
+#' @return a \code{kallisto} object with member \code{bootstrap_summary}
+#' updated and containing a data frame.
 #' @export
-sleuth_summarize_bootstrap <- function(obj) {
+sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
   # TODO: make this into an S3 function 'summarize_bootstrap'
   stopifnot(is(obj, "sleuth"))
+
+  if (!is.na(obj$bootstrap_summary) && !force) {
+    if (verbose) {
+      cat("summarize_bootstrap.sleuth: Already computed summary -- will not recompute.")
+    }
+
+    return(obj)
+  }
 
   tpm_bs <- sleuth_summarize_bootstrap_col(obj, "tpm")
   counts_bs <- sleuth_summarize_bootstrap_col(obj, "est_counts")
@@ -113,6 +134,8 @@ var_fit <- function(obj) {
     by = c("target_id", "sample", "condition")
     ) %>%
     as.data.frame(stringsAsFactors = FALSE)
+
+  all_data
 }
 
 sleuth_summarize_bootstrap_col <- function(obj, col) {
