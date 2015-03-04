@@ -45,7 +45,8 @@ melt_bootstrap <- function(kal, column = "tpm")
     boot <- boot %>%
         mutate(target_id = all_boot[[1]]$target_id)
 
-    tidyr::gather_(boot, "sample", column, bs_names)
+    tidyr::gather_(boot, "sample", column, bs_names) %>%
+      mutate(sample = as.factor(sample))
 }
 
 #' Summarize bootstrap values
@@ -56,7 +57,7 @@ melt_bootstrap <- function(kal, column = "tpm")
 #' @param column the column to select (rho, tpm, est_counts
 #' @return a summarized data.frame
 #' @export
-summarize_bootstrap <- function(kal, column = "tpm", force = FALSE)
+summarize_bootstrap <- function(kal, column = "tpm")
 {
     stopifnot(is(kal, "kallisto"))
     bs <- melt_bootstrap(kal, column)

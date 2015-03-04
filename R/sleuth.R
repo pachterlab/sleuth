@@ -64,9 +64,6 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
     by = c("sample")) %>%
     as.data.frame(stringsAsFactors = FALSE)
 
-  print(tpm_sf)
-  print(est_counts_sf)
-
   # Normalize all the bootstrap samples
   kal_list <- lapply(seq_along(kal_list), function(i)
     {
@@ -184,4 +181,18 @@ obs_transcript_summary <- function(data, pool = TRUE)
         )
   }
 
+}
+
+#' @export
+melt_bootstrap_sleuth <- function(obj) {
+  # TODO: make this into a S3 function
+  lapply(seq_along(obj$kal), function(i)
+    {
+      cur_samp <- obj$sample_to_condition$sample[i]
+      cur_cond <- obj$sample_to_condition$condition[i]
+
+      melt_bootstrap(obj$kal[[i]]) %>%
+        rename(bs_sample = sample) %>%
+        mutate(sample = cur_samp, condition = cur_cond)
+    }) %>% rbind_all()
 }
