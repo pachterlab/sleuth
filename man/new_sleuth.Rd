@@ -4,7 +4,8 @@
 \alias{new_sleuth}
 \title{Constructor for a 'sleuth' object}
 \usage{
-new_sleuth(kal_list, sample_names, condition_names, norm_bootstraps = TRUE)
+new_sleuth(kal_list, sample_names, condition_names, norm_bootstraps = TRUE,
+  verbose = TRUE)
 }
 \arguments{
 \item{kal_list}{a list of \code{kallisto} objects}

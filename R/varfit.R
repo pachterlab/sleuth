@@ -7,8 +7,8 @@
 #'
 #' @param x predictor variable
 #' @param y response variable
-#' @param maxk See \link{code{locfit::locfit.raw}}
-#' @param ... Addition arguments sent to \link{code{locfit::locfit.raw}}
+#' @param maxk See \code{\link{locfit::locfit.raw}}
+#' @param ... Addition arguments sent to \code{\link{locfit::locfit.raw}}
 #' @return predicted values from fitting y ~ x
 lf_predict <- function(x, y, maxk = 1000, ...) {
   locfit.raw(x, y, maxk = maxk, ...) %>%

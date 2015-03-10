@@ -11,9 +11,9 @@ lf_predict(x, y, maxk = 1000, ...)
 
 \item{y}{response variable}
 
-\item{maxk}{See \link{code{locfit::locfit.raw}}}
+\item{maxk}{See \code{\link{locfit::locfit.raw}}}
 
-\item{...}{Addition arguments sent to \link{code{locfit::locfit.raw}}}
+\item{...}{Addition arguments sent to \code{\link{locfit::locfit.raw}}}
 }
 \value{
 predicted values from fitting y ~ x

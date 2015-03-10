@@ -16,7 +16,7 @@
 #' @return a \code{sleuth} object
 #' @export
 new_sleuth <- function(kal_list, sample_names, condition_names,
-  norm_bootstraps = TRUE) {
+  norm_bootstraps = TRUE, verbose = TRUE) {
   if (length(kal_list) != length(sample_names)) {
     stop(paste0("'", substitute(kal_list), "' must be the same length as '",
         substitute(sample_names), "'"))
@@ -26,6 +26,8 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
     stop(paste0("'", substitute(kal_list), "' must be the same length as '",
         substitute(condition_names), "'"))
   }
+
+  if (verbose) cat("Appending sample names\n")
 
   # append sample ane condition columns to data
   kal_list <- lapply(seq_along(kal_list), function(it)
@@ -38,6 +40,7 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
 
   obs_abundance_raw <- rbind_all(lapply(kal_list, function(k) k$abundance))
 
+  if (verbose) cat("Normalizing 'tpm'\n")
   # normalize TPM using TMM
   tpm_spread <- spread_abundance_by(obs_abundance_raw, "tpm")
   tpm_sf <- edgeR::calcNormFactors(tpm_spread)
@@ -46,6 +49,7 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
   tpm_norm$target_id <- rownames(tpm_norm)
   tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
 
+  if (verbose) cat("Normalizing 'est_counts'\n")
   # normalize est_counts using TMM
   est_counts_spread <- spread_abundance_by(obs_abundance_raw, "est_counts")
   est_counts_sf <- edgeR::calcNormFactors(est_counts_spread)
@@ -54,21 +58,26 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
   est_counts_norm$target_id <- rownames(est_counts_norm)
   est_counts_norm <- tidyr::gather(est_counts_norm, sample, est_counts, -target_id)
 
+  if (verbose) cat("Joining tpm and est_counts tables\n")
   obs_norm <- inner_join(data.table::as.data.table(est_counts_norm),
     data.table::as.data.table(tpm_norm), by = c("target_id", "sample"))
 
   sample_to_condition <- data.frame(sample = sample_names,
     condition = condition_names, stringsAsFactors = FALSE)
 
+  if (verbose) cat("Joining tpm and est_counts tables\n")
   obs_norm <- left_join(obs_norm, data.table::as.data.table(sample_to_condition),
     by = c("sample")) %>%
     as.data.frame(stringsAsFactors = FALSE)
 
   # Normalize all the bootstrap samples
-  kal_list <- lapply(seq_along(kal_list), function(i)
-    {
-      normalize_bootstrap(kal_list[[i]], tpm_sf[i], est_counts_sf[i])
-    })
+  if (norm_bootstraps) {
+    if (verbose) cat("Normalizing bootstrap samples\n")
+    kal_list <- lapply(seq_along(kal_list), function(i)
+      {
+        normalize_bootstrap(kal_list[[i]], tpm_sf[i], est_counts_sf[i])
+      })
+  }
 
   structure(list(
       kal = kal_list,
