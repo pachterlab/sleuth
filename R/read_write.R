@@ -116,3 +116,46 @@ read_gtf <- function(fname) {
 
   gtf
 }
+
+#' Write a kallisto object to HDF5
+#'
+#' Write a kallisto object to HDF5.
+#'
+#' @param kal the kallisto object to write out
+#' @param fname the file name to write out to
+#' @return the kallisto object \code{kal} invisibly.
+#' @export
+write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE) {
+  stopifnot( is(kal, "kallisto") )
+  stopifnot( is(fname, "character") )
+
+  fname <- path.expand(fname)
+
+  if (file.exists(fname)) {
+    if (overwrite) {
+      warning(paste0("'", fname, "' already exists. Overwritting."))
+      file.remove(fname)
+    } else {
+      stop(paste0("'", fname, "' already exists."))
+    }
+  }
+
+  if ( !rhdf5::h5createFile( fname ) ) {
+    stop(paste0("Error: Couldn't open '", fname, "' to write out."))
+  }
+
+  # write out auxilary info
+  rhdf5::h5createGroup(fname, "aux")
+  rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
+  rhdf5::h5write(length(kal$abundance$bootstrap), fname, "aux/num_bootstraps")
+  # TODO: put the lengths in aux
+
+  rhdf5::h5write(kal$abundance$est_counts, fname, "est_counts")
+
+  rhdf5::h5createGroup(fname, "bootstrap")
+  for (i in seq_along(kal$boostrap)) {
+    rhdf5::h5write(kal$bootstrap[[i]]$est_counts, fname, paste0("boostrap/bs", i))
+  }
+
+  invisible(kal)
+}

@@ -13,6 +13,8 @@ Depends:
 Imports:
     data.table,
     ggplot2,
-    tidyr
+    tidyr,
+    rhdf5
 Suggests:
+    MASS,
     testthat
