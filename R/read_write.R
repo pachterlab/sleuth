@@ -125,9 +125,15 @@ read_gtf <- function(fname) {
 #' @param fname the file name to write out to
 #' @return the kallisto object \code{kal} invisibly.
 #' @export
-write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE) {
+write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, compression = 6L) {
   stopifnot( is(kal, "kallisto") )
   stopifnot( is(fname, "character") )
+  stopifnot( is(compression, "integer") )
+  stopifnot( length(compression) == 1 )
+
+  if (compression < 0 || compression > 7 ) {
+    stop("'compression' must be in [0, 7]")
+  }
 
   fname <- path.expand(fname)
 
@@ -144,18 +150,79 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE) {
     stop(paste0("Error: Couldn't open '", fname, "' to write out."))
   }
 
+  dims <- c(nrow(kal$abundance), 1)
+  cat("dims: ", class(dims), "\n")
+
   # write out auxilary info
   rhdf5::h5createGroup(fname, "aux")
+  rhdf5::h5createDataset(fname, "aux/ids", dims = dims,
+    storage.mode = "character", size = 100, level = compression)
   rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
-  rhdf5::h5write(length(kal$abundance$bootstrap), fname, "aux/num_bootstraps")
-  # TODO: put the lengths in aux
+  rhdf5::h5write(length(kal$bootstrap), fname, "aux/num_bootstrap")
 
+  # TODO: put lengths in aux
+  # TODO: put effective lengths in aux
+
+  # rhdf5::h5createDataset(fname, "est_counts",
+  #   storage.mode = "double", level = compression)
   rhdf5::h5write(kal$abundance$est_counts, fname, "est_counts")
 
   rhdf5::h5createGroup(fname, "bootstrap")
-  for (i in seq_along(kal$boostrap)) {
-    rhdf5::h5write(kal$bootstrap[[i]]$est_counts, fname, paste0("boostrap/bs", i))
+  for (i in seq_along(kal$bootstrap)) {
+    bs <- kal$bootstrap[[i]]$est_counts
+    bs_name <- paste0("bootstrap/bs", i)
+    # rhdf5::h5createDataset(fname, bs_name,
+    #   storage.mode = "double", level = compression)
+    rhdf5::h5write(bs, fname, bs_name)
   }
 
   invisible(kal)
+}
+
+#' Read a kallisto object from HDF5 file
+#'
+#' Read a kallisto object from HDF5 file.
+#'
+#' @param fname
+#' @return a \code{kallisto} object
+#' @export
+read_kallisto_hdf5 <- function(fname, read_bootstrap = TRUE) {
+  stopifnot(is(fname, "character"))
+
+  fname <- path.expand(fname)
+
+  if (!file.exists(fname)) {
+    stop(paste0("Can't file file: '", fname, "'"))
+  }
+
+  target_id <- rhdf5::h5read(fname, "aux/ids")
+  abund <- data.frame(target_id = target_id, stringsAsFactors = FALSE)
+  abund$est_counts <- rhdf5::h5read(fname, "est_counts")
+
+
+  bs_samples <- list()
+  if (read_bootstrap) {
+    num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
+    cat("Found ", num_bootstrap, " bootstrap samples\n")
+    bs_samples <- lapply(1:num_bootstrap[1], function(i)
+      {
+        .read_bootstrap_hdf5(fname, i, abund$target_id)
+      })
+  }
+
+  invisible(structure(
+      list(abundance = abund,
+        bootstrap = bs_samples),
+      class = "kallisto"))
+}
+
+# read a bootstrap from an HDF5 file and return a \code{data.frame}
+.read_bootstrap_hdf5 <- function(fname, i, target_id) {
+  bs <- data.frame(target_id = target_id, stringsAsFactors = FALSE)
+  bs$est_counts <- rhdf5::h5read(fname, paste0("bootstrap/bs", i))
+
+  # TODO: incorporate lengths
+  # TODO: after lengths, compute TPM
+
+  bs
 }

@@ -4,7 +4,7 @@
 \alias{write_kallisto_hdf5}
 \title{Write a kallisto object to HDF5}
 \usage{
-write_kallisto_hdf5(kal, fname, overwrite = TRUE)
+write_kallisto_hdf5(kal, fname, overwrite = TRUE, compression = 6)
 }
 \arguments{
 \item{kal}{the kallisto object to write out}
