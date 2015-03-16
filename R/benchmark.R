@@ -93,13 +93,121 @@ pairwise_cor <- function(mres, unit) {
     cor(method = "pearson") %>%
     reshape2::melt(varnames = c("method_a", "method_b")) %>%
     filter(method_a != method_b) %>%
-    distinct(value)
+    distinct(value) %>%
+    mutate(method_a = gsub(paste0(unit, "_"), "", method_a)) %>%
+    mutate(method_b = gsub(paste0(unit, "_"), "", method_b)) %>%
+    arrange(method_a, method_b)
 
   scor <- unit_data %>%
     cor(method = "spearman") %>%
     reshape2::melt(varnames = c("method_a", "method_b")) %>%
     filter(method_a != method_b) %>%
-    distinct(value)
+    distinct(value) %>%
+    mutate(method_a = gsub(paste0(unit, "_"), "", method_a)) %>%
+    mutate(method_b = gsub(paste0(unit, "_"), "", method_b)) %>%
+    arrange(method_a, method_b)
 
   list(pearson = pcor, spearman = scor)
 }
+
+#' @export
+plot_pair <- function(mres, unit, method_a, method_b) {
+  stopifnot( is(mres, "merged_res") )
+  stopifnot( unit == "tpm" || unit == "est_counts" )
+
+  col_a <- paste0(unit, "_", method_a)
+  col_b <- paste0(unit, "_", method_b)
+
+  sub_data <- mres$all_data %>%
+    select(target_id,
+      matches(col_a),
+      matches(col_b))
+
+  ggplot(sub_data, aes_string(col_a, col_b)) +
+    geom_point(alpha = 0.08) +
+    geom_abline(intercept = 0, slope = 1, color = "black") +
+    stat_smooth(method = "lm", color = "blue", alpha= 0.8) +
+    theme_bw()
+}
+
+#' Read eXpress data
+#'
+#' @param fname the file name of the express 'results.xprs' file.
+#' @return a data.table
+#' @export
+read_xprs <- function(fname) {
+    xprs <- fread(fname, header = TRUE, stringsAsFactors = FALSE,
+        data.table = TRUE)
+    xprs
+}
+
+#' Read kallisto output for merge_results
+#'
+#' Read a kallisto data into a format that place nicely with
+#' \code{merge_results}. Basically equivalent to
+#' \code{read_kallisto("dir")$abundance}, but doesn't do extra stuff with
+#' metadata that \code{read_kallisto_does}
+#'
+#' @param fname the path to "expression.txt" from kallisto
+#' @return a data.table
+#' @export
+read_kallisto_rename <- function(fname) {
+    kal <- fread(fname, header = TRUE, stringsAsFactors = FALSE,
+        data.table = TRUE)
+    kal
+}
+
+#' @export
+read_sailfish <- function(fname) {
+  # TODO: fix sailfish TPM
+    sf <- fread(fname, header = FALSE, skip = 5, stringsAsFactors = FALSE,
+        data.table = FALSE)
+    colnames(sf) <- c("target_id", "length", "tpm", "rpkm", "kpkm", "est_counts")
+    # sf %>%
+    #     rename(tpm_sailfish = tpm, counts_sf = est_counts) %>%
+    #     arrange(target_id)
+    sf %>%
+      select(target_id, tpm, est_counts)
+}
+
+#' @export
+read_salmon <- function(fname) {
+  # TODO: fix salmon TPM
+    salmon <- fread(fname, header = FALSE, skip = 13, stringsAsFactors = FALSE,
+        data.table = FALSE)
+    colnames(salmon) <- c("target_id", "length", "tpm", "fpkm", "est_counts")
+    # salmon %>%
+    #     rename(tpm_salmon = tpm, counts_salmon = est_counts) %>%
+    #     arrange(target_id)
+    salmon %>%
+      select(target_id, tpm, est_counts)
+}
+
+read_kallisto_py <- function(fname) {
+    kal <- fread(fname, header = TRUE, stringsAsFactors = FALSE,
+        data.table = FALSE)
+    # kal %>%
+    #     rename(target_id = name, tpm_kal_py = tpm, counts_kal_py = est_counts) %>%
+    #     arrange(target_id)
+    kal %>%
+      rename(target_id = name)
+}
+
+#' @export
+read_oracle <- function(fname, targ_to_eff_len) {
+    oracle <- fread(paste0("sed 's/^ *//g' ", fname), header = FALSE,
+        data.table = FALSE)
+
+    targ_to_eff_len <- select(targ_to_eff_len, target_id, eff_length)
+
+    oracle %>%
+        rename(target_id = V1, counts = V2) %>%
+        left_join(targ_to_eff_len, ., by = "target_id") %>%
+        mutate(counts = replace(counts, is.na(counts), 0.0)) %>%
+        mutate(tpm = counts / eff_length) %>%
+        mutate(tpm = replace(tpm, eff_length == 0, 0.0)) %>%
+        mutate(tpm = 1e6 * tpm / sum(tpm)) %>%
+        rename(tpm_oracle = tpm) %>%
+        arrange(target_id)
+}
+

@@ -156,8 +156,8 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
 
   # write out auxilary info
   rhdf5::h5createGroup(fname, "aux")
-  rhdf5::h5createDataset(fname, "aux/ids", dims = dims,
-    storage.mode = "character", size = 100, level = compression)
+  stopifnot( rhdf5::h5createDataset(fname, "aux/ids", dims = dims,
+    storage.mode = "character", size = 100, level = compression) )
   rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
 
   if (write_bootstrap) {
