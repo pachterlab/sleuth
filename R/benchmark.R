@@ -102,7 +102,9 @@ pairwise_cor <- function(mres, unit) {
     cor(method = "spearman") %>%
     reshape2::melt(varnames = c("method_a", "method_b")) %>%
     filter(method_a != method_b) %>%
-    distinct(value) %>%
+    mutate(ah = ifelse(as.character(method_a) < as.character(method_b), paste0(method_a, method_b), paste0(method_b, method_a))) %>%
+    distinct(ah) %>%
+    select(-ah) %>%
     mutate(method_a = gsub(paste0(unit, "_"), "", method_a)) %>%
     mutate(method_b = gsub(paste0(unit, "_"), "", method_b)) %>%
     arrange(method_a, method_b)
@@ -130,6 +132,36 @@ plot_pair <- function(mres, unit, method_a, method_b) {
     theme_bw()
 }
 
+#' @export
+plot_ranks <- function(mres, unit, method) {
+  stopifnot( is(mres, "merged_res") )
+  stopifnot( unit == "tpm" || unit == "est_counts" )
+
+  col_meth <- paste0(unit, "_", method)
+  col_oracle <- paste0(unit, "_", "oracle")
+  sub_data <- mres$all_data %>%
+    select_("target_id", col_meth, col_oracle) %>%
+    as.data.frame()
+  sub_data$meth_rank <- rank(sub_data[,col_meth])
+  sub_data$oracle_rank <- rank(sub_data[,col_oracle])
+  sub_data$d <- with(sub_data, oracle_rank - meth_rank)
+  # sub_data <- as.data.frame(sub_data, stringsAsFactors = FALSE) %>%
+  #   mutate(meth_rank = lazyeval::interp(~rank(x), x = col_meth))
+
+  # ggplot(sub_data, aes_string("oracle_rank", "d")) +
+  #   geom_point(alpha = 0.2)
+  # print(head(sub_data))
+  plt <- ggvis::ggvis(sub_data, x = ~oracle_rank, y = ~d) %>%
+    ggvis::layer_points(fill := "black", opacity := 0.2) %>%
+    ggvis::add_tooltip(function(dat){
+      print(dat)
+      print(sub_data[(sub_data$oracle_rank == dat$oracle_rank) & (sub_data$d == dat$d),])
+      }, "hover")
+
+  list(plt = plt, data = sub_data)
+  plt
+}
+
 #' Read eXpress data
 #'
 #' @param fname the file name of the express 'results.xprs' file.
@@ -152,9 +184,10 @@ read_xprs <- function(fname) {
 #' @return a data.table
 #' @export
 read_kallisto_rename <- function(fname) {
-    kal <- fread(fname, header = TRUE, stringsAsFactors = FALSE,
-        data.table = TRUE)
-    kal
+    # kal <- fread(fname, header = TRUE, stringsAsFactors = FALSE,
+    #     data.table = TRUE)
+    # kal
+  read.table(fname, stringsAsFactors=FALSE, header = TRUE)
 }
 
 #' @export
@@ -181,6 +214,15 @@ read_salmon <- function(fname) {
     #     arrange(target_id)
     salmon %>%
       select(target_id, tpm, est_counts)
+}
+
+#' @export
+read_rsem <- function(fname) {
+  read.table(fname, header = TRUE, stringsAsFactors = FALSE) %>%
+    rename(target_id = transcript_id,
+      est_counts = expected_count,
+      tpm = TPM, eff_len = effective_length) %>%
+    select(-gene_id, -FPKM, -IsoPct)
 }
 
 read_kallisto_py <- function(fname) {
@@ -211,3 +253,48 @@ read_oracle <- function(fname, targ_to_eff_len) {
         arrange(target_id)
 }
 
+
+#' @export
+read_cufflinks <- function(fname, mean_frag_len) {
+  data <- data.table::fread(fname, header = TRUE)
+
+  data <- data %>%
+    mutate(tpm = FPKM * 1e6/ sum(FPKM),
+      est_counts = tpm_to_alpha(tpm, length - mean_frag_len))
+
+  data %>%
+    select(target_id = tracking_id, tpm, est_counts)
+}
+
+
+tpm_to_alpha <- function(tpm, eff_len) {
+  stopifnot(length(tpm) == length(eff_len))
+
+  alpha <- (tpm * eff_len) / 1e6
+  alpha <- alpha / sum(alpha)
+
+  alpha
+}
+
+#' @export
+alpha_load <- function(dir_name, oracle_targs) {
+  alpha <- data.table::fread(file.path(dir_name, "alpha.txt"), data.table = FALSE, header = TRUE)
+  alpha <- t(as.matrix(alpha))
+  alpha <- alpha[oracle_targs,]
+
+  ll <- data.table::fread(file.path(dir_name, "ll.txt"), header = FALSE, data.table = FALSE)
+
+  list(alpha = alpha, ll = ll[,1])
+}
+
+#' @export
+alpha_to_oracle_cor <- function(alpha, oracle_counts) {
+  all_spearman <- lapply(1:ncol(alpha),
+    function(i)
+    {
+      if (i %% 100 == 0) print(i)
+      cor(alpha[,i], oracle_counts, method = "spearman")
+    })
+
+  unlist(all_spearman)
+}
