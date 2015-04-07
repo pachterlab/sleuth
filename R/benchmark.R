@@ -32,12 +32,12 @@ merge_results <- function(exp_list, exp_labels, oracle) {
   melt_by <- function(data, unit_by) {
     m_unit <- data %>%
       select(target_id, starts_with(unit_by)) %>%
-      melt(id.vars = "target_id", variable.name = "method")
-    ret <- oracle %>%
+      reshape2::melt(id.vars = "target_id", variable.name = "method")
+    ret <- data.table::data.table(oracle) %>%
       select(target_id, starts_with(unit_by)) %>%
-      inner_join(m_unit, by = "target_id") %>%
+      inner_join(data.table::data.table(m_unit), by = "target_id") %>%
       rename(estimate = value)
-    setnames(ret, paste0(unit_by, "_oracle"), "oracle")
+    data.table::setnames(ret, paste0(unit_by, "_oracle"), "oracle")
     ret
   }
 
@@ -45,7 +45,7 @@ merge_results <- function(exp_list, exp_labels, oracle) {
   m_est_counts <- melt_by(all_res, "est_counts")
 
   all_res <- all_res %>%
-    inner_join(oracle, by = "target_id")
+    inner_join(data.table::data.table(oracle), by = "target_id")
 
   structure(list(all_data = all_res, m_tpm = m_tpm, m_est_counts = m_est_counts),
     class = "merged_res")
@@ -298,3 +298,10 @@ alpha_to_oracle_cor <- function(alpha, oracle_counts) {
 
   unlist(all_spearman)
 }
+
+#' Simulate counts table
+#'
+#' Simulate a counts table, given TPM and effective length
+#'
+#' @param mixture a data.frame containing columns "tpm", "target_id" and "eff_len"
+#' @param total_counts the total number of reads

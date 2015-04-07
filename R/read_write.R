@@ -156,15 +156,20 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
 
   # write out auxilary info
   rhdf5::h5createGroup(fname, "aux")
-  stopifnot( rhdf5::h5createDataset(fname, "aux/ids", dims = dims,
+  # stopifnot( rhdf5::h5writeDataset(fname, "aux/ids", dims = dims,
+  #   storage.mode = "character", size = 100, level = compression) )
+  stopifnot( rhdf5::h5writeDataset(fname, "aux/ids", dims = dims,
     storage.mode = "character", size = 100, level = compression) )
-  rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
+  # rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
 
   if (write_bootstrap) {
     rhdf5::h5write(length(kal$bootstrap), fname, "aux/num_bootstrap")
   } else {
     rhdf5::h5write(0L, fname, "aux/num_bootstrap")
   }
+
+  rhdf5::h5write(kal$abundance$eff_len, fname, "aux/eff_lengths")
+  rhdf5::h5write(kal$abundance$len, fname, "aux/lengths")
 
   # TODO: put lengths in aux
   # TODO: put effective lengths in aux
@@ -204,25 +209,27 @@ read_kallisto_hdf5 <- function(fname, read_bootstrap = TRUE) {
     stop(paste0("Can't file file: '", fname, "'"))
   }
 
-  target_id <- rhdf5::h5read(fname, "aux/ids")
+  target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
   abund <- data.frame(target_id = target_id, stringsAsFactors = FALSE)
-  abund$est_counts <- rhdf5::h5read(fname, "est_counts")
-
+  abund$est_counts <- as.numeric(rhdf5::h5read(fname, "est_counts"))
+  abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
+  abund$len <- as.numeric(rhdf5::h5read(fname, "aux/lengths"))
 
   bs_samples <- list()
   if (read_bootstrap) {
     num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
     if (num_bootstrap > 0) {
       cat("Found ", num_bootstrap, " bootstrap samples\n")
+      bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
+        {
+          .read_bootstrap_hdf5(fname, i, abund$target_id)
+        })
     } else {
       cat("No bootstrap samples found\n ")
-      break
     }
-    bs_samples <- lapply(1:num_bootstrap[1], function(i)
-      {
-        .read_bootstrap_hdf5(fname, i, abund$target_id)
-      })
   }
+
+  abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
   invisible(structure(
       list(abundance = abund,
@@ -233,7 +240,7 @@ read_kallisto_hdf5 <- function(fname, read_bootstrap = TRUE) {
 # read a bootstrap from an HDF5 file and return a \code{data.frame}
 .read_bootstrap_hdf5 <- function(fname, i, target_id) {
   bs <- data.frame(target_id = target_id, stringsAsFactors = FALSE)
-  bs$est_counts <- rhdf5::h5read(fname, paste0("bootstrap/bs", i))
+  bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
 
   # TODO: incorporate lengths
   # TODO: after lengths, compute TPM

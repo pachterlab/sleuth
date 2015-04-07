@@ -20,3 +20,15 @@ tpm_to_alpha <- function(tpm, eff_len) {
 
   num / denom
 }
+
+#' @export
+counts_to_fpkm <- function(counts, eff_len) {
+  stopifnot( length(counts) == length(eff_len) )
+
+  which_valid <- which(eff_len > 0)
+  N <- sum(counts)
+  fpkm <- (counts / eff_len) * (1e9 / N)
+  fpkm[-which_valid] <- 0
+
+  fpkm
+}
