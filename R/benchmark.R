@@ -68,11 +68,16 @@ compute_cor_oracle <- function(mres) {
         group_by(method) %>%
         summarise(
           pearson = cor(oracle, estimate, method = "pearson"),
-          spearman = cor(oracle, estimate, method = "spearman")
+          spearman = cor(oracle, estimate, method = "spearman"),
+          mpe = median(pe(estimate, oracle))
           )
     })
 
   setNames(both_res, c("tpm", "est_counts"))
+}
+
+pe <- function(estimate, truth) {
+  (abs(estimate - truth) ) / ((estimate + truth) * 0.5)
 }
 
 #' Compute all pairwise correlations of a unit
@@ -160,6 +165,22 @@ plot_ranks <- function(mres, unit, method) {
 
   list(plt = plt, data = sub_data)
   plt
+}
+
+#' @export
+plot_pe <- function(mres, unit, method) {
+  stopifnot( is(mres, "merged_res") )
+  stopifnot( unit == "tpm" || unit == "est_counts" )
+
+  col_meth <- paste0(unit, "_", method)
+  col_oracle <- paste0(unit, "_", "oracle")
+  sub_data <- mres$all_data %>%
+    select_("target_id", col_meth, col_oracle) %>%
+    as.data.frame()
+
+  sub_data$pe <- pe(sub_data[,col_meth], sub_data[,col_oracle])
+  ggplot(sub_data, aes_string(col_oracle, "pe")) +
+    geom_point(alpha = 0.02)
 }
 
 #' Read eXpress data
