@@ -200,7 +200,7 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
 #' @param fname
 #' @return a \code{kallisto} object
 #' @export
-read_kallisto_hdf5 <- function(fname, read_bootstrap = TRUE) {
+read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
   stopifnot(is(fname, "character"))
 
   fname <- path.expand(fname)

@@ -69,7 +69,7 @@ compute_cor_oracle <- function(mres) {
         summarise(
           pearson = cor(oracle, estimate, method = "pearson"),
           spearman = cor(oracle, estimate, method = "spearman"),
-          mpe = median(pe(estimate, oracle))
+          mpe = median(pe(estimate, oracle), na.rm = TRUE)
           )
     })
 
@@ -77,7 +77,7 @@ compute_cor_oracle <- function(mres) {
 }
 
 pe <- function(estimate, truth) {
-  (abs(estimate - truth) ) / ((estimate + truth) * 0.5)
+  2 *(abs(estimate - truth) ) / (estimate + truth)
 }
 
 #' Compute all pairwise correlations of a unit
