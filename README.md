@@ -5,6 +5,21 @@ Investigate transcript abundance from
 analysis from RNA-Seq data.
 
 
+# Dependencies
+
+Dependencies are `dplyr`, `data.table`, `ggplot2`, `tidyr`, and `rhdf5`
+
+All depencies except `rhd5` are available on CRAN. Here is how to install them:
+
+```{r}
+# install packages from CRAN
+install.packages("dplyr", "data.table", "ggplot2", "tidyr"
+
+# install 'rhdf5' from Bioconductor
+source("http://bioconductor.org/biocLite.R")
+biocLite("rhdf5")
+```
+
 # Installation
 
 The easiest way to install is using the `devtools` package. The package is
