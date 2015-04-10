@@ -17,4 +17,6 @@ print.kallisto <- function(obj) {
   n_bootstrap <- length(obj$bootstrap)
 
   cat("bootstraps: ", n_bootstrap, "\n")
+
+  invisible(obj)
 }

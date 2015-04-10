@@ -4,28 +4,48 @@
 #' Conceptually, a sleuth is a pack of kallistos. A 'sleuth' object stores
 #' a pack of kallisto results, and can then intelligently operate them
 #' depending on conditions and sequencing depth.
+#'
 #' @param kal_list a list of \code{kallisto} objects
-#' @param sample_names a character vector of \code{length(kal_list)} with
-#' identifiers for the sample.
-#' @param condition_names a character vector of \code{length(kal_list)} with
-#' identifiers for the condition. These typically refer to the cell type (e.g.
-#' tumor vs not) and should be the same for samples that are part of the same
-#' experimental condition
+#' @param sample_to_condition is a \code{data.frame} which contains a mapping from \code{sample} (a column) to some set of experimental conditions
+#' @param design is a \code{formula} which explains the full model (design) of the experiment
 #' @param norm_boostrap if \code{TRUE} use the size factors calculated from the
 #' raw observations to normalize bootstrap values
 #' @return a \code{sleuth} object
 #' @export
-new_sleuth <- function(kal_list, sample_names, condition_names,
+new_sleuth <- function(
+  kal_list, sample_to_condition,
+  design,
   norm_bootstraps = TRUE, verbose = TRUE) {
-  if (length(kal_list) != length(sample_names)) {
-    stop(paste0("'", substitute(kal_list), "' must be the same length as '",
-        substitute(sample_names), "'"))
+
+  ##############################
+  # check inputs
+
+  # data types
+  if (!all(lapply(kal_list, is, "kallisto"))) {
+    stop(paste0("One or more objects in '", substitute(kal_list),
+        "' (kal_list) is NOT a 'kallisto' object"))
   }
 
-  if (length(kal_list) != length(condition_names)) {
-    stop(paste0("'", substitute(kal_list), "' must be the same length as '",
-        substitute(condition_names), "'"))
+  if (!is(sample_to_condition, "data.frame")) {
+    stop(paste0("'", substitute(sample_to_condition), "' must be a data.frame"))
   }
+
+  if (!is(design, "formula")) {
+    stop(paste0("'",substitute(design), "' (design) must be a formula"))
+  }
+
+  if (length(kal_list) != nrow(sample_to_condition)) {
+    stop(paste0("'", substitute(kal_list), "' must have the same length as the number of rows in '",
+        substitute(sample_to_condition), "'"))
+  }
+
+
+  if (!("sample" %in% colnames(sample_to_condition))) {
+    stop(paste0("'", substitute(sample_to_condition),
+        "' must contain a column names 'sample'"))
+  }
+  # done
+  ##############################
 
   if (verbose) cat("Appending sample names\n")
 
@@ -33,7 +53,7 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
   kal_list <- lapply(seq_along(kal_list), function(it)
     {
       kal_list[[it]]$abundance <- kal_list[[it]]$abundance %>%
-        mutate(sample = sample_names[it], condition = condition_names[it])
+        mutate(sample = sample_to_condition$sample[it])
       kal_list[[it]]
     })
 
@@ -62,11 +82,12 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
   obs_norm <- inner_join(data.table::as.data.table(est_counts_norm),
     data.table::as.data.table(tpm_norm), by = c("target_id", "sample"))
 
-  sample_to_condition <- data.frame(sample = sample_names,
-    condition = condition_names, stringsAsFactors = FALSE)
+  # sample_to_condition <- data.frame(sample = sample_names,
+  #   condition = condition_names, stringsAsFactors = FALSE)
 
   if (verbose) cat("Joining tpm and est_counts tables\n")
-  obs_norm <- left_join(obs_norm, data.table::as.data.table(sample_to_condition),
+  obs_norm <- left_join(obs_norm,
+    data.table::as.data.table(sample_to_condition),
     by = c("sample")) %>%
     as.data.frame(stringsAsFactors = FALSE)
 
@@ -86,7 +107,8 @@ new_sleuth <- function(kal_list, sample_names, condition_names,
       sample_to_condition = sample_to_condition,
       bootstrap_summary = NA,
       tpm_sf = tpm_sf,
-      est_counts_sf = est_counts_sf
+      est_counts_sf = est_counts_sf,
+      design = design
       ),
     class = "sleuth")
 }

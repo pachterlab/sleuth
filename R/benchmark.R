@@ -69,15 +69,54 @@ compute_cor_oracle <- function(mres) {
         summarise(
           pearson = cor(oracle, estimate, method = "pearson"),
           spearman = cor(oracle, estimate, method = "spearman"),
-          mpe = median(pe(estimate, oracle), na.rm = TRUE)
+          med_scaled_err = median(abs(scaled_error(estimate, oracle)),
+              na.rm = TRUE))
+    })
+
+  setNames(both_res, c("tpm", "est_counts"))
+}
+
+#' @export
+filtered_summary <- function(mres, filter_exp) {
+  stopifnot( is(mres, "merged_res") )
+  do_filter <- if (missing(filter_exp)) {
+    FALSE
+  } else {
+    filter_exp <- deparse(substitute(filter_exp))
+    filtered_ids <- mres$all_data %>%
+      filter_(.dots = list(filter_exp)) %>%
+      select(target_id)
+    TRUE
+  }
+
+  both_res <- lapply(list(mres$m_tpm, mres$m_est_counts),
+    function(res)
+    {
+      if (do_filter) {
+        res <- data.table(res) %>%
+          inner_join(data.table(filtered_ids), by = c("target_id"))
+      }
+
+      res %>%
+        group_by(method) %>%
+        summarise(
+          pearson = cor(estimate, oracle, method = "pearson"),
+          spearman = cor(estimate, oracle, method = "spearman"),
+          med_scaled_err = median(abs(scaled_error(estimate, oracle)),
+              na.rm = TRUE),
+          med_per_err = median(abs(percent_error(estimate, oracle)))
           )
     })
 
   setNames(both_res, c("tpm", "est_counts"))
 }
 
-pe <- function(estimate, truth) {
-  2 *(abs(estimate - truth) ) / (estimate + truth)
+scaled_error <- function(estimate, truth) {
+  2 *(estimate - truth)  / (estimate + truth)
+}
+
+percent_error <- function(estimate, truth) {
+  (estimate - truth) / truth
 }
 
 #' Compute all pairwise correlations of a unit

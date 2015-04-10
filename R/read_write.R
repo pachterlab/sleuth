@@ -47,6 +47,14 @@ read_kallisto <- function(output_dir, read_bootstrap = TRUE)
         class = "kallisto"))
 }
 
+#' @export
+print.sleuth <- function(obj) {
+  cat("\tsleuth object\n")
+  cat("\n")
+  cat("bears:", length(obj$kal), "\n")
+  cat("design:", deparse(obj$design), "\n")
+}
+
 
 #' @export
 kv_vec_to_df <- function(x, cols = c("gene_id", "transcript_id")) {
@@ -222,7 +230,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
       cat("Found ", num_bootstrap, " bootstrap samples\n")
       bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
         {
-          .read_bootstrap_hdf5(fname, i, abund$target_id)
+          .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {
       cat("No bootstrap samples found\n ")
@@ -238,12 +246,12 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
 }
 
 # read a bootstrap from an HDF5 file and return a \code{data.frame}
-.read_bootstrap_hdf5 <- function(fname, i, target_id) {
-  bs <- data.frame(target_id = target_id, stringsAsFactors = FALSE)
+.read_bootstrap_hdf5 <- function(fname, i, main_est) {
+  bs <- data.frame(
+    target_id = main_est$target_id,
+    stringsAsFactors = FALSE)
   bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
-
-  # TODO: incorporate lengths
-  # TODO: after lengths, compute TPM
+  bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
 
   bs
 }

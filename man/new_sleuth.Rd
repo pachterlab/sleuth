@@ -4,11 +4,15 @@
 \alias{new_sleuth}
 \title{Constructor for a 'sleuth' object}
 \usage{
-new_sleuth(kal_list, sample_names, condition_names, norm_bootstraps = TRUE,
+new_sleuth(kal_list, sample_to_condition, design, norm_bootstraps = TRUE,
   verbose = TRUE)
 }
 \arguments{
 \item{kal_list}{a list of \code{kallisto} objects}
+
+\item{sample_to_condition}{is a \code{data.frame} which contains a mapping from \code{sample} (a column) to some set of experimental conditions}
+
+\item{design}{is a \code{formula} which explains the full model (design) of the experiment}
 
 \item{sample_names}{a character vector of \code{length(kal_list)} with
 identifiers for the sample.}
