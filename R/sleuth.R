@@ -21,7 +21,7 @@ new_sleuth <- function(
   # check inputs
 
   # data types
-  if (!all(lapply(kal_list, is, "kallisto"))) {
+  if (!all(unlist(lapply(kal_list, is, "kallisto")))) {
     stop(paste0("One or more objects in '", substitute(kal_list),
         "' (kal_list) is NOT a 'kallisto' object"))
   }
@@ -44,6 +44,10 @@ new_sleuth <- function(
     stop(paste0("'", substitute(sample_to_condition),
         "' must contain a column names 'sample'"))
   }
+
+  # TODO: ensure all kallisto have same number of transcripts
+  # TODO: ensure transcripts are in same order -- if not, sort them
+
   # done
   ##############################
 
@@ -108,7 +112,8 @@ new_sleuth <- function(
       bootstrap_summary = NA,
       tpm_sf = tpm_sf,
       est_counts_sf = est_counts_sf,
-      design = design
+      design = design,
+      design_matrix = model.matrix(design, sample_to_condition)
       ),
     class = "sleuth")
 }
@@ -180,6 +185,13 @@ sleuth_summarize_bootstrap_col <- function(obj, col) {
   rbind_all(res)
 }
 
+#' Spread abundance by a column
+#'
+#' Take a data.frame from a sleuth object (e.g. \code{obs_raw}) and cast it
+#' into a matrix where the rows are the target_ids and the columns are the
+#' sample ids. The values are the variable you are "spreading" on.
+#' @param abund the abundance \code{data.frame} from a \code{sleuth} object
+#' @param var a character array of length one. The variable for which to get "spread" on (e.g. "est_counts").
 #' @export
 spread_abundance_by <- function(abund, var) {
   # var <- lazyeval::lazy(var)

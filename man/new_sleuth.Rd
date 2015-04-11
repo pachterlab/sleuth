@@ -14,14 +14,6 @@ new_sleuth(kal_list, sample_to_condition, design, norm_bootstraps = TRUE,
 
 \item{design}{is a \code{formula} which explains the full model (design) of the experiment}
 
-\item{sample_names}{a character vector of \code{length(kal_list)} with
-identifiers for the sample.}
-
-\item{condition_names}{a character vector of \code{length(kal_list)} with
-identifiers for the condition. These typically refer to the cell type (e.g.
-tumor vs not) and should be the same for samples that are part of the same
-experimental condition}
-
 \item{norm_boostrap}{if \code{TRUE} use the size factors calculated from the
 raw observations to normalize bootstrap values}
 }

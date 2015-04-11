@@ -114,3 +114,52 @@ normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
 
   kal
 }
+
+
+#' Sample bootstraps
+#'
+#' From a sleuth object, create experiments by randomly sampling bootstraps from each kallisto object
+#' @param obj a \code{kallisto} object
+#' @param n_samples the number of samples to genenerate
+#' @export
+sample_bootstrap <- function(obj, n_samples = 100L) {
+  stopifnot( is(obj, "sleuth") )
+
+  n_kal <- length(obj$kal)
+  n_bs_per_samp <- unlist(lapply(obj$kal, function(x) length(x$bootstrap)))
+  if (any(n_bs_per_samp < n_samples)) {
+    warning("You've asked to sample more samples than you have bootstraps.",
+      " We recommend you generate more bootstrap samples in kallisto...")
+  }
+
+  which_samp <- lapply(seq_along(n_bs_per_samp),
+    function(i)
+    {
+      cur_n <- n_bs_per_samp[i]
+      sample.int(cur_n, n_samples, replace = TRUE)
+    })
+  # each column contains which bootstrap sample we want from each kallisto
+  which_samp <- t(simplify2array(which_samp))
+
+  # allocate the matrices
+  sample_mat <- lapply(1:n_samples,
+    function(discard)
+    {
+      mat <- matrix(NA_real_, nrow = nrow(obj$kal[[1]]$abundance),
+        ncol = nrow(which_samp))
+      rownames(mat) <- obj$kal[[1]]$abundance$target_id
+      colnames(mat) <- obj$sample_to_condition$sample
+      mat
+    })
+
+  # go through the generated sample ids and place them into the corresponding
+  # matrix sample
+  for (s in 1:n_samples) {
+    for (idx in 1:nrow(which_samp)) {
+      b <- which_samp[idx,s]
+      sample_mat[[s]][,idx] <- obj$kal[[idx]]$bootstrap[[b]]$est_counts
+    }
+  }
+
+  sample_mat
+}
