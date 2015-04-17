@@ -7,7 +7,7 @@
 #' target_id, tpm, est_counts
 #' @param exp_labels a character vector of the same length as exp_list with
 #' labels for each method
-#' @param a data.frame with columns: target_id, counts, tpm
+#' @param oracle a data.frame with columns: target_id, counts, tpm
 #' @export
 merge_results <- function(exp_list, exp_labels, oracle) {
   stopifnot( is(exp_list, "list") )

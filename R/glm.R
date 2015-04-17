@@ -13,6 +13,9 @@ glm_by_rows <- function(exp_mat, design_mat) {
     {
       tryCatch (
         {
+          if (i %% 1000 == 0) {
+            print(i)
+          }
           structure(
             fit_gamma_glm(design_mat, exp_mat[i,]),
             class = c("glm", "lm")
@@ -22,6 +25,28 @@ glm_by_rows <- function(exp_mat, design_mat) {
         finally = function() {}
         )
     }), rownames(exp_mat))
+}
+
+#' @export
+fit_null_glms <- function(obj) {
+  stopifnot( is(obj, "sleuth") )
+
+  obs_norm <- spread_abundance_by(obj$obs_norm, "est_counts")
+
+  cat("Fitting null GLMs\n")
+  # fit the intercept only model
+  obj$valid_null_glms <- glm_by_rows(obs_norm,
+    model.matrix(~ 1, s_o$sample_to_condition)) %>%
+      Filter(function(x) is(x, "glm"), .)
+
+  cat("Computing summaries")
+  obj$null_glm_summary <- Map(summary, obj$valid_null_glms)
+
+  obj
+}
+
+glm_summary <- function(glm_list) {
+
 }
 
 #' @export
