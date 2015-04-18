@@ -28,6 +28,11 @@ glm_by_rows <- function(exp_mat, design_mat) {
 }
 
 #' @export
+bs_obs_glm_fit <- function(obj) {
+  stopifnot( is(obj, "sleuth") )
+}
+
+#' @export
 fit_null_glms <- function(obj) {
   stopifnot( is(obj, "sleuth") )
 
@@ -45,8 +50,17 @@ fit_null_glms <- function(obj) {
   obj
 }
 
-glm_summary <- function(glm_list) {
+#' @export
+locfit_phi <- function(obj) {
+  stopifnot( is(obj, "sleuth") )
+  stopifnot( !is.null(obj[["null_glm_summary"]]) )
 
+  disp <- unlist(Map(function(x) x[["dispersion"]], obj$null_glm_summary))
+  obs_norm <- spread_abundance_by(obj$obs_norm, "est_counts")
+  null_mean <- apply(obs_norm, 1, mean)
+  null_mean <- null_mean[names(disp)]
+
+  list(null_mean, disp)
 }
 
 #' @export

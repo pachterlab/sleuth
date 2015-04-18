@@ -163,3 +163,38 @@ sample_bootstrap <- function(obj, n_samples = 100L) {
 
   sample_mat
 }
+
+#' @export
+dcast_bootstrap <- function(obj, ...) {
+  UseMethod("dcast_bootstrap")
+}
+
+#' @export
+dcast_bootstrap.sleuth <- function(obj, units) {
+  bs <- lapply(obj[["kal"]], dcast_bootstrap, units)
+
+  do.call(cbind, bs)
+}
+
+#' @export
+dcast_bootstrap.kallisto <- function(obj, units) {
+  if ( !(units %in% c("est_counts", "tpm")) ) {
+    stop(paste0("'", substitute(units),
+        "' is not valid for 'units'. Please see documentation"))
+  }
+
+  if ( length(obj$bootstrap) < 1 ) {
+    stop("No bootstrap samples found.")
+  }
+
+  n_bs <- length(obj$bootstrap)
+  n_features <- nrow(obj$bootstrap[[1]])
+  mat <- matrix(NA_real_, nrow = n_features, ncol = n_bs)
+
+  for (j in seq_along(obj$bootstrap)) {
+    mat[ ,j] <- obj[[ "bootstrap" ]][[j]][[ units ]]
+  }
+  rownames(mat) <- obj[["bootstrap"]][[1]][["target_id"]]
+
+  mat
+}

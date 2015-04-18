@@ -20,3 +20,4 @@ print.kallisto <- function(obj) {
 
   invisible(obj)
 }
+
