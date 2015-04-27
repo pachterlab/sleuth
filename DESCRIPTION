@@ -14,7 +14,8 @@ Imports:
     data.table,
     ggplot2,
     tidyr,
-    rhdf5
+    rhdf5,
+    lazyeval
 Suggests:
     MASS,
     testthat

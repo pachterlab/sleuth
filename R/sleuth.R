@@ -67,7 +67,8 @@ new_sleuth <- function(
   if (verbose) cat("Normalizing 'tpm'\n")
   # normalize TPM using TMM
   tpm_spread <- spread_abundance_by(obs_abundance_raw, "tpm")
-  tpm_sf <- edgeR::calcNormFactors(tpm_spread)
+  # tpm_sf <- edgeR::calcNormFactors(tpm_spread)
+  tpm_sf <- DESeq2::estimateSizeFactorsForMatrix(tpm_spread)
   tpm_norm <- t(t(tpm_spread) / tpm_sf) %>%
     as.data.frame(stringsAsFactors = FALSE)
   tpm_norm$target_id <- rownames(tpm_norm)
@@ -76,7 +77,8 @@ new_sleuth <- function(
   if (verbose) cat("Normalizing 'est_counts'\n")
   # normalize est_counts using TMM
   est_counts_spread <- spread_abundance_by(obs_abundance_raw, "est_counts")
-  est_counts_sf <- edgeR::calcNormFactors(est_counts_spread)
+  # est_counts_sf <- edgeR::calcNormFactors(est_counts_spread)
+  est_counts_sf <- DESeq2::estimateSizeFactorsForMatrix(est_counts_spread)
   est_counts_norm <- t(t(est_counts_spread) / est_counts_sf) %>%
     as.data.frame(stringsAsFactors = FALSE)
   est_counts_norm$target_id <- rownames(est_counts_norm)

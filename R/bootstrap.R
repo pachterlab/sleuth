@@ -170,14 +170,14 @@ dcast_bootstrap <- function(obj, ...) {
 }
 
 #' @export
-dcast_bootstrap.sleuth <- function(obj, units) {
-  bs <- lapply(obj[["kal"]], dcast_bootstrap, units)
+dcast_bootstrap.sleuth <- function(obj, units, nsamples = NULL) {
+  bs <- lapply(obj[["kal"]], dcast_bootstrap, units, nsamples)
 
   do.call(cbind, bs)
 }
 
 #' @export
-dcast_bootstrap.kallisto <- function(obj, units) {
+dcast_bootstrap.kallisto <- function(obj, units, nsamples = NULL) {
   if ( !(units %in% c("est_counts", "tpm")) ) {
     stop(paste0("'", substitute(units),
         "' is not valid for 'units'. Please see documentation"))
@@ -189,10 +189,17 @@ dcast_bootstrap.kallisto <- function(obj, units) {
 
   n_bs <- length(obj$bootstrap)
   n_features <- nrow(obj$bootstrap[[1]])
-  mat <- matrix(NA_real_, nrow = n_features, ncol = n_bs)
 
-  for (j in seq_along(obj$bootstrap)) {
-    mat[ ,j] <- obj[[ "bootstrap" ]][[j]][[ units ]]
+  which_bs <- seq_along(obj$bootstrap)
+  if (!is.null(nsamples) && nsamples < n_bs) {
+    print(nsamples)
+    which_bs <- sample.int(n_bs, nsamples)
+  }
+
+  mat <- matrix(NA_real_, nrow = n_features, ncol = length(which_bs))
+
+  for (j in seq_along(which_bs)) {
+    mat[ ,j] <- obj[[ "bootstrap" ]][[which_bs[j]]][[ units ]]
   }
   rownames(mat) <- obj[["bootstrap"]][[1]][["target_id"]]
 
