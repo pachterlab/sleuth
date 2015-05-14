@@ -287,7 +287,7 @@ read_sailfish <- function(fname) {
   # TODO: fix sailfish TPM
     sf <- fread(fname, header = FALSE, skip = 5, stringsAsFactors = FALSE,
         data.table = FALSE)
-    colnames(sf) <- c("target_id", "length", "tpm", "rpkm", "kpkm", "est_counts")
+    colnames(sf) <- c("target_id", "length", "tpm", "rpkm", "kpkm", "EstimatedNumKmers", "est_counts")
     # sf %>%
     #     rename(tpm_sailfish = tpm, counts_sf = est_counts) %>%
     #     arrange(target_id)

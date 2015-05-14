@@ -13,7 +13,7 @@ All depencies except `rhd5` are available on CRAN. Here is how to install them:
 
 ```{r}
 # install packages from CRAN
-install.packages("dplyr", "data.table", "ggplot2", "tidyr"
+install.packages(c("dplyr", "data.table", "ggplot2", "tidyr"))
 
 # install 'rhdf5' from Bioconductor
 source("http://bioconductor.org/biocLite.R")

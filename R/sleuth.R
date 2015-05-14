@@ -241,3 +241,23 @@ melt_bootstrap_sleuth <- function(obj) {
         mutate(sample = cur_samp, condition = cur_cond)
     }) %>% rbind_all()
 }
+
+#' @export
+null_mean_var <- function(obj, transform = identity, min_reads = 1) {
+  stopifnot( is(obj, "sleuth") )
+
+  which_pass <- obj$obs_norm %>%
+    group_by(target_id) %>%
+    summarise(pass = all(est_counts > min_reads)) %>%
+    filter(pass)
+
+  obj$obs_norm %>%
+    data.table::data.table() %>%
+    inner_join(data.table::data.table(which_pass), by = c("target_id")) %>%
+    mutate(trans_counts = transform(est_counts)) %>%
+    group_by(target_id) %>%
+    summarise(
+      counts_mean = mean(trans_counts),
+      counts_var = var(trans_counts)
+      )
+}
