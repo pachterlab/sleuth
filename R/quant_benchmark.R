@@ -69,7 +69,7 @@ compute_cor_oracle <- function(mres) {
         summarise(
           pearson = cor(oracle, estimate, method = "pearson"),
           spearman = cor(oracle, estimate, method = "spearman"),
-          med_scaled_err = median(abs(scaled_error(estimate, oracle)),
+          med_rel_diff = median(abs(scaled_error(estimate, oracle)),
               na.rm = TRUE))
     })
 
@@ -134,8 +134,9 @@ filtered_summary <- function(mres, filter_exp) {
         summarise(
           pearson = cor(estimate, oracle, method = "pearson"),
           spearman = cor(estimate, oracle, method = "spearman"),
-          med_scaled_err = median(abs(scaled_error(estimate, oracle)),
+          med_rel_diff_no_zeroes = median(abs(relative_difference(estimate, oracle)),
               na.rm = TRUE),
+          med_rel_diff = median(abs(relative_difference(estimate, oracle, FALSE))),
           med_per_err = median(abs(percent_error(estimate, oracle)))
           )
     })
@@ -143,8 +144,22 @@ filtered_summary <- function(mres, filter_exp) {
   setNames(both_res, c("tpm", "est_counts"))
 }
 
-scaled_error <- function(estimate, truth) {
-  2 *(estimate - truth)  / (estimate + truth)
+relative_difference <- function(x, y, na_zeroes = TRUE) {
+  stopifnot(length(x) == length(y))
+
+  result <- rep(NA_real_, length(x))
+
+  non_zero <- which( x > 0 | y > 0 )
+  both_zero <- setdiff(seq_along(x), non_zero)
+
+  if (!na_zeroes) {
+    result[both_zero] <- 0.0
+  }
+
+  result[non_zero] <- 2 * ((x[non_zero] - y[non_zero]) /
+    abs(x[non_zero] + y[non_zero]))
+
+  result
 }
 
 percent_error <- function(estimate, truth) {
