@@ -58,3 +58,34 @@ lmm_by_row <- function(obj, design_formula, random_formula, filter_df) {
   bs_lmm
 }
 
+#' @export
+summary_lme <- function (object, stdFixed, verbose = FALSE, ...) {
+  fixed <- fixef(object)
+  # stdFixed <- sqrt(diag(as.matrix(object$varFix)))
+  # object$corFixed <- array(t(object$varFix/stdFixed)/stdFixed,
+  #     dim(object$varFix), list(names(fixed), names(fixed)))
+  # if (adjustSigma && object$method == "ML")
+  #     stdFixed <- stdFixed * sqrt(object$dims$N/(object$dims$N -
+  #         length(stdFixed)))
+
+  tTable <- data.frame(fixed, stdFixed, object$fixDF[["X"]],
+    fixed/stdFixed, fixed)
+  dimnames(tTable) <- list(names(fixed), c("Value", "Std.Error",
+      "DF", "t-value", "p-value"))
+  tTable[, "p-value"] <- 2 * pt(-abs(tTable[, "t-value"]),
+    tTable[, "DF"])
+  object$tTable <- as.matrix(tTable)
+  resd <- resid(object, type = "pearson")
+  if (length(resd) > 5) {
+    resd <- quantile(resd, na.rm = TRUE)
+    names(resd) <- c("Min", "Q1", "Med", "Q3", "Max")
+  }
+  object$residuals <- resd
+  aux <- logLik(object)
+  object$BIC <- BIC(aux)
+  object$AIC <- AIC(aux)
+  attr(object, "oClass") <- class(object)
+  attr(object, "verbose") <- verbose
+  class(object) <- c("summary.lme", class(object))
+  object
+}
