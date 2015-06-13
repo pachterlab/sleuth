@@ -1,11 +1,11 @@
 #' @export
-fit_lmm <- function(design_mat, design_formula, random_formula, result) {
+fit_lmm <- function(design_mat, design_formula, random_formula, result, method = "REML") {
   stopifnot( length(result) == nrow(design_mat) )
 
   design_mat <- design_mat %>%
     mutate(expression = result)
 
-  nlme::lme(design_formula, random = random_formula, data = design_mat)
+  nlme::lme(design_formula, random = random_formula, data = design_mat, method = method)
 }
 
 #' @export
@@ -23,7 +23,7 @@ lmm_design <- function(obj) {
 }
 
 #' @export
-lmm_by_row <- function(obj, design_formula, random_formula, filter_df) {
+lmm_by_row <- function(obj, design_formula, random_formula, filter_df, method = "REML") {
   stopifnot( is(obj, "sleuth") )
 
   filter_df <- as.data.frame(filter_df)
@@ -44,7 +44,7 @@ lmm_by_row <- function(obj, design_formula, random_formula, filter_df) {
       tryCatch(
         {
           if (filt[i]) {
-            fit_lmm(design, design_formula, random_formula, bs[i,])
+            fit_lmm(design, design_formula, random_formula, bs[i,], method)
           } else {
             stop("didn't pass filter")
           }

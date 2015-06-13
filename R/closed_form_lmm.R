@@ -46,13 +46,14 @@ lmm <- function(X, y, nsamples) {
 
   A <- sum(h_i ^ 2)
 
-  n2A <- (n^2) * A
-  d <- (n2A - S) / ( n*S - n2A)
+  n_i2A <- (n_i^2) * A
+  d <- (n_i2A - S) / ( n_i*S - n_i2A )
 
   # this is the (I + Z_i D Z_i')^-1 expression
   # note that in this case, it reduces to:
   # I - d/(1 + n_i *d) 1 1'
-  covar_inv <- diag(n_i) - (d / (1 + n_i * d)) * matrix(1, nrow = n_i, ncol = n_i)
+  covar_inv <- diag(n_i) - (d / (1 + n_i * d)) *
+    matrix(1, nrow = n_i, ncol = n_i)
 
   sigma_sq <- lapply(seq_along(X_i),
     function(i)
@@ -62,5 +63,18 @@ lmm <- function(X, y, nsamples) {
 
   sigma_sq <- sum(unlist(sigma_sq)) / (n - nsamples)
 
-  list(sigma_sq = sigma_sq, coef = b)
+  # can simplify this when we know the design ahead of time
+  cov_b <- lapply(seq_along(X_i),
+    function(i)
+    {
+      (t(X_i[[i]]) %*% covar_inv) %*% X_i[[i]]
+    })
+  cov_b <- Reduce(function(x, y) x + y, cov_b) %>%
+    solve()
+  cov_b <- cov_b * sigma_sq
+
+  log_lik <- -1/2 * (nsamples * log(1 + n_i * d) +
+    nsamples * n_i * log(S - (n_i^(2) * d * A)/(1 + n_i * d)))
+
+  list(sigma_sq = sigma_sq, coef = b, log_lik = log_lik, cov_b = cov_b)
 }

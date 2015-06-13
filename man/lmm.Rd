@@ -20,7 +20,7 @@ contraints are the design is balanced (within group sizes are equal) and
 there is one common random intercept.
 }
 \details{
-Notation is borrowed from "Mixed Models: Theory and Applications with R,
+Notation is borrowed from Ch2: "Mixed Models: Theory and Applications with R,
 Second Edition" by Eugene Demidenko
 }
 
