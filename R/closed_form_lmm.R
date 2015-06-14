@@ -136,5 +136,24 @@ compute_lmms <- function(obj, transform_fn, filter_df) {
     )
   names(bs_lmm) <- obj$kal[[1]]$bootstrap[[1]]$target_id
 
-  bs_lmm
+  filt_lmm <- bs_lmm %>%
+    Filter(function(x) is(x, "sleuth_lmm"), .)
+
+  obj$lmms <- filt_lmm
+
+  reshape_lmms(obj)
+}
+
+reshape_lmms <- function(obj) {
+  stopifnot( is(obj, "sleuth") )
+
+  sigma <- data.frame(raw_sigma = sapply(obj$lmms, function(x) sqrt(x$sigma_sq)))
+  fixed_sd <- rbind_all( lapply(obj$lmms, function(x) x$fixed_sd) )
+  b <- rbind_all( lapply(obj$lmms, function(x) x$coef) )
+
+  obj$fixed_sd <- fixed_sd
+  obj$b <- b
+  obj$sigma <- sigma
+
+  obj
 }
