@@ -98,3 +98,43 @@ lmm <- function(X, y, nsamples, adjust_sigma = TRUE) {
 
   res
 }
+
+#' @export
+compute_lmms <- function(obj, transform_fn, filter_df) {
+  stopifnot( is(obj, "sleuth") )
+  stopifnot( is(transform_fn, "function") )
+
+  filter_df <- as.data.frame(filter_df)
+  rownames(filter_df) <- filter_df$target_id
+  filter_df$target_id <- NULL
+
+  bs <- dcast_bootstrap(obj, "est_counts")
+
+  # design <- lmm_design(obj)
+
+  targs <- rownames(bs)
+  filt <- filter_df[targs,1]
+  stopifnot(length(targs) == length(filt))
+
+  design <- model.matrix(~ condition, lmm_design(obj))
+
+  bs_lmm <- lapply(1:nrow(bs),
+    function(i)
+    {
+      tryCatch(
+        {
+          if (filt[i]) {
+            lmm(design, transform_fn(bs[i,]), length(obj$kal))
+          } else {
+            stop("didn't pass filter")
+          }
+        },
+        error = function(e) {e},
+        finally = function() {}
+        )
+    }
+    )
+  names(bs_lmm) <- obj$kal[[1]]$bootstrap[[1]]$target_id
+
+  bs_lmm
+}

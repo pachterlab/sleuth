@@ -5,7 +5,10 @@ fit_lmm <- function(design_mat, design_formula, random_formula, result, method =
   design_mat <- design_mat %>%
     mutate(expression = result)
 
-  nlme::lme(design_formula, random = random_formula, data = design_mat, method = method)
+  nlme::lme(design_formula,
+    random = random_formula,
+    data = design_mat,
+    method = method)
 }
 
 #' @export
@@ -23,7 +26,9 @@ lmm_design <- function(obj) {
 }
 
 #' @export
-lmm_by_row <- function(obj, design_formula, random_formula, filter_df, method = "REML") {
+lmm_by_row <- function(obj, design_formula, random_formula, filter_df,
+  method = "REML") {
+
   stopifnot( is(obj, "sleuth") )
 
   filter_df <- as.data.frame(filter_df)
