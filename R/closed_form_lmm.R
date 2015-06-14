@@ -11,8 +11,9 @@
 #' @param y the response
 #' @param nsamples the number of biological samples (in LMM terms, the "number
 #' of clusters")
+#' @param adjust_sigma if TRUE, adjust sigma when computing test
 #' @export
-lmm <- function(X, y, nsamples) {
+lmm <- function(X, y, nsamples, adjust_sigma = TRUE) {
   # let's assume that the groups all have equal size
 
   # solve betas by QR decomposition (OLS-style)
@@ -37,12 +38,11 @@ lmm <- function(X, y, nsamples) {
   y_i <- Map(function(s, e) y[s:e], start, end)
   resid_i <- Map(function(s, e) ols$residuals[s:e], start, end)
 
-  h_i <- lapply(seq_along(X_i),
+  h_i <- sapply(seq_along(X_i),
     function(i)
     {
       mean(y_i[[i]]) - t(ols$coefficients) %*% apply(X_i[[i]], 2, mean)
-    }) %>%
-      unlist()
+    })
 
   A <- sum(h_i ^ 2)
 
@@ -55,13 +55,13 @@ lmm <- function(X, y, nsamples) {
   covar_inv <- diag(n_i) - (d / (1 + n_i * d)) *
     matrix(1, nrow = n_i, ncol = n_i)
 
-  sigma_sq <- lapply(seq_along(X_i),
+  sigma_sq <- sapply(seq_along(X_i),
     function(i)
     {
       (t(resid_i[[i]]) %*% covar_inv) %*% resid_i[[i]]
     })
 
-  sigma_sq <- sum(unlist(sigma_sq)) / (n - nsamples)
+  sigma_sq <- sum(sigma_sq) / (n - nsamples)
 
   # can simplify this when we know the design ahead of time
   cov_b <- lapply(seq_along(X_i),
@@ -72,9 +72,29 @@ lmm <- function(X, y, nsamples) {
   cov_b <- Reduce(function(x, y) x + y, cov_b) %>%
     solve()
   cov_b <- cov_b * sigma_sq
+  fixed_sd <- sqrt( diag(cov_b) )
+
+  adjustment <- NA_real_
+  if (adjust_sigma) {
+    adjustment <- n / (n - length(fixed_sd))
+    fixed_sd <- fixed_sd * sqrt( adjustment )
+  }
+
+  t_value <- b / fixed_sd
 
   log_lik <- -1/2 * (nsamples * log(1 + n_i * d) +
     nsamples * n_i * log(S - (n_i^(2) * d * A)/(1 + n_i * d)))
 
-  list(sigma_sq = sigma_sq, coef = b, log_lik = log_lik, cov_b = cov_b)
+  res <- list(
+    sigma_sq = sigma_sq,
+    coef = b,
+    log_lik = log_lik,
+    cov_b = cov_b,
+    t_value = t_value,
+    fixed_sd = fixed_sd,
+    adjustment = adjustment
+    )
+  class(res) <- "sleuth_lmm"
+
+  res
 }

@@ -4,7 +4,7 @@
 \alias{lmm}
 \title{Simple special case LMM}
 \usage{
-lmm(X, y, nsamples)
+lmm(X, y, nsamples, adjust_sigma = TRUE)
 }
 \arguments{
 \item{X}{the design matrix for the fixed effect}
@@ -13,6 +13,8 @@ lmm(X, y, nsamples)
 
 \item{nsamples}{the number of biological samples (in LMM terms, the "number
 of clusters")}
+
+\item{adjust_sigma}{if TRUE, adjust sigma when computing test}
 }
 \description{
 This is an implementation of the special linear mixed effects model. The
