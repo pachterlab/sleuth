@@ -72,3 +72,19 @@ plot_transcript <- function(obj, trans_name, group_string = NULL) {
 
   plt + ggtitle(trans_name)
 }
+
+
+#' Mean variance plot
+#'
+#' Basic mean-variance plot
+#' @param obj a "sleuth" object
+#' @return a gpplot object with a layer containing points
+#' @export
+plot_mean_var <- function(obj) {
+  stopifnot( is(obj, "sleuth") )
+
+  # plt_df <- data.frame(bs_mean = obj$bs_means, raw_sigma = obj$sigma$raw_sigma)
+
+  ggplot(obj$sigma, aes(bs_mean, raw_sigma)) +
+    geom_point(alpha = 0.2)
+}
