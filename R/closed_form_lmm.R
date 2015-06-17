@@ -171,9 +171,9 @@ rbind_matrix <- function(list_obj, which_slot) {
   res
 }
 
-#' Naive shrinkage using lowess
+#' Naive shrinkage using locfit
 #'
-#' The most naive shrinkage you could perform using lowess and the raw
+#' The most naive shrinkage you could perform using locfit and the raw
 #' variances from the LMM
 #'
 #' @param obj a \code{sleuth} object
@@ -192,6 +192,56 @@ naive_shrink_lmm <- function(obj) {
   obj
 }
 
+
+lf_pred <- function(data) {
+  model <- locfit::locfit(sqrt(raw_sigma) ~ bs_mean, data = data)
+  smooth_pred <- locfit:::predict.locfit(model, data$bs_mean) ^ 2
+  max_pred <- pmax(smooth_pred, data$raw_sigma)
+
+  result <- data.frame(smooth_pred = smooth_pred, max_pred = max_pred)
+  rownames(result) <- rownames(data)
+  result$target_id <- data$target_id
+
+  result
+}
+
+#' Shrink lmm by grouping
+#'
+#' Given a data.frame with columns 'target_id' and 'shrinkage_group', fit
+#' different shrinkage lines
+#' @param obj a \code{sleuth} object
+#' @param grouping a data.frame containing the columns 'target_id' and
+#' 'shrinkage_group'
+#' @return a \code{sleuth} object with an updated \code{sigma} slot with
+#' updated column \code{group_shrink_sigma}
+#' @export
+shrink_by_group_lmm <- function(obj, grouping) {
+  # TODO: check whether 'target_id' and 'shrinkage_group' are in the DF
+  sigma_by_grouping <- inner_join(obj$sigma, select(grouping, target_id, shrinkage_group),
+    by = "target_id")
+
+  orig_order <- rownames(obj$sigma)
+
+  pred <- sigma_by_grouping %>%
+    group_by(shrinkage_group) %>%
+    do({
+      lf_pred(.)
+    })
+
+  pred <- pred %>%
+    rename(group_shrink_smooth = smooth_pred, group_shrink_sigma = max_pred)
+
+  # obj$sigma[pred$target_id, "group_shrink_smooth"] <- pred$group_shrink_smooth
+  # obj$sigma[pred$target_id, "group_shrink_sigma"] <- pred$group_shrink_sigma
+
+  obj$sigma <- inner_join(pred, obj$sigma, by = "target_id")
+  obj$sigma <- as.data.frame(obj$sigma)
+  rownames(obj$sigma) <- obj$sigma$target_id
+  obj$sigma <- obj$sigma[orig_order,]
+
+  obj
+}
+
 #' Compute t-statistics
 #'
 #' Compute t-statistics from a "sleuth" object
@@ -204,8 +254,10 @@ naive_shrink_lmm <- function(obj) {
 compute_t <- function(obj, which_var, adjust_sigma = TRUE) {
   stopifnot( which_var %in% colnames(obj$sigma) )
 
-  fixed_sd <- obj$var_b * obj$sigma[,which_var] * obj$adjustment
-  stopifnot( rownames(fixed_sd) == rownames(obj$b) )
+  #fixed_sd <- sqrt(obj$var_b * obj$adjustment) * matrix(rep(as.data.frame(obj$sigma)[,which_var], 2), ncol = 2)
+  fixed_sd <- sqrt(obj$var_b * obj$adjustment) * obj$sigma[,which_var]
+  #fixed_sd$target_id <- obj$sigma$target_id
+  #stopifnot( rownames(fixed_sd) == rownames(obj$b) )
 
   # FIXME: figure out what DF is in general
   degrees_free <- 6
@@ -213,4 +265,34 @@ compute_t <- function(obj, which_var, adjust_sigma = TRUE) {
   p_vals <- apply(t_stats, 2, function(col) 2 * pt(-abs(col), df = degrees_free))
 
   list(t_stats = t_stats, p_vals = p_vals)
+}
+
+#' OLS on observations
+#'
+#' @param obj a \code{sleuth} object
+#' @param design a matrix
+#' @return a \code{sleuth} object with an updated slot containing slot "obs_beta"
+#' @export
+ols_by_row <- function(obj, design, transform = identity) {
+  stopifnot( is(obj, "sleuth") )
+
+  obs_counts <- reshape2::dcast(obj$obs_norm, target_id ~ sample,
+    value.var = "est_counts")
+  obs_counts <- as.data.frame(obs_counts)
+  rownames(obs_counts) <- obs_counts$target_id
+  obs_counts$target_id <- NULL
+  obs_counts <- as.matrix(obs_counts)
+
+  obs_counts <- transform(obs_counts)
+
+  all_fits <- lapply(1:nrow(obs_counts),
+    function(it)
+    {
+      matrix(lm.fit(design, obs_counts[it,])$coefficients, nrow = 1)
+    })
+
+  coef_matrix <- do.call("rbind", all_fits)
+  dimnames(coef_matrix) <- list(rownames(obs_counts), colnames(design))
+
+  coef_matrix
 }

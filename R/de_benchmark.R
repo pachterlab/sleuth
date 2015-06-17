@@ -84,7 +84,8 @@ fdr_nde_plot <- function(de_bench) {
     mutate(nde = 1:n(), tFDR = cummean(!is_de)) %>%
     ggplot(aes(nde, estimate, group = method)) +
       geom_line(aes(colour = method), linetype = 3) +
-      geom_line(aes(nde, tFDR, colour = method)) +
+      geom_line(aes(nde, tFDR, colour = method, linetype = method), size = 0.8,
+        alpha = 0.8) +
       geom_vline(xintercept = n_true_de, linetype = 3) +
       geom_hline(yintercept = 0.10, linetype = 3) +
       theme_bw() +

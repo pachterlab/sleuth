@@ -4,7 +4,7 @@
 \alias{melt_bootstrap}
 \title{Convert kallisto bootstraps into a molten data.frame}
 \usage{
-melt_bootstrap(kal, column = "tpm")
+melt_bootstrap(kal, column = "tpm", transform = identity)
 }
 \arguments{
 \item{kal}{a kallisto object}

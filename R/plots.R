@@ -88,3 +88,21 @@ plot_mean_var <- function(obj) {
   ggplot(obj$sigma, aes(bs_mean, raw_sigma)) +
     geom_point(alpha = 0.2)
 }
+
+# #' Plot the proportion of bootstrap variation
+# #'
+# #' Plot the proportion of bootstrap variation to total variation
+# #'
+# #' @param obj a \code{sleuth} object
+# #' @return a ggplot object
+# #' @export
+# plot_bootstrap_var_proportion(obj) {
+#   if (is.na(obj$bootstrap_summary)) {
+#     stop("No bootstrap summary found. Please run bootstrap_summary()")
+#   }
+# 
+#   tmp_join <- inner_join(obj$bootstrap_summary, obj$sigma, by = "target_id")
+# 
+# 
+#   ggplot(tmp_join)
+# }

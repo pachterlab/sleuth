@@ -33,13 +33,14 @@ bootstrap2mat <- function(kal, column = "tpm")
 #' @param column the column to pull out of the kallisto results (default = "tpm")
 #' @return a molten data.frame with columns "target_id", "sample" and the selected variable
 #' @export
-melt_bootstrap <- function(kal, column = "tpm")
+melt_bootstrap <- function(kal, column = "tpm", transform = identity)
 {
     stopifnot(is(kal, "kallisto"))
   stopifnot(length(kal$bootstrap) > 0)
 
     all_boot <- kal$bootstrap
     boot <- data.frame(lapply(all_boot, select_, .dots = list(column)))
+    boot <- transform(boot)
     bs_names <- paste0("bs", 1:ncol(boot))
     data.table::setnames(boot, colnames(boot), bs_names)
     boot <- boot %>%
@@ -57,10 +58,10 @@ melt_bootstrap <- function(kal, column = "tpm")
 #' @param column the column to select (rho, tpm, est_counts
 #' @return a summarized data.frame
 #' @export
-summarize_bootstrap <- function(kal, column = "tpm")
+summarize_bootstrap <- function(kal, column = "tpm", transform = identity)
 {
     stopifnot(is(kal, "kallisto"))
-    bs <- melt_bootstrap(kal, column)
+    bs <- melt_bootstrap(kal, column, transform)
 
     mean_col <- paste0("bs_mean_", column)
     sd_col <- paste0("bs_sd_", column)

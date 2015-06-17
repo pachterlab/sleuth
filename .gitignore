@@ -2,3 +2,5 @@
 .R*history
 .RData
 *.Rproj
+
+*.DS_Store

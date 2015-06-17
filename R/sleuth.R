@@ -173,13 +173,13 @@ var_fit <- function(obj) {
   all_data
 }
 
-sleuth_summarize_bootstrap_col <- function(obj, col) {
+sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
   res <- lapply(seq_along(obj$kal), function(i)
     {
       cur_samp <- obj$sample_to_condition$sample[i]
       cur_cond <- obj$sample_to_condition$condition[i]
 
-      summarize_bootstrap(obj$kal[[i]], col) %>%
+      summarize_bootstrap(obj$kal[[i]], col, transform) %>%
         mutate(sample = cur_samp,
           condition = cur_cond)
     })

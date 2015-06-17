@@ -2,7 +2,7 @@
 % Please edit documentation in R/closed_form_lmm.R
 \name{naive_shrink_lmm}
 \alias{naive_shrink_lmm}
-\title{Naive shrinkage using lowess}
+\title{Naive shrinkage using locfit}
 \usage{
 naive_shrink_lmm(obj)
 }
@@ -13,7 +13,7 @@ naive_shrink_lmm(obj)
 a \code{sleuth} object with an extra column in the slot \code{sigma}
 }
 \description{
-The most naive shrinkage you could perform using lowess and the raw
+The most naive shrinkage you could perform using locfit and the raw
 variances from the LMM
 }
 
