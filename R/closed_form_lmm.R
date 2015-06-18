@@ -249,9 +249,10 @@ shrink_by_group_lmm <- function(obj, grouping) {
 #' @param obj a \code{sleuth} object
 #' @param which_var which variance to use
 #' @param adjust_sigma if TRUE, adjust sigma
+#' @param use_obs_beta use the betas from the observed data?
 #' @return a data.frame with t-statistics
 #' @export
-compute_t <- function(obj, which_var, adjust_sigma = TRUE) {
+compute_t <- function(obj, which_var, adjust_sigma = TRUE, use_obs_beta = FALSE) {
   stopifnot( which_var %in% colnames(obj$sigma) )
 
   #fixed_sd <- sqrt(obj$var_b * obj$adjustment) * matrix(rep(as.data.frame(obj$sigma)[,which_var], 2), ncol = 2)
@@ -261,7 +262,13 @@ compute_t <- function(obj, which_var, adjust_sigma = TRUE) {
 
   # FIXME: figure out what DF is in general
   degrees_free <- 6
-  t_stats <- obj$b / fixed_sd
+
+  t_stats <- NULL
+  if (use_obs_beta) {
+    t_stats <- obj$obs_beta[rownames(obj$b),] / fixed_sd
+  } else {
+    t_stats <- obj$b / fixed_sd
+  }
   p_vals <- apply(t_stats, 2, function(col) 2 * pt(-abs(col), df = degrees_free))
 
   list(t_stats = t_stats, p_vals = p_vals)

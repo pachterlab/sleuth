@@ -4,7 +4,7 @@
 \alias{compute_t}
 \title{Compute t-statistics}
 \usage{
-compute_t(obj, which_var, adjust_sigma = TRUE)
+compute_t(obj, which_var, adjust_sigma = TRUE, use_obs_beta = FALSE)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
@@ -12,6 +12,8 @@ compute_t(obj, which_var, adjust_sigma = TRUE)
 \item{which_var}{which variance to use}
 
 \item{adjust_sigma}{if TRUE, adjust sigma}
+
+\item{use_obs_beta}{use the betas from the observed data?}
 }
 \value{
 a data.frame with t-statistics
