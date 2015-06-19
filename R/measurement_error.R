@@ -64,3 +64,16 @@ me_model <- function(X, y, sigma_q_sq)
     degrees_free = degrees_free
     )
 }
+
+#' @export
+compute_t_me <- function(data, which_sigma, Sxx, n_data) {
+
+  var_b <- (data[,which_sigma] + data[,"sigma_q_sq"]) / (n_data * Sxx)
+  se_b <- sqrt( var_b )
+
+  data$t_value <- data$b1 / se_b
+  data$se_b <- se_b
+  data$pval <- 2 * pt(abs(data$t_value), data$degrees_free[1], lower.tail = FALSE)
+
+  data
+}
