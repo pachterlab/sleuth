@@ -261,3 +261,23 @@ null_mean_var <- function(obj, transform = identity, min_reads = 1) {
       counts_var = var(trans_counts)
       )
 }
+
+#' observations to a matrix
+#'
+#' observations to a matrix
+#'
+#' @param obj is a sleuth object
+#' @param value_name either "est_counts" or "tpm"
+#' @return a matrix with the appropriate names
+obs_to_matrix <- function(obj, value_name) {
+
+  obs_counts <- reshape2::dcast(obj$obs_norm, target_id ~ sample,
+    value.var = value_name)
+
+  obs_counts <- as.data.frame(obs_counts)
+  rownames(obs_counts) <- obs_counts$target_id
+  obs_counts$target_id <- NULL
+  obs_counts <- as.matrix(obs_counts)
+
+  obs_counts
+}
