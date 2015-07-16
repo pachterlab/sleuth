@@ -281,3 +281,28 @@ obs_to_matrix <- function(obj, value_name) {
 
   obs_counts
 }
+
+
+#' Get a data.frame from all kallisto objects
+#'
+#' Build a data.frame from all kallisto objects given a column name
+#'
+#' @param obj a sleuth object
+#' @param col_name a column to extract
+#' @return a data.frame with columns \code{sample} and column \code{col_name}
+get_col <- function(obj, ...) {
+  n_samples <- nrow(obj$design_matrix)
+  n_trans <- nrow(obj$kal[[1]]$abundance)
+
+  #which_cols <- as.character(...)
+  lapply(seq_along(obj$kal),
+    function(i)
+    {
+      which_sample <- obj$sample_to_condition$sample[i]
+      dplyr::select_(obj$kal[[i]]$abundance, "target_id",
+        .dots = lazyeval::lazy_dots(...)) %>%
+          mutate(sample = which_sample)
+    }) %>%
+      data.table::rbindlist() %>%
+      as.data.frame()
+}

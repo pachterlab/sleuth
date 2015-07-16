@@ -33,7 +33,8 @@ sliding_window_grouping <- function(data, x_col, y_col,
     mutate(x_group = cut(x_ecdf, n_bins)) %>%
     group_by(x_group) %>%
     do(get_quantile(., y_col, lwr, upr, ignore_zeroes)) %>%
-    select(-c(x_ecdf, x_group))
+    select(-c(x_ecdf, x_group)) %>%
+    ungroup()
 }
 
 #' @export

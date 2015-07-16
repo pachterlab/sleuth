@@ -72,26 +72,33 @@ fdr_tpr_plot <- function(de_bench) {
 
 
 #' @export
-fdr_nde_plot <- function(de_bench) {
+fdr_nde_plot <- function(de_bench, estimate = TRUE) {
   stopifnot( is(de_bench, "de_benchmark") )
 
   n_true_de <- sum(de_bench$all_data$is_de)
   print(n_true_de)
 
-  de_bench$m_qval %>%
+  plt <- de_bench$m_qval %>%
+    mutate(method = sub("qval_", "", method)) %>%
     group_by(method) %>%
     arrange(estimate) %>%
     mutate(nde = 1:n(), tFDR = cummean(!is_de)) %>%
-    ggplot(aes(nde, estimate, group = method)) +
-      geom_line(aes(colour = method), linetype = 3) +
+    ggplot(aes(nde, estimate, group = method))
+  if (estimate) {
+    plt <- plt + geom_line(aes(colour = method), linetype = 3)
+  }
+
+  plt <- plt +
       geom_line(aes(nde, tFDR, colour = method, linetype = method), size = 0.8,
         alpha = 0.8) +
       geom_vline(xintercept = n_true_de, linetype = 3) +
       geom_hline(yintercept = 0.10, linetype = 3) +
-      theme_bw() +
+      #theme_bw() +
       xlab("Number of features called DE") +
       ylab("FDR") +
       ylim(0, 1)
+
+  plt
 }
 
 #' @export

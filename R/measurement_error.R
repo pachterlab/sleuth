@@ -66,12 +66,19 @@ me_model <- function(X, y, sigma_q_sq)
 }
 
 #' @export
-compute_t_me <- function(data, which_sigma, Sxx, n_data) {
-
+compute_t_me <- function(data, which_sigma, Sxx, n_data, adjust_se = NULL) {
   var_b <- (data[,which_sigma] + data[,"sigma_q_sq"]) / (n_data * Sxx)
   se_b <- sqrt( var_b )
 
-  data$t_value <- data$b1 / se_b
+  s0 <- 0
+  if (!is.null(adjust_se)) {
+    s0 <- quantile(se_b, adjust_se, na.rm = TRUE)
+    #s0 <- s0 * 10
+  }
+  cat(s0, "\n")
+  cat(quantile(se_b, probs = seq(0, 1, length.out = 10), na.rm = TRUE), "\n")
+
+  data$t_value <- data$b1 / (se_b + s0)
   data$se_b <- se_b
   data$pval <- 2 * pt(abs(data$t_value), data$degrees_free[1], lower.tail = FALSE)
 

@@ -125,6 +125,16 @@ read_gtf <- function(fname) {
   gtf
 }
 
+#' @export
+trans_to_genes_from_gtf <- function(fname) {
+  trans <- rtracklayer::import(fname)
+  trans <- data.frame(GenomicRanges::mcols(trans), stringsAsFactors = FALSE)
+  trans <- dplyr::select(trans, transcript_id, gene_id)
+  trans <- dplyr::distinct(trans)
+
+  trans
+}
+
 #' Write a kallisto object to HDF5
 #'
 #' Write a kallisto object to HDF5.
