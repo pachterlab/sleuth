@@ -28,7 +28,7 @@ new_de_benchmark <- function(de_list, de_labels, oracle) {
     de_list)
 
   oracle <- oracle %>%
-    select(target_id, is_de)
+    select(target_id, is_de, log_fc)
 
   melt_by <- function(data, unit_by) {
     m_unit <- data %>%
@@ -78,14 +78,21 @@ fdr_nde_plot <- function(de_bench, estimate = TRUE) {
   n_true_de <- sum(de_bench$all_data$is_de)
   print(n_true_de)
 
-  plt <- de_bench$m_qval %>%
-    mutate(method = sub("qval_", "", method)) %>%
+  pvals <- mutate(de_bench$m_pval, method = sub("pval_", "", method))
+  qvals <- select(de_bench$m_qval, target_id, method, estimate)
+  qvals <- mutate(qvals, method = sub("qval_", "", method))
+  qvals <- rename(qvals, qval = estimate)
+
+  pvals <- inner_join(pvals, qvals, by = c("target_id", "method"))
+
+  plt <- pvals %>%
+    mutate(method = sub("pval_", "", method)) %>%
     group_by(method) %>%
     arrange(estimate) %>%
     mutate(nde = 1:n(), tFDR = cummean(!is_de)) %>%
     ggplot(aes(nde, estimate, group = method))
   if (estimate) {
-    plt <- plt + geom_line(aes(colour = method), linetype = 3)
+    plt <- plt + geom_line(aes(nde, qval, colour = method), linetype = 3)
   }
 
   plt <- plt +
@@ -109,4 +116,24 @@ pval_distribution <- function(de_bench) {
     ggplot(aes(estimate, y = ..density..)) +
     geom_histogram(binwidth = 0.02) +
     facet_wrap( ~ method )
+}
+
+#' @export
+de_rank_scatter <- function(de_bench, cutoff = 5000) {
+  stopifnot( is(de_bench, "de_benchmark") )
+  rank_diff <- function(x) {
+    x$true_rank <- rank(-abs(x$log_fc))
+    x$est_rank <- rank(x$estimate)
+    tmp <- head(arrange(x, est_rank), cutoff)
+    mutate(tmp, relative_rank = rank(true_rank))
+  }
+
+  grped <- as.data.frame(de_bench$m_qval) %>%
+    group_by(method)
+
+  tmp <- grped %>%
+    filter(method == 'qval_DESeq2') %>%
+    ungroup()
+
+  do(grped, rank_diff(.))
 }

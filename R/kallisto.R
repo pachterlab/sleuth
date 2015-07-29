@@ -21,3 +21,7 @@ print.kallisto <- function(obj) {
   invisible(obj)
 }
 
+#' @export
+head.kallisto <- function(obj) {
+  print(obj)
+}

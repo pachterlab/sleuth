@@ -50,6 +50,58 @@ melt_bootstrap <- function(kal, column = "tpm", transform = identity)
       mutate(sample = as.factor(sample))
 }
 
+#' Aggregate bootstrap samples
+#'
+#' A faster way to aggregate bootstrap samples based off of some mapping.
+#'
+#' @param kal a \code{kallisto} object
+#' @param mapping a data.frame containing the mapping with columns
+#' \code{target_id} and a column specified in 'split_by'
+#' @param split_by a character string of length one denoting the column in \code{mapping} to split by (such as \code{gene_id})
+#' @param aggregate_fun a function to aggregate
+#' @return a data.frame nrow(mapping) rows that has been aggregated
+#' groupwise using \code{aggregate_fun}
+#' @export
+aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
+  column = "tpm", aggregate_fun = sum) {
+
+  stopifnot( is(kal, "kallisto") )
+
+  if ( !(column %in% c("tpm", "est_counts")) ) {
+    stop("Unit must be 'tpm' or 'est_counts'")
+  }
+
+  if ( !("target_id" %in% colnames(mapping)) ) {
+    stop("Column 'target_id' not found in 'mapping'")
+  }
+
+  if ( !(split_by %in% colnames(mapping)) ) {
+    stop("Column 'mapping' not found in 'mapping'")
+  }
+
+  if ( any(!complete.cases(mapping)) ) {
+    warning("Found some NAs in mapping. Removing them.")
+    mapping <- mapping[complete.cases(mapping),]
+  }
+
+  m_bs <- melt_bootstrap(kal, column)
+
+  m_bs <- inner_join(
+    data.table::data.table(m_bs, key = "target_id"),
+    data.table::data.table(mapping, key = "target_id"),
+    by = c("target_id")
+    )
+
+  m_bs <- m_bs %>%
+    dplyr::group_by_(split_by, "sample") %>%
+    dplyr::summarise_(
+      value = lazyeval::interp( ~aggregate_fun(x), x = as.name(column) )
+      )
+  data.table::setnames(m_bs, "value", column)
+
+  as.data.frame(m_bs)
+}
+
 #' Summarize bootstrap values
 #'
 #' Compute the mean, sd, var, and coefficient of variation from a kallisto

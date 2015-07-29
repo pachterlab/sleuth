@@ -28,13 +28,17 @@ get_quantile <- function(data, which_col, lwr, upr, ignore_zeroes = TRUE) {
 #' @export
 sliding_window_grouping <- function(data, x_col, y_col,
   n_bins = 100, lwr = 0.25, upr = 0.75, ignore_zeroes = TRUE) {
-  data %>%
-    mutate(x_ecdf = ecdf(data[,x_col])(data[,x_col])) %>%
-    mutate(x_group = cut(x_ecdf, n_bins)) %>%
-    group_by(x_group) %>%
-    do(get_quantile(., y_col, lwr, upr, ignore_zeroes)) %>%
-    select(-c(x_ecdf, x_group)) %>%
-    ungroup()
+
+  data <- as.data.frame(data)
+
+  data <- mutate(data,x_ecdf = ecdf(data[,x_col])(data[,x_col]))
+  data <- mutate(data, x_group = cut(x_ecdf, n_bins))
+  data <- group_by(data, x_group)
+
+  res <- do(data, get_quantile(., y_col, lwr, upr, ignore_zeroes))
+  res <- select(res, -c(x_ecdf, x_group))
+
+  ungroup(res)
 }
 
 #' @export
@@ -42,5 +46,5 @@ shrink_df <- function(data, shrink_formula, filter_var) {
   data <- as.data.frame(data)
   s_formula <- substitute(shrink_formula)
   fit <- eval(loess(s_formula, data[data[,filter_var],]))
-  predict(fit, data)
+  data.frame(data, shrink = predict(fit, data))
 }
