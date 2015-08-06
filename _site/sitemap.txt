@@ -1,18 +1,18 @@
 
-http://pachterlab.github.io/kallisto/about.html
-http://pachterlab.github.io/kallisto/atom.xml
-http://pachterlab.github.io/kallisto/download.html
-http://pachterlab.github.io/kallisto/faq.html
-http://pachterlab.github.io/kallisto/index.html
-http://pachterlab.github.io/kallisto/license.html
-http://pachterlab.github.io/kallisto/manual.html
-http://pachterlab.github.io/kallisto/pseudobam.html
-http://pachterlab.github.io/kallisto/rss.xml
-http://pachterlab.github.io/kallisto/sitemap.txt
-http://pachterlab.github.io/kallisto/source.html
-http://pachterlab.github.io/kallisto/starting.html
+http://pachterlab.github.io/sleuth/about.html
+http://pachterlab.github.io/sleuth/atom.xml
+http://pachterlab.github.io/sleuth/download.html
+http://pachterlab.github.io/sleuth/faq.html
+http://pachterlab.github.io/sleuth/index.html
+http://pachterlab.github.io/sleuth/license.html
+http://pachterlab.github.io/sleuth/manual.html
+http://pachterlab.github.io/sleuth/pseudobam.html
+http://pachterlab.github.io/sleuth/rss.xml
+http://pachterlab.github.io/sleuth/sitemap.txt
+http://pachterlab.github.io/sleuth/source.html
+http://pachterlab.github.io/sleuth/starting.html
 
-http://pachterlab.github.io/kallisto/releases/2015/07/06/v0.42.2.1
-http://pachterlab.github.io/kallisto/releases/2015/06/09/v0.42.2
-http://pachterlab.github.io/kallisto/releases/2015/05/12/v0.42.1
-http://pachterlab.github.io/kallisto/releases/2015/05/06/v0.42
+http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1
+http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2
+http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1
+http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42

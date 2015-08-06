@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">
 <channel>
-        <title>kallisto</title>
-        <description>kallisto - Pachter Lab</description>
-        <link>http://pachterlab.github.io/kallisto</link>
-        <link>http://pachterlab.github.io/kallisto</link>
-        <lastBuildDate>2015-08-06T00:01:58-07:00</lastBuildDate>
-        <pubDate>2015-08-06T00:01:58-07:00</pubDate>
+        <title>sleuth</title>
+        <description>sleuth - Pachter Lab</description>
+        <link>http://pachterlab.github.io/sleuth</link>
+        <link>http://pachterlab.github.io/sleuth</link>
+        <lastBuildDate>2015-08-06T00:17:21-07:00</lastBuildDate>
+        <pubDate>2015-08-06T00:17:21-07:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -23,8 +23,8 @@
 &lt;p&gt;It is recommended that users upgrade to this release.&lt;/p&gt;
 
 </description>
-                <link>http://pachterlab.github.io/kallisto/releases/2015/07/06/v0.42.2.1</link>
-                <guid>http://pachterlab.github.io/kallisto/releases/2015/07/06/v0.42.2.1</guid>
+                <link>http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1</link>
+                <guid>http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1</guid>
                 <pubDate>2015-07-06T00:00:00-07:00</pubDate>
         </item>
 
@@ -54,8 +54,8 @@
 &lt;/ul&gt;
 
 </description>
-                <link>http://pachterlab.github.io/kallisto/releases/2015/06/09/v0.42.2</link>
-                <guid>http://pachterlab.github.io/kallisto/releases/2015/06/09/v0.42.2</guid>
+                <link>http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2</link>
+                <guid>http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2</guid>
                 <pubDate>2015-06-09T00:00:00-07:00</pubDate>
         </item>
 
@@ -84,8 +84,8 @@
 &lt;/ul&gt;
 
 </description>
-                <link>http://pachterlab.github.io/kallisto/releases/2015/05/12/v0.42.1</link>
-                <guid>http://pachterlab.github.io/kallisto/releases/2015/05/12/v0.42.1</guid>
+                <link>http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1</link>
+                <guid>http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1</guid>
                 <pubDate>2015-05-12T00:00:00-07:00</pubDate>
         </item>
 
@@ -94,8 +94,8 @@
                 <description>&lt;p&gt;This is the initial public release of Kallisto.&lt;/p&gt;
 
 </description>
-                <link>http://pachterlab.github.io/kallisto/releases/2015/05/06/v0.42</link>
-                <guid>http://pachterlab.github.io/kallisto/releases/2015/05/06/v0.42</guid>
+                <link>http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42</link>
+                <guid>http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42</guid>
                 <pubDate>2015-05-06T00:00:00-07:00</pubDate>
         </item>
 

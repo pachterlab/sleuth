@@ -37,7 +37,7 @@
     <div class="navbar">
       <div class="navbar-inner">
         <div class="container-narrow">
-          <a class="brand" href="/">kallisto</a>
+          <a class="brand" href="/">sleuth</a>
           <ul class="nav">
             
             
@@ -138,40 +138,15 @@
 <div class="row-fluid">
   <div class="span12">
     
-<p><strong>kallisto</strong> is a program for quantifying abundances of transcripts from
-RNA-Seq data, or more generally of target sequences using high-throughput
-sequencing reads. It is based on the novel idea of <em>pseudoalignment</em> for
-rapidly determining the compatibility of reads with targets, without the need
-for alignment. On benchmarks with standard RNA-Seq data, <strong>kallisto</strong> can
-    quantify 30 million human reads in less than 3  minutes on a Mac desktop
-    computer using only the read sequences and a transcriptome index that
-    itself takes less than 10 minutes to build. Pseudoalignment of reads
-    preserves the key information needed for quantification, and <strong>kallisto</strong>
-    is therefore not only fast, but also as accurate as existing
-    quantification tools. In fact, because the pseudoalignment procedure is
-    robust to errors in the reads, in many benchmarks <strong>kallisto</strong>
-    significantly outperforms existing tools.</p>
+<p><strong>sleuth</strong> is a program for analysis of RNA-Seq experiments for which transcript abundances have been quantified with kallisto. <strong>sleuth</strong> provides tools for exploratory data analysis utilizing Shiny, and implements statistical algorithms for differential analysis that leverage the boostrap estimates of kallisto.</p>
 
-<p><img src="assets/timings.png" width="49%" height="49%" />
-<img src="assets/median_relative_diff.png" width="49%" height="49%" /></p>
-
-<p>The figures above show the performance of <strong>kallisto</strong> as compared to other programs. Running times are based on 20 cores used to quantify 20 samples each with 30 million reads. <strong>kallisto</strong> is hundreds of times faster than standard tools (when disk access is not a limiting factor <strong>kallisto</strong> is even faster, averaging about 2.5 minutes per run). Sailfish is much faster than most tools, although still significantly slower than <strong>kallisto</strong>, and its approach of shredding reads into k-mers reduces accuracy. This can be seen in the plot on the right which shows the median relative difference of quantifications with respect to the “truth” from simulations. Reads were simulated using the RSEM simulator.</p>
-
-<p>The speed of <strong>kallisto</strong> makes it tractable to use the bootstrap to determine
-uncertainty on estimates. Uncertainty estimates can be used in downstream
-applications and <strong>kallisto</strong> includes infrastructure for managing the large
-amount of data associated with bootstrapped samples. A companion tool to
-<strong>kallisto</strong>, called <strong>sleuth</strong> can be used to visualize and interpret
-<strong>kallisto</strong> quantifications, and soon to perform many popular differential
-analyses in a way that accounts for uncertainty in estimates.</p>
-
-<p>The <strong>kallisto</strong> project was developed by <a href="https://math.berkeley.edu/~nbray/">Nicolas
-Bray</a>, <a href="http://www.cs.berkeley.edu/~pimentel/">Harold
-Pimentel</a>, <a href="https://notendur.hi.is/pmelsted/">Páll
+<p>The <strong>sleuth</strong> project was developed by <a href="http://www.cs.berkeley.edu/~pimentel/">Harold
+Pimentel</a> with assistance from <a href="https://math.berkeley.edu/~nbray/">Nicolas
+Bray</a>, <a href="https://notendur.hi.is/pmelsted/">Páll
 Melsted</a> and <a href="https://math.berkeley.edu/~lpachter/">Lior
-Pachter</a>. A preprint with more details about the program is available <a href="http://arxiv.org/abs/1505.02710">here</a>.</p>
+Pachter</a>. A preprint with more details about the program will be available shortly.</p>
 
-<p>To use <strong>kallisto</strong> <a href="download.html">download the software</a> and visit the
+<p>To use <strong>sleuth</strong> <a href="download.html">download the software</a> and visit the
 <a href="starting.html">Getting started</a> page for a quick tutorial.</p>
 
 
