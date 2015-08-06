@@ -138,73 +138,27 @@
 <div class="row-fluid">
   <div class="span12">
     
-<p>The <strong>kallisto</strong> GitHub repository is <a href="https://github.com/pachterlab/kallisto">here</a>. Source code can also be downloaded from the <a href="download.html">download page</a>. Currently, <strong>kallisto</strong> can be built on Linux and Mac. If building on Mac, we suggest using a package manager such as <a href="http://brew.sh">Homebrew</a> to download dependencies. Homebrew is easily installed by copying and pasting the command below at a terminal prompt:</p>
+<p>The <strong>sleuth</strong> GitHub repository is <a href="https://github.com/pachterlab/sleuth">here</a>. Source code can also be downloaded from the <a href="download.html">download page</a>.</p>
 
-<p><code>ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"</code></p>
-
-<p>Other dependencies are either included, or can be installed using package managers on the system.</p>
+<p><strong>sleuth</strong> can be installed from CRAN using:</p>
 
 <h4 id="requirements">Requirements:</h4>
 
 <ul>
-  <li>A 64-bit operating system</li>
-  <li>g++ version &gt;= 4.8</li>
-  <li><strong>CMake</strong> version &gt;= 2.8.12
-    <ul>
-      <li>Mac: <code>brew install cmake</code></li>
-      <li>Ubuntu: <code>sudo apt-get install cmake</code></li>
-      <li>CentOS: <code>sudo yum install cmake</code></li>
-    </ul>
-  </li>
-  <li><strong>zlib</strong> (should be installed on OSX &gt;= 10.9)
-    <ul>
-      <li>Mac: Should be installed by default</li>
-      <li>Ubuntu: <code>sudo apt-get install zlib1g-dev</code></li>
-      <li>CentOS: <code>sudo yum install zlib-devel</code></li>
-    </ul>
-  </li>
-  <li><strong>HDF5</strong> C library version &gt;= 18.12
-    <ul>
-      <li>Mac: <code>brew install hdf5</code></li>
-      <li>Ubuntu: <code>sudo apt-get install libhdf5-dev</code></li>
-      <li>CentOS: <code>sudo yum install hdf5-devel</code></li>
-    </ul>
-  </li>
+  <li>R</li>
+  <li>A computer</li>
+  <li>Time</li>
 </ul>
 
 <h4 id="download">Download</h4>
 
-<p><strong>kallisto</strong> is hosted on GitHub. The source code can be obtained by cloning the repository as follows:</p>
+<p><strong>sleuth</strong> is hosted on GitHub. The source code can be obtained by cloning the repository as follows:</p>
 
-<p><code>git clone https://github.com/pachterlab/kallisto.git</code></p>
-
-<h4 id="compile">Compile</h4>
-
-<p>Begin by moving to the source directory:</p>
-
-<p><code>cd kallisto</code></p>
-
-<p>Make a build directory and move there:</p>
-
-<p><code>mkdir build</code></p>
-
-<p><code>cd build</code></p>
-
-<p>Run cmake:</p>
-
-<p><code>cmake ..</code></p>
-
-<p>Build the code:</p>
-
-<p><code>make</code></p>
-
-<p>The <strong>kallisto</strong> executable is now located in <code>build/src</code>. To install <strong>kallisto</strong>  into the cmake install prefix path type:</p>
-
-<p><code>make install</code></p>
+<p><code>git clone https://github.com/pachterlab/sleuth.git</code></p>
 
 <h4 id="test">Test</h4>
 
-<p>The <strong>kallisto</strong> source code package comes with a small test transcriptome and read files that can be used to test that the package was compiled and installed correctly. The <a href="starting.html">Getting started</a> page provides a complete description of how to run <strong>kallisto</strong> on these files.</p>
+<p>The <strong>sleuth</strong> source code package comes with a small test dataset. The <a href="starting.html">Getting started</a> page provides a complete description of how to run <strong>sleuth</strong> on these files.</p>
 
 
   </div>

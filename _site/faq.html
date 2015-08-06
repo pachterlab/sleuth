@@ -139,75 +139,63 @@
   <div class="span12">
     
 <ul>
-  <li>I’m having trouble with <strong>kallisto</strong>. Can I get help?
+  <li>I’m having trouble with <strong>sleuth</strong>. Can I get help?
     <ul>
       <li>Yes. If you think you have discovered a bug that needs to be fixed please
 file a report on the GitHub page. If you have a question about installing
-or running the program please ask on the <a href="https://groups.google.com/forum/#!forum/kallisto-sleuth-users">kallisto-sleuth-users Google user
+or running the program please ask on the <a href="https://groups.google.com/forum/#!forum/sleuth-sleuth-users">kallisto-sleuth-users Google user
 group</a>.</li>
     </ul>
   </li>
   <li>Where can I get announcements about new releases?
     <ul>
-      <li>You can get announcements via the <a href="https://groups.google.com/forum/#!forum/kallisto-sleuth-announcements">kallisto-sleuth-announcements Google
+      <li>You can get announcements via the <a href="https://groups.google.com/forum/#!forum/sleuth-sleuth-announcements">kallisto-sleuth-announcements Google
 group</a>.
 This is a read-only, low traffic mailing list that only sends an email when
 a major version is released.</li>
     </ul>
   </li>
-  <li><strong>kallisto</strong> is fast but is it as accurate as other quantification tools?
+  <li><strong>sleuth</strong> is spiffy but is it as accurate as other differential expression tools?
     <ul>
-      <li>Yes. The source of  <strong>kallisto</strong>’s speed is the novel concept of
-<em>pseudoalignment</em> of reads. Pseudosalignment is all that is needed for
-accurate quantification, and in tests on both real and simulated data we
-find that <strong>kallisto</strong> is frequently <em>more</em> accurate than existing methods.
-The increase in accuracy over some methods is due to the robustness of
-pseudoalignment to read base errors and indels, and the ability to perform
-many rounds of the Expectation-Maximization algorithm.</li>
+      <li>Yes. <strong>sleuth</strong> takes advantage of the boostraps of kallisto, thereby effectively leveraging technical replicates in the determination of differential expression. In our tests on both real and simulated data we find that <strong>sleuth</strong> is <em>more</em> accurate than currently popular differential expression tools such as Cuffdiff2 and DESeq2.</li>
     </ul>
   </li>
-  <li>Can <strong>kallisto</strong>  be used for finding differentially expressed genes in
-RNA-Seq analysis?
+  <li>Can <strong>sleuth</strong>  be used for quantifying abundances of transcripts or genes from RNA-Seq data?
     <ul>
-      <li>No. <strong>kallisto</strong> can be used to build indices for quantification, and it
-can quantify RNA-Seq samples. It is also useful for assessing the
-reliability of abundance estimates via the bootstrap samples it produces.
-But it is not a tool for performing differential analysis. However the
-companion tool <strong>sleuth</strong> is designed to for that purpose, and <strong>sleuth</strong>
-uses the boostrapped samples produced by <strong>kallisto</strong>.</li>
+      <li>No. <strong>sleuth</strong> can be used <em>after</em> transcript have been quantified using kallisto.</li>
     </ul>
   </li>
-  <li>Is <strong>kallisto</strong> usable with both single-end and paired-end reads?
+  <li>Is <strong>sleuth</strong> usable with both single-end and paired-end reads?
     <ul>
       <li>Yes.</li>
     </ul>
   </li>
-  <li>Does <strong>kallisto</strong> require reads to be of the same length?
+  <li>Does <strong>sleuth</strong> require reads to be of the same length?
     <ul>
       <li>No.</li>
     </ul>
   </li>
-  <li>Can <strong>kallisto</strong> be used to quantify single-cell RNA-Seq data?
+  <li>Can <strong>sleuth</strong> be used to analyze single-cell RNA-Seq data?
     <ul>
-      <li>Yes.</li>
+      <li>Yes. However there are unique challenges in single-cell analysis that are not currently addressed by <strong>sleuth</strong> (but will be in the near future).</li>
     </ul>
   </li>
-  <li>I’ve already mapped all my reads. Can I use those mappings with <strong>kallisto</strong>?
+  <li>I’ve already mapped all my reads and counted the number of alignments to genes. Can I use those mappings with <strong>sleuth</strong>?
     <ul>
-      <li>No. The mappings are not relevant and not needed for <strong>kallisto</strong>.</li>
+      <li>No. The mappings are not relevant and not needed for <strong>sleuth</strong>.</li>
     </ul>
   </li>
-  <li>Are you distributing pre-built indices?
+  <li>Are you distributing for use with <strong>sleuth</strong>?
     <ul>
-      <li>No. Building indices with <strong>kallisto index</strong> will be faster in practice than downloading index files. For example, the <strong>kallisto</strong> index for the human transcriptome takes between 5–10 minutes to build on a standard desktop or laptop. We are distributing transcriptome fasta files for model organisms <a href="http://bio.math.berkeley.edu/kallisto/transcriptomes/">here</a>.</li>
+      <li>No. <strong>sleuth</strong> relies on the transcriptome used to quantify the RNA-Seq data being analyzed.</li>
     </ul>
   </li>
-  <li>My RNA-Seq was prepared with a stranded library. Is there a special option I need to use with kallisto?
+  <li>My RNA-Seq was prepared with a stranded library. Is there a special option I need to use with sleuth?
     <ul>
       <li>No.</li>
     </ul>
   </li>
-  <li>Is there a reason you picked the name kallisto for your program?
+  <li>Is there a reason you picked the name sleuth for your program?
     <ul>
       <li>Yes.</li>
     </ul>

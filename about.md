@@ -6,7 +6,7 @@ group: navigation
 
 {% include JB/setup %}
 
-__sleuth__ is a program for analysis of RNA-Seq experiments for which transcript abundances have been quantified with kallisto. __sleuth__ provides tools for exploratory data analysis utilizing Shiny, and implements statistical algorithms for differential analysis that leverage the boostrap estimates of kallisto.
+__sleuth__ is a program for analysis of RNA-Seq experiments for which transcript abundances have been quantified with [kallisto](http://pachterlab.github.io/kallisto). __sleuth__ provides tools for exploratory data analysis utilizing [Shiny by RStudio](http://shiny.rstudio.com), and implements statistical algorithms for differential analysis that leverage the boostrap estimates of [kallisto](http://pachterlab.github.io/kallisto).
 
 The __sleuth__ project was developed by [Harold
 Pimentel](http://www.cs.berkeley.edu/~pimentel/) with assistance from [Nicolas
