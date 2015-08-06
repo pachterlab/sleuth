@@ -14,18 +14,33 @@ me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
   cat("Summarizing bootstraps\n")
   bs_summary <- bs_sigma_summary(obj, xform)
 
+  # filter things first
+  filt_names <- dplyr::filter(pass_filt, count_filt)[['target_id']]
+
+  bs_summary$obs_counts <- bs_summary$obs_counts[filt_names,]
+  bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[filt_names]
+
   cat("Fitting ME models\n")
   mes <- me_model_by_row(obj, obj$design_matrix, bs_summary)
   tid <- names(mes)
-  mes <- dplyr::bind_rows(mes)
-  mes$target_id <- tid
+
+  mes_df <- dplyr::bind_rows(lapply(mes,
+    function(x) {
+      data.frame(rss = x$rss, sigma_sq = x$sigma_sq, sigma_q_sq = x$sigma_q_sq,
+        mean_obs = x$mean_obs, var_obs = x$var_obs)
+    }))
+
+  mes_df$target_id <- tid
   rm(tid)
-  mes <- semi_join(mes, dplyr::filter(pass_filt, count_filt),
-    by = "target_id")
-  mes <- dplyr::mutate(mes, sigma_sq_pmax = pmax(sigma_sq, 0))
+
+  mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
+
+  # mes <- semi_join(mes, dplyr::filter(pass_filt, count_filt),
+  #   by = "target_id")
+  # mes <- dplyr::mutate(mes, sigma_sq_pmax = pmax(sigma_sq, 0))
 
   cat("Grouping by sliding window\n")
-  swg <- sliding_window_grouping(mes, "mean_obs", "sigma_sq_pmax",
+  swg <- sliding_window_grouping(mes_df, "mean_obs", "sigma_sq_pmax",
     ignore_zeroes = TRUE)
 
   cat("Shrinkage estimation\n")
@@ -48,7 +63,7 @@ me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
     })
   names(beta_covars) <- l_smooth$target_id
 
-  list(summary = l_smooth, beta_covars = beta_covars)
+  list(mes = mes, summary = l_smooth, beta_covars = beta_covars)
 }
 
 
@@ -68,7 +83,6 @@ covar_beta <- function(sigma, X, A) {
   # sammich!
   A %*% (t(X) %*% diag(sigma) %*% X) %*% A
 }
-
 
 #' Measurement error model
 #'
@@ -206,14 +220,14 @@ me_model <- function(X, y, sigma_q_sq)
   mean_obs <- mean(y)
   var_obs <- var(y)
 
-  data.frame(
+  list(
+    ols_fit = ols_fit,
     b1 = ols_fit$coefficients[2],
     rss = rss,
     sigma_sq = sigma_sq,
     sigma_q_sq = sigma_q_sq,
     mean_obs = mean_obs,
-    var_obs = var_obs,
-    degrees_free = degrees_free
+    var_obs = var_obs
     )
 }
 
