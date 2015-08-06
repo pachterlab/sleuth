@@ -4,23 +4,23 @@ title : RSS Feed
 ---
 
 <?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0">
 <channel>
-        <title>{{ site.title | xml_escape }}</title>
-        <description>{{ site.title | xml_escape }} - {{ site.author.name | xml_escape }}</description>
+        <title>{{ site.title }}</title>
+        <description>{{ site.title }} - {{ site.author.name }}</description>
+        <link>{{ site.production_url }}{{ site.rss_path }}</link>
         <link>{{ site.production_url }}</link>
-        <atom:link href="{{ site.production_url }}{{ site.JB.rss_path }}" rel="self" type="application/rss+xml" />
-        <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
-        <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
-        <ttl>60</ttl>
+        <lastBuildDate>{{ site.time | date_to_xmlschema }}</lastBuildDate>
+        <pubDate>{{ site.time | date_to_xmlschema }}</pubDate>
+        <ttl>1800</ttl>
 
-{% for post in site.posts limit:20 %}
+{% for post in site.posts %}
         <item>
-                <title>{{ post.title | xml_escape }}</title>
+                <title>{{ post.title }}</title>
                 <description>{{ post.content | xml_escape }}</description>
                 <link>{{ site.production_url }}{{ post.url }}</link>
                 <guid>{{ site.production_url }}{{ post.id }}</guid>
-                <pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
+                <pubDate>{{ post.date | date_to_xmlschema }}</pubDate>
         </item>
 {% endfor %}
 

@@ -135,14 +135,52 @@
   <h1> </h1>
 </div>
 
-<div class="row-fluid">
+<div class="row-fluid post-full">
   <div class="span12">
+    <div class="date">
+      <span>12 May 2015</span>
+    </div>
+    <div class="content">
+      <p>This is version 0.42.1 of Kallisto. We recommend that users upgrade to this version.</p>
+
+<p>Updates include</p>
+
+<ul>
+  <li><code>index</code>
+    <ul>
+      <li>now accepts multiple FASTA files and creates an index of all the targets</li>
+      <li>clips the polyA tail of transcripts that end with runs of A of length 10 or greater</li>
+    </ul>
+  </li>
+  <li><code>quant</code>
+    <ul>
+      <li>now accepts multiple FASTQ paired-end files, or single-end files</li>
+      <li><code>--single</code> flag to specify single-end reads</li>
+      <li>simplifies jumping rules</li>
+      <li>uses soft-intersect, if one read has no mapping k-mers the other end is used for pseudoalignment</li>
+      <li>outputs number of reads processed and number of reads pseudoaligned</li>
+    </ul>
+  </li>
+</ul>
+
+
+    </div>
+
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/releases/2015/05/06/v0.42" title="">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next"><a href="/releases/2015/06/09/v0.42.2" title="">Next &rarr;</a></li>
+      
+      </ul>
+    </div>
+    <hr>
     
-<!-- Read [Jekyll Quick Start](http://jekyllbootstrap.com/usage/jekyll-quick-start.html) //-->
-
-<p><a href="about.html"><img src="bear.jpg" /></a></p>
-
-
   </div>
 </div>
 

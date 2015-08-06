@@ -1,9 +1,18 @@
 
-http://pachterlab.github.io/kallisto/archive.html
+http://pachterlab.github.io/kallisto/about.html
 http://pachterlab.github.io/kallisto/atom.xml
-http://pachterlab.github.io/kallisto/categories.html
+http://pachterlab.github.io/kallisto/download.html
+http://pachterlab.github.io/kallisto/faq.html
 http://pachterlab.github.io/kallisto/index.html
-http://pachterlab.github.io/kallisto/pages.html
+http://pachterlab.github.io/kallisto/license.html
+http://pachterlab.github.io/kallisto/manual.html
+http://pachterlab.github.io/kallisto/pseudobam.html
 http://pachterlab.github.io/kallisto/rss.xml
 http://pachterlab.github.io/kallisto/sitemap.txt
-http://pachterlab.github.io/kallisto/tags.html
+http://pachterlab.github.io/kallisto/source.html
+http://pachterlab.github.io/kallisto/starting.html
+
+http://pachterlab.github.io/kallisto/releases/2015/07/06/v0.42.2.1
+http://pachterlab.github.io/kallisto/releases/2015/06/09/v0.42.2
+http://pachterlab.github.io/kallisto/releases/2015/05/12/v0.42.1
+http://pachterlab.github.io/kallisto/releases/2015/05/06/v0.42

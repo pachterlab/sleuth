@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>About</title>
+    
+    <meta name="author" content="Pachter Lab">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="/rss.xml" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">kallisto</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li class="active"><a href="/about.html" class="active">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/download.html">Download</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/faq.html">FAQ</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+      	
+      	<li><a href="/license.html">License</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/manual.html">Manual</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/source.html">Source</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/starting.html">Getting Started</a></li>
+      	
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>About </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    
+<p><strong>kallisto</strong> is a program for quantifying abundances of transcripts from
+RNA-Seq data, or more generally of target sequences using high-throughput
+sequencing reads. It is based on the novel idea of <em>pseudoalignment</em> for
+rapidly determining the compatibility of reads with targets, without the need
+for alignment. On benchmarks with standard RNA-Seq data, <strong>kallisto</strong> can
+    quantify 30 million human reads in less than 3  minutes on a Mac desktop
+    computer using only the read sequences and a transcriptome index that
+    itself takes less than 10 minutes to build. Pseudoalignment of reads
+    preserves the key information needed for quantification, and <strong>kallisto</strong>
+    is therefore not only fast, but also as accurate as existing
+    quantification tools. In fact, because the pseudoalignment procedure is
+    robust to errors in the reads, in many benchmarks <strong>kallisto</strong>
+    significantly outperforms existing tools.</p>
+
+<p><img src="assets/timings.png" width="49%" height="49%" />
+<img src="assets/median_relative_diff.png" width="49%" height="49%" /></p>
+
+<p>The figures above show the performance of <strong>kallisto</strong> as compared to other programs. Running times are based on 20 cores used to quantify 20 samples each with 30 million reads. <strong>kallisto</strong> is hundreds of times faster than standard tools (when disk access is not a limiting factor <strong>kallisto</strong> is even faster, averaging about 2.5 minutes per run). Sailfish is much faster than most tools, although still significantly slower than <strong>kallisto</strong>, and its approach of shredding reads into k-mers reduces accuracy. This can be seen in the plot on the right which shows the median relative difference of quantifications with respect to the “truth” from simulations. Reads were simulated using the RSEM simulator.</p>
+
+<p>The speed of <strong>kallisto</strong> makes it tractable to use the bootstrap to determine
+uncertainty on estimates. Uncertainty estimates can be used in downstream
+applications and <strong>kallisto</strong> includes infrastructure for managing the large
+amount of data associated with bootstrapped samples. A companion tool to
+<strong>kallisto</strong>, called <strong>sleuth</strong> can be used to visualize and interpret
+<strong>kallisto</strong> quantifications, and soon to perform many popular differential
+analyses in a way that accounts for uncertainty in estimates.</p>
+
+<p>The <strong>kallisto</strong> project was developed by <a href="https://math.berkeley.edu/~nbray/">Nicolas
+Bray</a>, <a href="http://www.cs.berkeley.edu/~pimentel/">Harold
+Pimentel</a>, <a href="https://notendur.hi.is/pmelsted/">Páll
+Melsted</a> and <a href="https://math.berkeley.edu/~lpachter/">Lior
+Pachter</a>. A preprint with more details about the program is available <a href="http://arxiv.org/abs/1505.02710">here</a>.</p>
+
+<p>To use <strong>kallisto</strong> <a href="download.html">download the software</a> and visit the
+<a href="starting.html">Getting started</a> page for a quick tutorial.</p>
+
+
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+        <p>&copy; 2015 Pachter Lab
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div>
+
+    
+
+
+  </body>
+</html>
+

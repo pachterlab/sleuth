@@ -135,14 +135,53 @@
   <h1> </h1>
 </div>
 
-<div class="row-fluid">
+<div class="row-fluid post-full">
   <div class="span12">
+    <div class="date">
+      <span>09 June 2015</span>
+    </div>
+    <div class="content">
+      <p>This is version 0.42.2 of Kallisto.</p>
+
+<p>Updates include</p>
+
+<ul>
+  <li><code>index</code>
+    <ul>
+      <li>the index has been updated to include more of the transcript information</li>
+      <li>indices should be slightly smaller than before</li>
+      <li>indices constructed with previous versions will not work with this version, rerun your index command</li>
+    </ul>
+  </li>
+  <li><code>quant</code>
+    <ul>
+      <li>Bootstraps can be run in multithreaded mode, use option <code>-t</code> to specify number of threads</li>
+      <li>If only one read of a paired end maps, <code>kallisto</code> will check the transcript positions to discard reads that would go outside of transcript given the mean fragment length.</li>
+      <li>Pseudobam. Pseudoalignments can now be output in SAM format to standard output. For more details on the output see <a href="/kallisto/pseudobam.html">pseudobam</a></li>
+      <li>Sequence specific bias. <code>kallisto</code> can learn a model for sequence specific bias and correct the abundances accordingly.</li>
+      <li>TSV. All output text files have been changed to <code>.tsv</code> ending.</li>
+    </ul>
+  </li>
+</ul>
+
+
+    </div>
+
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/releases/2015/05/12/v0.42.1" title="">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next"><a href="/releases/2015/07/06/v0.42.2.1" title="">Next &rarr;</a></li>
+      
+      </ul>
+    </div>
+    <hr>
     
-<!-- Read [Jekyll Quick Start](http://jekyllbootstrap.com/usage/jekyll-quick-start.html) //-->
-
-<p><a href="about.html"><img src="bear.jpg" /></a></p>
-
-
   </div>
 </div>
 
