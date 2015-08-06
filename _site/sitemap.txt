@@ -1,9 +1,9 @@
 
-http://username.github.io/archive.html
-http://username.github.io/atom.xml
-http://username.github.io/categories.html
-http://username.github.io/index.html
-http://username.github.io/pages.html
-http://username.github.io/rss.xml
-http://username.github.io/sitemap.txt
-http://username.github.io/tags.html
+http://pachterlab.github.io/kallisto/archive.html
+http://pachterlab.github.io/kallisto/atom.xml
+http://pachterlab.github.io/kallisto/categories.html
+http://pachterlab.github.io/kallisto/index.html
+http://pachterlab.github.io/kallisto/pages.html
+http://pachterlab.github.io/kallisto/rss.xml
+http://pachterlab.github.io/kallisto/sitemap.txt
+http://pachterlab.github.io/kallisto/tags.html

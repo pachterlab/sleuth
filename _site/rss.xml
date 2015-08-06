@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-        <title>Jekyll Bootstrap</title>
-        <description>Jekyll Bootstrap - Name Lastname</description>
-        <link>http://username.github.io</link>
-        <atom:link href="http://username.github.io/rss.xml" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Sat, 06 Jun 2015 21:19:07 -0700</lastBuildDate>
-        <pubDate>Sat, 06 Jun 2015 21:19:07 -0700</pubDate>
+        <title>kallisto</title>
+        <description>kallisto - Pachter Lab</description>
+        <link>http://pachterlab.github.io/kallisto</link>
+        <atom:link href="http://pachterlab.github.io/kallisto/rss.xml" rel="self" type="application/rss+xml" />
+        <lastBuildDate>Thu, 06 Aug 2015 00:00:52 -0700</lastBuildDate>
+        <pubDate>Thu, 06 Aug 2015 00:00:52 -0700</pubDate>
         <ttl>60</ttl>
 
 

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
  
- <title>Jekyll Bootstrap</title>
- <link href="http://username.github.io/atom.xml" rel="self"/>
- <link href="http://username.github.io"/>
- <updated>2015-06-06T21:19:07-07:00</updated>
- <id>http://username.github.io</id>
+ <title>kallisto</title>
+ <link href="http://pachterlab.github.io/kallisto/atom.xml" rel="self"/>
+ <link href="http://pachterlab.github.io/kallisto"/>
+ <updated>2015-08-06T00:00:52-07:00</updated>
+ <id>http://pachterlab.github.io/kallisto</id>
  <author>
-   <name>Name Lastname</name>
+   <name>Pachter Lab</name>
    <email>blah@email.test</email>
  </author>
 
