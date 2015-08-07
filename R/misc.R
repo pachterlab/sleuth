@@ -48,3 +48,16 @@ shrink_df <- function(data, shrink_formula, filter_var) {
   fit <- eval(loess(s_formula, data[data[,filter_var],]))
   data.frame(data, shrink = predict(fit, data))
 }
+
+msg <- function(..., nl = TRUE) {
+  message(..., appendLF = nl)
+}
+
+# shortcut for as.data.frame(x, stringsAsFactors = FALSE)
+as_df <- function(x, ...) {
+  as.data.frame(x, stringsAsFactors = FALSE, ...)
+}
+
+adf <- function(...) {
+  data.frame(..., stringsAsFactors = FALSE)
+}

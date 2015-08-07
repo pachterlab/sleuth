@@ -4,21 +4,31 @@
 \alias{new_sleuth}
 \title{Constructor for a 'sleuth' object}
 \usage{
-new_sleuth(kal_list, sample_to_condition, design, norm_bootstraps = TRUE,
-  verbose = TRUE)
+new_sleuth(kal_dirs, sample_names, sample_to_covariates, full_model,
+  normalize = TRUE, trans = "log", filter_fun = basic_filter,
+  annotation = NULL, verbose = TRUE, ...)
 }
 \arguments{
-\item{kal_list}{a list of \code{kallisto} objects}
+\item{kal_dirs}{a character vector of length greater than one where each
+string points to a kallisto output directory}
 
-\item{sample_to_condition}{is a \code{data.frame} which contains a mapping from \code{sample} (a column) to some set of experimental conditions}
+\item{sample_to_covariates}{is a \code{data.frame} which contains a mapping
+from \code{sample} (a column) to some set of experimental conditions or covariates}
 
-\item{design}{is a \code{formula} which explains the full model (design) of the experiment}
+\item{full_model}{is a \code{formula} which explains the full model (design)
+of the experiment. It must be consistent with the data.frame supplied in
+\code{sample_to_covariates}}
 
-\item{norm_boostrap}{if \code{TRUE} use the size factors calculated from the
-raw observations to normalize bootstrap values}
+\item{trans}{is a character string of either 'log', or 'cpm'. Currently
+ignored.}
+
+\item{filter_fun}{the function to use when filtering.}
+
+\item{...}{additional arguments passed to other functions}
 }
 \value{
-a \code{sleuth} object
+a \code{sleuth} object containing all kallisto samples, metadata,
+and summary statistics
 }
 \description{
 Conceptually, a sleuth is a pack of kallistos. A 'sleuth' object stores
