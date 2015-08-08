@@ -141,6 +141,66 @@ me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
 }
 
 
+#' @export
+wald_beta_test <- function(obj, which_beta, which_model = 'full') {
+  stopifnot( is(obj, 'sleuth') )
+
+  # get the beta index
+  beta_i <- which(colnames(obj$design_matrix) %in% which_beta)
+
+  if ( length(beta_i) == 0 ) {
+    stop(paste0("'", which_beta,
+        "' doesn't appear in your design. Try one of the following:\n",
+        colnames(obj$design_matrix)))
+  } else if ( length(beta_i) > 1 ) {
+    stop(paste0("Sorry. '", which_beta, "' is ambiguous for columns: ",
+        colnames(obj$design_matrix[beta_i])))
+  }
+
+  b <- sapply(obj$fits[[ which_model ]]$models,
+    function(x) {
+      x$ols_fit$coefficients[ beta_i ]
+    })
+  names(b) <- names(obj$fits[[ which_model ]]$models)
+
+  res <- obj$fits[[ which_model ]]$summary
+  res$target_id <- as.character(res$target_id)
+  res <- res[match(names(b), res$target_id), ]
+
+  stopifnot( all.equal(res$target_id, names(b)) )
+
+  se <- sapply(obj$fits[[ which_model ]]$beta_covars,
+    function(x) {
+      x[beta_i, beta_i]
+    })
+  se <- sqrt( se )
+  se <- se[ names(b) ]
+
+  stopifnot( all.equal(names(b), names(se)) )
+
+  res <- dplyr::mutate(res,
+    b = b,
+    se_b = se,
+    wald_stat = b / se,
+    pval = 2 * pnorm(abs(wald_stat), lower.tail = FALSE),
+    qval = p.adjust(pval, method = 'BH')
+    )
+
+  dplyr::select(res,
+    target_id,
+    mean_obs,
+    var_obs,
+    sigma_sq,
+    sigma_q_sq,
+    smooth_sigma_sq,
+    smooth_sigma_sq_pmax,
+    b,
+    se_b,
+    pval,
+    qval
+    )
+}
+
 #' Compute the covariance on beta under OLS
 #'
 #' Compute the covariance on beta under OLS
