@@ -225,15 +225,14 @@ var_fit <- function(obj) {
 sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
   res <- lapply(seq_along(obj$kal), function(i)
     {
-      cur_samp <- obj$sample_to_condition$sample[i]
-      cur_cond <- obj$sample_to_condition$condition[i]
+      cur_samp <- obj$sample_to_covariates$sample[i]
+      cur_cond <- obj$sample_to_covariates$condition[i]
 
-      summarize_bootstrap(obj$kal[[i]], col, transform) %>%
-        mutate(sample = cur_samp,
-          condition = cur_cond)
+      dplyr::mutate(summarize_bootstrap(obj$kal[[i]], col, transform),
+        sample = cur_samp, condition = cur_cond)
     })
 
-  rbind_all(res)
+  dplyr::bind_rows(res)
 }
 
 #' Spread abundance by a column
