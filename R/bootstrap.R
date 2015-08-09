@@ -120,8 +120,6 @@ summarize_bootstrap <- function(kal, column = "tpm", transform = identity)
     var_col <- paste0("bs_var_", column)
     cv_col <- paste0("bs_cv_", column)
 
-    print(cv_col)
-
     bs <- bs %>%
         group_by(target_id) %>%
         summarise_(.dots = setNames(list(
@@ -150,10 +148,18 @@ summarize_bootstrap <- function(kal, column = "tpm", transform = identity)
 #' @export
 normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
   stopifnot(is(kal, "kallisto"))
-  stopifnot(length(tpm_size_factor) == 1 && length(est_counts_size_factor) == 1)
 
   calc_norm_tpm <- !missing(tpm_size_factor)
   calc_norm_counts <- !missing(est_counts_size_factor)
+
+  if (calc_norm_tpm) {
+    stopifnot(length(tpm_size_factor) == 1)
+  }
+
+  if (calc_norm_counts) {
+    stopifnot(length(est_counts_size_factor) == 1)
+  }
+
   bs <- lapply(kal$bootstrap, function(bs_tbl)
     {
       if (calc_norm_tpm)

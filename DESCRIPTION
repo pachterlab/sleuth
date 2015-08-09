@@ -9,6 +9,7 @@ URL: https://github.com/pimentel/sleuth
 BugReports: https://github.com/pimentel/sleuth/issues
 Depends:
     R (>= 3.1.2),
+    methods,
     dplyr
 Imports:
     data.table,
@@ -18,5 +19,4 @@ Imports:
     lazyeval
 Suggests:
     MASS,
-    nlme,
     testthat

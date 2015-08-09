@@ -52,7 +52,7 @@ print.sleuth <- function(obj) {
   cat("\tsleuth object\n")
   cat("\n")
   cat("bears:", length(obj$kal), "\n")
-  cat("design:", deparse(obj$design), "\n")
+  cat("design:", deparse(obj$full_formula), "\n")
 }
 
 

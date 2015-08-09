@@ -1,3 +1,83 @@
+#' A sleuth wrapper for fitting the model
+#'
+#' TODO: describe
+#'
+#' @param obj a \code{sleuth} object
+#' @param formula currently ignored. a formula specifying the design to fit
+#' @param fit_name currently ignored. the name to store the fit in the sleuth object
+#' @return a sleuth object with updated attributes
+#' @export
+sleuth_fit <- function(obj, formula = NULL, fit_name = NULL) {
+  stopifnot( is(obj, 'sleuth') )
+
+  # TODO: check if normalized. if not, normalize
+  # TODO: implement formula and fit_name
+  fit_name <- 'full'
+  formula <- obj$full_formula
+
+  msg('Summarizing bootstraps')
+  bs_summary <- bs_sigma_summary(obj, function(x) log(x + 0.5))
+
+  # TODO: in normalization step, take out all things that don't pass filter so
+  # don't have to filter out here
+  bs_summary$obs_counts <- bs_summary$obs_counts[obj$filter_df$target_id, ]
+  bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[obj$filter_df$target_id]
+
+  msg('Fitting measurement error models')
+
+  mes <- me_model_by_row(obj, obj$design_matrix, bs_summary)
+  tid <- names(mes)
+
+  mes_df <- dplyr::bind_rows(lapply(mes,
+    function(x) {
+      data.frame(rss = x$rss, sigma_sq = x$sigma_sq, sigma_q_sq = x$sigma_q_sq,
+        mean_obs = x$mean_obs, var_obs = x$var_obs)
+    }))
+
+  mes_df$target_id <- tid
+  rm(tid)
+
+  mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
+
+  msg('Grouping by sliding window')
+  swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
+    ignore_zeroes = TRUE)
+
+  msg('Shrinkage estimation')
+  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr')
+  l_smooth <- select(mutate(l_smooth, smooth_sigma_sq = shrink ^ 4), -shrink)
+
+  l_smooth <- mutate(l_smooth,
+    smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
+
+  X <- obj$design_matrix
+  A <- solve( t(X) %*% X )
+
+  msg('Computing var(beta)')
+  beta_covars <- lapply(1:nrow(l_smooth),
+    function(i) {
+      row <- l_smooth[i,]
+      with(row,
+        covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
+        )
+    })
+  names(beta_covars) <- l_smooth$target_id
+
+  if ( is.null(obj$fits) ) {
+    obj$fits <- list()
+  }
+
+  obj$fits[[fit_name]] <- list(
+    models = mes,
+    summary = l_smooth,
+    beta_covars = beta_covars,
+    formula = formula)
+
+  class(obj$fits[[fit_name]]) <- 'sleuth_model'
+
+  obj
+}
+
 #' Measurement error model with equal variances
 #'
 #' Fit the measurement error model with equal variances across samples and
@@ -66,6 +146,75 @@ me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
   list(mes = mes, summary = l_smooth, beta_covars = beta_covars)
 }
 
+
+#' @export
+wald_test <- function(obj, which_beta, which_model = 'full') {
+  stopifnot( is(obj, 'sleuth') )
+
+  # get the beta index
+  beta_i <- which(colnames(obj$design_matrix) %in% which_beta)
+
+  if ( length(beta_i) == 0 ) {
+    stop(paste0("'", which_beta,
+        "' doesn't appear in your design. Try one of the following:\n",
+        colnames(obj$design_matrix)))
+  } else if ( length(beta_i) > 1 ) {
+    stop(paste0("Sorry. '", which_beta, "' is ambiguous for columns: ",
+        colnames(obj$design_matrix[beta_i])))
+  }
+
+  b <- sapply(obj$fits[[ which_model ]]$models,
+    function(x) {
+      x$ols_fit$coefficients[ beta_i ]
+    })
+  names(b) <- names(obj$fits[[ which_model ]]$models)
+
+  res <- obj$fits[[ which_model ]]$summary
+  res$target_id <- as.character(res$target_id)
+  res <- res[match(names(b), res$target_id), ]
+
+  stopifnot( all.equal(res$target_id, names(b)) )
+
+  se <- sapply(obj$fits[[ which_model ]]$beta_covars,
+    function(x) {
+      x[beta_i, beta_i]
+    })
+  se <- sqrt( se )
+  se <- se[ names(b) ]
+
+  stopifnot( all.equal(names(b), names(se)) )
+
+  res <- dplyr::mutate(res,
+    b = b,
+    se_b = se,
+    wald_stat = b / se,
+    pval = 2 * pnorm(abs(wald_stat), lower.tail = FALSE),
+    qval = p.adjust(pval, method = 'BH')
+    )
+
+  res <- dplyr::select(res, -x_group)
+  # test_info <- dplyr::select(res,
+  #   target_id,
+  #   mean_obs,
+  #   var_obs,
+  #   sigma_sq,
+  #   sigma_q_sq,
+  #   smooth_sigma_sq,
+  #   smooth_sigma_sq_pmax,
+  #   b,
+  #   se_b,
+  #   pval,
+  #   qval
+  #   )
+
+  if (is.null(obj$fits[[which_model]]$wald)) {
+    obj$fits[[which_model]]$wald <- list()
+  }
+
+  obj$fits[[which_model]]$wald[[which_beta]] <- res
+
+  obj
+}
 
 #' Compute the covariance on beta under OLS
 #'
@@ -195,11 +344,11 @@ bs_sigma_summary <- function(obj, transform = identity) {
   obs_counts <- transform( obs_counts )
 
   bs_summary <- sleuth_summarize_bootstrap_col(obj, "est_counts", transform)
-  bs_summary <- bs_summary %>%
-    group_by(target_id) %>%
-    summarise(sigma_q_sq = mean(bs_var_est_counts))
+  bs_summary <- dplyr::group_by(bs_summary, target_id)
+  bs_summary <- dplyr::summarise(bs_summary,
+    sigma_q_sq = mean(bs_var_est_counts))
 
-  bs_summary <- as.data.frame(bs_summary)
+  bs_summary <- as_df(bs_summary)
 
   bs_sigma <- bs_summary$sigma_q_sq
   names(bs_sigma) <- bs_summary$target_id
