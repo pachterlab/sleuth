@@ -7,12 +7,13 @@
 #' @param fit_name currently ignored. the name to store the fit in the sleuth object
 #' @return a sleuth object with updated attributes
 #' @export
-sleuth <- function(obj, formula = NULL, fit_name = NULL) {
+sleuth_fit <- function(obj, formula = NULL, fit_name = NULL) {
   stopifnot( is(obj, 'sleuth') )
 
   # TODO: check if normalized. if not, normalize
   # TODO: implement formula and fit_name
   fit_name <- 'full'
+  formula <- obj$full_formula
 
   msg('Summarizing bootstraps')
   bs_summary <- bs_sigma_summary(obj, function(x) log(x + 0.5))
@@ -66,8 +67,13 @@ sleuth <- function(obj, formula = NULL, fit_name = NULL) {
     obj$fits <- list()
   }
 
-  obj$fits[[fit_name]] <- list(models = mes, summary = l_smooth,
-    beta_covars = beta_covars)
+  obj$fits[[fit_name]] <- list(
+    models = mes,
+    summary = l_smooth,
+    beta_covars = beta_covars,
+    formula = formula)
+
+  class(obj$fits[[fit_name]]) <- 'sleuth_model'
 
   obj
 }
@@ -142,7 +148,7 @@ me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
 
 
 #' @export
-wald_beta_test <- function(obj, which_beta, which_model = 'full') {
+wald_test <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
 
   # get the beta index
@@ -186,19 +192,28 @@ wald_beta_test <- function(obj, which_beta, which_model = 'full') {
     qval = p.adjust(pval, method = 'BH')
     )
 
-  dplyr::select(res,
-    target_id,
-    mean_obs,
-    var_obs,
-    sigma_sq,
-    sigma_q_sq,
-    smooth_sigma_sq,
-    smooth_sigma_sq_pmax,
-    b,
-    se_b,
-    pval,
-    qval
-    )
+  res <- dplyr::select(res, -x_group)
+  # test_info <- dplyr::select(res,
+  #   target_id,
+  #   mean_obs,
+  #   var_obs,
+  #   sigma_sq,
+  #   sigma_q_sq,
+  #   smooth_sigma_sq,
+  #   smooth_sigma_sq_pmax,
+  #   b,
+  #   se_b,
+  #   pval,
+  #   qval
+  #   )
+
+  if (is.null(obj$fits[[which_model]]$wald)) {
+    obj$fits[[which_model]]$wald <- list()
+  }
+
+  obj$fits[[which_model]]$wald[[which_beta]] <- res
+
+  obj
 }
 
 #' Compute the covariance on beta under OLS

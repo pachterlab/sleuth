@@ -120,8 +120,6 @@ summarize_bootstrap <- function(kal, column = "tpm", transform = identity)
     var_col <- paste0("bs_var_", column)
     cv_col <- paste0("bs_cv_", column)
 
-    print(cv_col)
-
     bs <- bs %>%
         group_by(target_id) %>%
         summarise_(.dots = setNames(list(

@@ -31,7 +31,7 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @export
-new_sleuth <- function(
+sleuth_prep <- function(
   kal_dirs,
   sample_names,
   sample_to_covariates,
