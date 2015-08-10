@@ -1,3 +1,44 @@
+#' Mean-variance relationship
+#'
+#' Plot the mean-variance relationship using ggvis
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_model which fit to use
+#' @param point_alpha the alpha of the points (0, 1)
+#' @return a \code{ggvis} object
+#' @export
+plot_mean_var <- function(obj,
+  which_model = 'full',
+  point_alpha = 0.4,
+  point_size = 2,
+  point_colors = c('black', 'dodgerblue'),
+  smooth_alpha = 1,
+  smooth_size = 0.75,
+  smooth_color = 'red'
+  ) {
+
+  if ( !model_exists(obj, which_model) ) {
+    stop("Model '", which_model, "' does not exists. Try looking at models(",
+      substitute(obj), ')')
+  }
+
+  df <- obj$fits[[which_model]]$summary
+
+  print(head(df))
+
+  p <- ggplot(df, aes(mean_obs, sqrt(sqrt(sigma_sq_pmax))))
+  p <- p + geom_point(aes(colour = iqr),
+    alpha = point_alpha, size = point_size)
+  p <- p + geom_line(aes(mean_obs, sqrt(sqrt(smooth_sigma_sq))),
+    size = smooth_size, alpha = smooth_alpha, colour = smooth_color)
+  p <- p + scale_colour_manual(values = c("black", "dodgerblue"))
+  p <- p + theme(legend.position = "none")
+  p <- p + xlab("mean( log( counts + 0.5 ) )")
+  p <- p + ylab("sqrt( sigma )")
+
+  p
+}
+
 #' Plot bootstrap summary
 #'
 #' Get a d
@@ -72,37 +113,3 @@ plot_transcript <- function(obj, trans_name, group_string = NULL) {
 
   plt + ggtitle(trans_name)
 }
-
-
-#' Mean variance plot
-#'
-#' Basic mean-variance plot
-#' @param obj a "sleuth" object
-#' @return a gpplot object with a layer containing points
-#' @export
-plot_mean_var <- function(obj) {
-  stopifnot( is(obj, "sleuth") )
-
-  # plt_df <- data.frame(bs_mean = obj$bs_means, raw_sigma = obj$sigma$raw_sigma)
-
-  ggplot(obj$sigma, aes(bs_mean, raw_sigma)) +
-    geom_point(alpha = 0.2)
-}
-
-# #' Plot the proportion of bootstrap variation
-# #'
-# #' Plot the proportion of bootstrap variation to total variation
-# #'
-# #' @param obj a \code{sleuth} object
-# #' @return a ggplot object
-# #' @export
-# plot_bootstrap_var_proportion(obj) {
-#   if (is.na(obj$bootstrap_summary)) {
-#     stop("No bootstrap summary found. Please run bootstrap_summary()")
-#   }
-# 
-#   tmp_join <- inner_join(obj$bootstrap_summary, obj$sigma, by = "target_id")
-# 
-# 
-#   ggplot(tmp_join)
-# }

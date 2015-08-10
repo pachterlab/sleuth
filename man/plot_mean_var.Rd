@@ -2,17 +2,23 @@
 % Please edit documentation in R/plots.R
 \name{plot_mean_var}
 \alias{plot_mean_var}
-\title{Mean variance plot}
+\title{Mean-variance relationship}
 \usage{
-plot_mean_var(obj)
+plot_mean_var(obj, which_model = "full", point_alpha = 0.2,
+  point_size = 2, point_colors = c("black", "dodgerblue"),
+  smooth_alpha = 1, smooth_size = 1, smooth_color = "red")
 }
 \arguments{
-\item{obj}{a "sleuth" object}
+\item{obj}{a \code{sleuth} object}
+
+\item{which_model}{which fit to use}
+
+\item{point_alpha}{the alpha of the points (0, 1)}
 }
 \value{
-a gpplot object with a layer containing points
+a \code{ggvis} object
 }
 \description{
-Basic mean-variance plot
+Plot the mean-variance relationship using ggvis
 }
 
