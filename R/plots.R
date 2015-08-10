@@ -39,6 +39,67 @@ plot_mean_var <- function(obj,
   p
 }
 
+#' Plot PCA
+#'
+#' Plot PCA for a set of RNA-Seq experiments
+#'
+#' @param obj a \code{sleuth} object
+#' @param pc_x integer denoting which principle component to take for the x-axis
+#' @param pc_y integer denoting which principle component to take for the y-axis
+#' @param text_labels if TRUE, use text labels instead of points
+#' @param color_by a variable to color by. if NA, then will leave all as 'black'
+#' @param center center the samples before running PCA
+#' @param scale scale the samples before running PCA
+#' @param ... additional arguments passed to \code{\link{geom_point}} or
+#' \code{\link{geom_text}}
+#' @return a gpplot object
+#' @export
+plot_pca <- function(obj,
+  pc_x = 1L,
+  pc_y = 2L,
+  text_labels = FALSE,
+  color_by = NULL,
+  center = TRUE,
+  scale = FALSE,
+  ...) {
+  stopifnot( is(obj, 'sleuth') )
+
+  mat <- tidyr::spread(
+    dplyr::select(obj$obs_norm, target_id, sample, est_counts),
+    sample,
+    est_counts)
+  rownames(mat) <- mat$target_id
+  mat$target_id <- NULL
+  mat <- as.matrix(mat)
+
+  pca_res <- prcomp(mat, center = center, scale = scale)
+
+  pcs <- sleuth:::as_df(pca_res$rotation[, c(pc_x, pc_y)])
+  pcs$sample <- rownames(pcs)
+  rownames(pcs) <- NULL
+
+  pc_x <- paste0('PC', pc_x)
+  pc_y <- paste0('PC', pc_y)
+
+  pcs <- dplyr::left_join(pcs, obj$sample_to_covariates,
+    by = 'sample')
+
+  p <- NULL
+  if ( !is.null( color_by ) ) {
+    p <- ggplot(pcs, aes_string(pc_x, pc_y, colour = color_by))
+  } else {
+    p <- ggplot(pcs, aes_string(pc_x, pc_y))
+  }
+
+  if ( text_labels ) {
+    p <- p + geom_text(aes(label = sample))
+  } else {
+    p <- p + geom_point()
+  }
+
+  p
+}
+
 #' Plot bootstrap summary
 #'
 #' Get a d

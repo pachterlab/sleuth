@@ -4,9 +4,9 @@
 \alias{plot_mean_var}
 \title{Mean-variance relationship}
 \usage{
-plot_mean_var(obj, which_model = "full", point_alpha = 0.2,
+plot_mean_var(obj, which_model = "full", point_alpha = 0.4,
   point_size = 2, point_colors = c("black", "dodgerblue"),
-  smooth_alpha = 1, smooth_size = 1, smooth_color = "red")
+  smooth_alpha = 1, smooth_size = 0.75, smooth_color = "red")
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
