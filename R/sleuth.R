@@ -20,7 +20,8 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
 #' @param kal_dirs a character vector of length greater than one where each
 #' string points to a kallisto output directory
 #' @param sample_to_covariates is a \code{data.frame} which contains a mapping
-#' from \code{sample} (a column) to some set of experimental conditions or covariates
+#' from \code{sample} (a column) to some set of experimental conditions or
+#' covariates
 #' @param full_model is a \code{formula} which explains the full model (design)
 #' of the experiment. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}
@@ -30,6 +31,8 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
 #' @param ... additional arguments passed to other functions
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
+#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{wald_test}} to
+#' test whether a coeffient is zero
 #' @export
 sleuth_prep <- function(
   kal_dirs,
@@ -40,14 +43,12 @@ sleuth_prep <- function(
   trans = 'log',
   filter_fun = basic_filter,
   annotation = NULL,
-  verbose = TRUE,
   ...) {
 
   ##############################
   # check inputs
 
   # data types
-
   if( !is(kal_dirs, 'character') ) {
     stop(paste0('"', substitute(kal_dirs),
         '" (kal_dirs) is must be a character vector.'))
@@ -62,7 +63,8 @@ sleuth_prep <- function(
   }
 
   if (length(kal_dirs) != nrow(sample_to_covariates)) {
-    stop(paste0("'", substitute(kal_dirs), "' must have the same length as the number of rows in '",
+    stop(paste0("'", substitute(kal_dirs),
+        "' must have the same length as the number of rows in '",
         substitute(sample_to_covariates), "'"))
   }
 
@@ -78,23 +80,27 @@ sleuth_prep <- function(
   # done
   ##############################
 
-  msg("Reading in kallisto results..")
+  msg('Reading in kallisto results')
 
+  nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
     function(i) {
       fname <- file.path(kal_dirs[i], 'abundance.h5')
 
+      nsamp <- dot(nsamp)
+
       if ( !file.exists(fname) ) {
         stop(paste0('Could not find HDF5 file: ', fname))
       }
 
-      kal <- read_kallisto_h5(fname, read_bootstrap = TRUE)
+      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE)})
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
 
       kal
     })
+  msg('')
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
@@ -153,16 +159,6 @@ sleuth_prep <- function(
     ret$filter_bool <- filter_bool
     ret$filter_df <- filter_df
   }
-
-
-
-  # if (FALSE) {
-  #   if (verbose) cat("Joining tpm and est_counts tables\n")
-  #   obs_norm <- inner_join(data.table::as.data.table(est_counts_norm),
-  #     data.table::as.data.table(tpm_norm), by = c("target_id", "sample"))
-  # } else {
-  #   obs_norm <- est_counts_norm
-  # }
 
   class(ret) <- 'sleuth'
 

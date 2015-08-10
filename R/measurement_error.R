@@ -1,21 +1,51 @@
-#' A sleuth wrapper for fitting the model
+#' Fit a measurement error model
 #'
-#' TODO: describe
+#' This function is a wrapper for fitting a measurement error model using
+#' \code{sleuth}.
 #'
 #' @param obj a \code{sleuth} object
-#' @param formula currently ignored. a formula specifying the design to fit
-#' @param fit_name currently ignored. the name to store the fit in the sleuth object
+#' @param formula a formula specifying the design to fit
+#' @param fit_name the name to store the fit in the sleuth
+#' object
+#' @param ... additional arguments passed to \code{sliding_window_grouping} and
+#' \code{shrink_df}
 #' @return a sleuth object with updated attributes
+#' @seealso \code{\link{sleuth_prep}} for creating a sleuth object,
+#' \code{\link{wald_test}} to test whether a coefficient is zero
 #' @export
-sleuth_fit <- function(obj, formula = NULL, fit_name = NULL) {
+sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   stopifnot( is(obj, 'sleuth') )
+
+  if ( is.null(formula) ) {
+    formula <- obj$full_formula
+  } else if ( !is(formula, 'formula') ) {
+    stop("'", substitute(formula), "' is not a valid 'formula'")
+  }
+
+  if ( is.null(fit_name) ) {
+    fit_name <- 'full'
+  } else if ( !is(fit_name, 'character') ) {
+    stop("'", substitute(fit_name), "' is not a valid 'character'")
+  }
+
+  if ( length(fit_name) > 1 ) {
+    stop("'", substitute(fit_name), "' is of length greater than one.",
+      " Please only supply one string.")
+  }
+
+  # TODO: check if model matrix is full rank
+  X <- model.matrix(formula, obj$sample_to_covariates)
+  A <- solve( t(X) %*% X )
 
   # TODO: check if normalized. if not, normalize
   # TODO: implement formula and fit_name
-  fit_name <- 'full'
-  formula <- obj$full_formula
+  if ( is.null(fit_name) ) {
+    fit_name <- 'full'
+    formula <- obj$full_formula
+  }
 
   msg('Summarizing bootstraps')
+  # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
   bs_summary <- bs_sigma_summary(obj, function(x) log(x + 0.5))
 
   # TODO: in normalization step, take out all things that don't pass filter so
@@ -39,19 +69,18 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL) {
 
   mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
 
-  msg('Grouping by sliding window')
-  swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
-    ignore_zeroes = TRUE)
-
   msg('Shrinkage estimation')
-  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr')
-  l_smooth <- select(mutate(l_smooth, smooth_sigma_sq = shrink ^ 4), -shrink)
+  swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
+    ignore_zeroes = TRUE, ...)
 
-  l_smooth <- mutate(l_smooth,
+  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr', ...)
+  l_smooth <- dplyr::select(
+    dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
+    -shrink)
+
+  l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
-  X <- obj$design_matrix
-  A <- solve( t(X) %*% X )
 
   msg('Computing var(beta)')
   beta_covars <- lapply(1:nrow(l_smooth),
@@ -71,7 +100,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL) {
     models = mes,
     summary = l_smooth,
     beta_covars = beta_covars,
-    formula = formula)
+    formula = formula,
+    design_matrix = X)
 
   class(obj$fits[[fit_name]]) <- 'sleuth_model'
 
@@ -115,17 +145,14 @@ me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
 
   mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
 
-  # mes <- semi_join(mes, dplyr::filter(pass_filt, count_filt),
-  #   by = "target_id")
-  # mes <- dplyr::mutate(mes, sigma_sq_pmax = pmax(sigma_sq, 0))
-
-  cat("Grouping by sliding window\n")
+  cat("Shrinkage estimation\n")
   swg <- sliding_window_grouping(mes_df, "mean_obs", "sigma_sq_pmax",
     ignore_zeroes = TRUE)
 
-  cat("Shrinkage estimation\n")
   l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, "iqr")
-  l_smooth <- select(mutate(l_smooth, smooth_sigma_sq = shrink ^ 4), -shrink)
+  l_smooth <- dplyr::select(
+    dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
+    -shrink)
 
   l_smooth <- mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
@@ -146,21 +173,49 @@ me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
   list(mes = mes, summary = l_smooth, beta_covars = beta_covars)
 }
 
+model_exists <- function(obj, which_model) {
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( is(which_model, 'character') )
+  stopifnot( length(which_model) == 1 )
 
+  which_model %in% names(obj$fits)
+}
+
+#' Wald test for a sleuth model
+#'
+#' This function computes the Wald test on one specific 'beta' coefficient on
+#' every transcript.
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_beta a character string of length one denoting which beta to
+#' test
+#' @param which_model a character string of length one denoting which model to
+#' use
+#' @return an updated sleuth object
+#' @seealso \code{\link{models}} to view which models have been fit and which
+#' coefficients can be tested, \code{\link{wald_results}} to get back
+#' a data.frame of the results
 #' @export
 wald_test <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
 
+  if ( !model_exists(obj, which_model) ) {
+    stop("'", which_model, "' is not a valid model. Please see models(",
+      substitute(obj), ") for a list of fitted models")
+  }
+
+  d_matrix <- obj$fits[[which_model]]$design_matrix
+
   # get the beta index
-  beta_i <- which(colnames(obj$design_matrix) %in% which_beta)
+  beta_i <- which(colnames(d_matrix) %in% which_beta)
 
   if ( length(beta_i) == 0 ) {
     stop(paste0("'", which_beta,
         "' doesn't appear in your design. Try one of the following:\n",
-        colnames(obj$design_matrix)))
+        colnames(d_matrix)))
   } else if ( length(beta_i) > 1 ) {
     stop(paste0("Sorry. '", which_beta, "' is ambiguous for columns: ",
-        colnames(obj$design_matrix[beta_i])))
+        colnames(d_matrix[beta_i])))
   }
 
   b <- sapply(obj$fits[[ which_model ]]$models,
@@ -193,19 +248,6 @@ wald_test <- function(obj, which_beta, which_model = 'full') {
     )
 
   res <- dplyr::select(res, -x_group)
-  # test_info <- dplyr::select(res,
-  #   target_id,
-  #   mean_obs,
-  #   var_obs,
-  #   sigma_sq,
-  #   sigma_q_sq,
-  #   smooth_sigma_sq,
-  #   smooth_sigma_sq_pmax,
-  #   b,
-  #   se_b,
-  #   pval,
-  #   qval
-  #   )
 
   if (is.null(obj$fits[[which_model]]$wald)) {
     obj$fits[[which_model]]$wald <- list()

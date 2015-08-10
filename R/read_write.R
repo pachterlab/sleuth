@@ -1,3 +1,57 @@
+#' Read a kallisto object from HDF5 file
+#'
+#' Read a kallisto object from HDF5 file.
+#'
+#' @param fname the file name for the HDF5 file
+#' @param read_bootstrap if \code{TRUE} load bootstraps, otherwise do not
+#' @return a \code{kallisto} object
+#' @export
+read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
+  stopifnot(is(fname, "character"))
+
+  fname <- path.expand(fname)
+
+  if (!file.exists(fname)) {
+    stop("Can't file file: '", fname, "'")
+  }
+
+  target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  abund <- adf(target_id = target_id)
+  abund$est_counts <- as.numeric(rhdf5::h5read(fname, "est_counts"))
+  abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
+  abund$len <- as.numeric(rhdf5::h5read(fname, "aux/lengths"))
+
+  bs_samples <- list()
+  if (read_bootstrap) {
+    num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
+    if (num_bootstrap > 0) {
+      msg("Found ", num_bootstrap, " bootstrap samples\n")
+      bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
+        {
+          .read_bootstrap_hdf5(fname, i, abund)
+        })
+    } else {
+      msg("No bootstrap samples found\n ")
+    }
+  }
+
+  abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
+
+  invisible(structure(
+      list(abundance = abund,
+        bootstrap = bs_samples),
+      class = "kallisto"))
+}
+
+# read a bootstrap from an HDF5 file and return a \code{data.frame}
+.read_bootstrap_hdf5 <- function(fname, i, main_est) {
+  bs <- adf( target_id = main_est$target_id )
+  bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
+  bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
+
+  bs
+}
+
 #' Read a kallisto data set
 #'
 #' Read a kallisto data set
@@ -210,123 +264,3 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
 
   invisible(kal)
 }
-
-#' Read a kallisto object from HDF5 file
-#'
-#' Read a kallisto object from HDF5 file.
-#'
-#' @param fname
-#' @return a \code{kallisto} object
-#' @export
-read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
-  stopifnot(is(fname, "character"))
-
-  fname <- path.expand(fname)
-
-  if (!file.exists(fname)) {
-    stop(paste0("Can't file file: '", fname, "'"))
-  }
-
-  target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
-  abund <- data.frame(target_id = target_id, stringsAsFactors = FALSE)
-  abund$est_counts <- as.numeric(rhdf5::h5read(fname, "est_counts"))
-  abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
-  abund$len <- as.numeric(rhdf5::h5read(fname, "aux/lengths"))
-
-  bs_samples <- list()
-  if (read_bootstrap) {
-    num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
-    if (num_bootstrap > 0) {
-      cat("Found ", num_bootstrap, " bootstrap samples\n")
-      bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
-        {
-          .read_bootstrap_hdf5(fname, i, abund)
-        })
-    } else {
-      cat("No bootstrap samples found\n ")
-    }
-  }
-
-  abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
-
-  invisible(structure(
-      list(abundance = abund,
-        bootstrap = bs_samples),
-      class = "kallisto"))
-}
-
-# read a bootstrap from an HDF5 file and return a \code{data.frame}
-.read_bootstrap_hdf5 <- function(fname, i, main_est) {
-  bs <- data.frame(
-    target_id = main_est$target_id,
-    stringsAsFactors = FALSE)
-  bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
-  bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
-
-  bs
-}
-
-
-# Was testing this format out... I think I like the other one better - HJP
-#
-# #' @export
-# write_kallisto_hdf5_matrix <- function(kal, fname, overwrite = TRUE, compression = 6L) {
-#   stopifnot( is(kal, "kallisto") )
-#   stopifnot( is(fname, "character") )
-#   stopifnot( is(compression, "integer") )
-#   stopifnot( length(compression) == 1 )
-#
-#   if (compression < 0 || compression > 7 ) {
-#     stop("'compression' must be in [0, 7]")
-#   }
-#
-#   fname <- path.expand(fname)
-#
-#   if (file.exists(fname)) {
-#     if (overwrite) {
-#       warning(paste0("'", fname, "' already exists. Overwritting."))
-#       file.remove(fname)
-#     } else {
-#       stop(paste0("'", fname, "' already exists."))
-#     }
-#   }
-#
-#   if ( !rhdf5::h5createFile( fname ) ) {
-#     stop(paste0("Error: Couldn't open '", fname, "' to write out."))
-#   }
-#
-#   dims <- c(nrow(kal$abundance), 1)
-#   cat("dims: ", class(dims), "\n")
-#
-#   # write out auxilary info
-#   rhdf5::h5createGroup(fname, "aux")
-#   rhdf5::h5createDataset(fname, "aux/ids", dims = dims,
-#     storage.mode = "character", size = 100, level = compression)
-#   rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
-#   rhdf5::h5write(length(kal$bootstrap), fname, "aux/num_bootstrap")
-#
-#   # TODO: put lengths in aux
-#   # TODO: put effective lengths in aux
-#
-#
-#   # rhdf5::h5createDataset(fname, "est_counts",
-#   #   storage.mode = "double", level = compression)
-#   rhdf5::h5write(kal$abundance$est_counts, fname, "est_counts")
-#
-#
-#   boot_mat <- sapply(kal$bootstrap, function(bs) bs$est_counts)
-#   rhdf5::h5createDataset(fname, "bootstrap", dims = dim(boot_mat),
-#     storage.mode = "double", chunk = c(nrow(boot_mat), 1), level = compression)
-#   rhdf5::h5write(boot_mat, fname, "bootstrap")
-#
-#
-#   # for (i in seq_along(kal$bootstrap)) {
-#   #   bs <- kal$bootstrap[[i]]$est_counts
-#   #   bs_name <- paste0("bootstrap/bs", i)
-#   #   # rhdf5::h5createDataset(fname, bs_name,
-#   #   #   storage.mode = "double", level = compression)
-#   #   rhdf5::h5write(bs, fname, bs_name)
-#   # }
-#
-#   invisible(kal)
-# }

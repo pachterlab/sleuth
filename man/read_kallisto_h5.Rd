@@ -7,7 +7,9 @@
 read_kallisto_h5(fname, read_bootstrap = TRUE)
 }
 \arguments{
-\item{fname}{}
+\item{fname}{the file name for the HDF5 file}
+
+\item{read_bootstrap}{if \code{TRUE} load bootstraps, otherwise do not}
 }
 \value{
 a \code{kallisto} object

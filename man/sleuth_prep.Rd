@@ -6,14 +6,15 @@
 \usage{
 sleuth_prep(kal_dirs, sample_names, sample_to_covariates, full_model,
   normalize = TRUE, trans = "log", filter_fun = basic_filter,
-  annotation = NULL, verbose = TRUE, ...)
+  annotation = NULL, ...)
 }
 \arguments{
 \item{kal_dirs}{a character vector of length greater than one where each
 string points to a kallisto output directory}
 
 \item{sample_to_covariates}{is a \code{data.frame} which contains a mapping
-from \code{sample} (a column) to some set of experimental conditions or covariates}
+from \code{sample} (a column) to some set of experimental conditions or
+covariates}
 
 \item{full_model}{is a \code{formula} which explains the full model (design)
 of the experiment. It must be consistent with the data.frame supplied in
@@ -34,5 +35,9 @@ and summary statistics
 Conceptually, a sleuth is a pack of kallistos. A 'sleuth' object stores
 a pack of kallisto results, and can then intelligently operate them
 depending on conditions and sequencing depth.
+}
+\seealso{
+\code{\link{sleuth_fit}} to fit a model, \code{\link{wald_test}} to
+test whether a coeffient is zero
 }
 

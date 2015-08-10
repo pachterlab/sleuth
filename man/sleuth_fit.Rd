@@ -2,21 +2,30 @@
 % Please edit documentation in R/measurement_error.R
 \name{sleuth_fit}
 \alias{sleuth_fit}
-\title{A sleuth wrapper for fitting the model}
+\title{Fit a measurement error model}
 \usage{
-sleuth_fit(obj, formula = NULL, fit_name = NULL)
+sleuth_fit(obj, formula = NULL, fit_name = NULL, ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{formula}{currently ignored. a formula specifying the design to fit}
+\item{formula}{a formula specifying the design to fit}
 
-\item{fit_name}{currently ignored. the name to store the fit in the sleuth object}
+\item{fit_name}{the name to store the fit in the sleuth
+object}
+
+\item{...}{additional arguments passed to \code{sliding_window_grouping} and
+\code{shrink_df}}
 }
 \value{
 a sleuth object with updated attributes
 }
 \description{
-TODO: describe
+This function is a wrapper for fitting a measurement error model using
+\code{sleuth}.
+}
+\seealso{
+\code{\link{sleuth_prep}} for creating a sleuth object,
+\code{\link{wald_test}} to test whether a coefficient is zero
 }
 
