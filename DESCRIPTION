@@ -7,16 +7,18 @@ License: GPL-2
 LazyData: true
 URL: https://github.com/pimentel/sleuth
 BugReports: https://github.com/pimentel/sleuth/issues
-Depends:
+Depends: 
     R (>= 3.1.2),
     methods,
     dplyr
-Imports:
+Imports: 
     data.table,
     ggplot2,
     tidyr,
     rhdf5,
     lazyeval
-Suggests:
+Suggests: 
     MASS,
-    testthat
+    testthat,
+    knitr
+VignetteBuilder: knitr
