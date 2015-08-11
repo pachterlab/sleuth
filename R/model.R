@@ -55,7 +55,7 @@ models.sleuth_model <- function(obj) {
 #' @seealso \code{\link{wald_test}} to compute tests, \code{\link{models}} to
 #' view which models and betas have been tested
 #' @export
-wald_results <- function(obj, which_beta, which_model = 'full') {
+sleuth_results <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
 
   if ( !model_exists(obj, which_model) ) {

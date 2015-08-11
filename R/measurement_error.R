@@ -11,7 +11,7 @@
 #' \code{shrink_df}
 #' @return a sleuth object with updated attributes
 #' @seealso \code{\link{sleuth_prep}} for creating a sleuth object,
-#' \code{\link{wald_test}} to test whether a coefficient is zero
+#' \code{\link{sleuth_test}} to test whether a coefficient is zero
 #' @export
 sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   stopifnot( is(obj, 'sleuth') )
@@ -196,7 +196,7 @@ model_exists <- function(obj, which_model) {
 #' coefficients can be tested, \code{\link{wald_results}} to get back
 #' a data.frame of the results
 #' @export
-wald_test <- function(obj, which_beta, which_model = 'full') {
+sleuth_test <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
 
   if ( !model_exists(obj, which_model) ) {

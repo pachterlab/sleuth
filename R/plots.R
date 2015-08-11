@@ -24,8 +24,6 @@ plot_mean_var <- function(obj,
 
   df <- obj$fits[[which_model]]$summary
 
-  print(head(df))
-
   p <- ggplot(df, aes(mean_obs, sqrt(sqrt(sigma_sq_pmax))))
   p <- p + geom_point(aes(colour = iqr),
     alpha = point_alpha, size = point_size)
@@ -98,6 +96,73 @@ plot_pca <- function(obj,
   }
 
   p
+}
+
+#' Interactive sleuth visualization with Shiny
+#'
+#' Interactive sleuth visualization with Shiny. To exit, type \code{ESC} in R.
+#' @param obj a \code{sleuth} object already processed and has run
+#' \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}
+#' @param ... additional parameters sent to ploltting functions
+#' @return a \code{\link{shinyApp}} result
+#' @export
+#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_test}}
+sleuth_interact <- function(obj, ...) {
+  stopifnot( is(obj, 'sleuth') )
+  if ( !require('shiny') ) {
+    stop("'sleuth_interact()' requires 'shiny'. Please install it using
+      install.packages('shiny')")
+  }
+
+  poss_covars <- dplyr::setdiff(
+    colnames(obj$sample_to_covariates),
+    'sample')
+
+  p_layout <- navbarPage(
+    'sleuth',
+    tabPanel('analysis',
+      plotOutput('mv_plt')),
+    tabPanel('maps',
+      fluidPage(
+        selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
+          selected = 1),
+        selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
+          selected = 2),
+        selectInput('text_labels', label = 'text labels: ',
+          choices = c(TRUE, FALSE), selected = TRUE),
+        selectInput('color_by', label = 'color by: ',
+          choices = c(NULL, poss_covars), selected = NULL),
+        selectInput('center', label = 'center: ',
+          choices = c(TRUE, FALSE), selected = TRUE),
+        selectInput('scale', label = 'scale: ',
+          choices = c(FALSE, TRUE), selected = FALSE),
+        plotOutput('pca_plt')
+      ))
+    )
+
+  server_fun <- function(input, output) {
+    output$pca_plt <- renderPlot({
+
+      color_by <- ifelse(is.null(input$color_by), NULL,
+        as.character(input$color_by))
+
+      plot_pca(obj,
+        pc_x = as.integer(input$pc_x),
+        pc_y = as.integer(input$pc_y),
+        text_labels = as.logical(input$text_labels),
+        color_by = color_by,
+        center = as.logical(input$center),
+        scale = as.logical(input$scale)
+        )
+
+    })
+
+    output$mv_plt <- renderPlot({
+      plot_mean_var(obj)
+    })
+  }
+
+  shinyApp(ui = p_layout, server = server_fun)
 }
 
 #' Plot bootstrap summary
