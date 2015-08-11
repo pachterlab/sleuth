@@ -1,6 +1,6 @@
 ---
 title: "Introduction to sleuth"
-author: "Vignette Author"
+author: "Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -9,50 +9,63 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+# Introduction to sleuth
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter
 
-## Vignette Info
+## Overview
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+__sleuth__ is a tool for the analysis and comparison of multiple related RNA-Seq experiments. Key features include:
 
-## Styles
 
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+1. The use of boostraps to ascertain and correct for technical variation in experiments.
+2. Implemention of a response error measurement model for inference that allows for a multitude of experimental designs.
+3. Interactive plots that enable real-time exploratory data analysis.
 
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
+To use __sleuth__, RNA-Seq data must first be quantified with [__kallisto__](http://pachterlab.github.io/kallisto/), which is a program for _very_ fast RNA-Seq quantification based on pseudo-alignment. An important feature of __kallisto__ is that it outputs bootstrapped estimates of transcript abundances, which can serve as proxies for technical replicates, allowing for an ascertainment of the variability in estimates due to the random processes underlying RNA-Seq as well as the statistical procedure of read assignment. __kallisto__ can quantify 30 million human reads in less than 3 minutes on a Mac desktop computer using only the read sequences and a transcriptome index that itself takes less than 10 minutes to build. __sleuth__ has also been designed to be lightweight and fast, and therefore RNA-Seq analysis with __kallisto__ and  __sleuth__ is tractable on a laptop computer in a matter of minutes.  
 
-## Figures
+The model __sleuth__ uses for performing differential analysis is a general linear model where there is error in the response. Formally, for a single transcript $i$, the (log) "true" abundance $y_i$ measured in read counts is modeled by
 
-The figure sizes have been customised so that you can easily put two images side-by-side. 
+$$ y_i = \beta_0 + \beta_1 x_i + \epsilon_i $$
 
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+where $x_i$ is an indicator variable describing the condition, $\beta_0$ and $\beta_1$ are parameters of the model and $\epsilon_i$ is biological "noise". However, conditioned on $x_i$ and $y_i$ the estimated number of counts from the observations in the experiment is given by 
+
+$$ D_i = y_i + q_i $$
+
+where $q_i$ represents technical "noise", i.e. uncertainty in the measurement due to effects other than biological variability. The __sleuth__ model incorporates the assumptions that the expectation $E(q_i|y_i) = 0$, that $E(D_i) = \beta_0 + \beta_1 x_i$  and that the response error is _additive_, i.e. the variance $V(D_i) = \sigma_i^2 + \sigma_{qi}^2$ where $\sigma_i^2 = V(\epsilon_i)$ and $\sigma_{qi}^2 = V(q_i|y_i)$. __sleuth__ makes use of the boostraps from __kallisto__ to estimate the $\sigma_{qi}^2$, and the $\sigma_i^2$ are estimated via a shrinkage procedure similar to that used in [Limma Voom](http://www.genomebiology.com/2014/15/2/R29).
+
+__sleuth__ has been designed to facilitate the exploration of RNA-Seq data by utilizing the [Shiny](http://shiny.rstudio.com) web application framework by RStudio. The worked example below illustrates how to load data into __sleuth__ and how to open Shiny plots for exploratory data analysis. The code underlying all plots is available via the Shiny interface so that analyses can be fully "open source". 
+
+## Installation
+
+To install this package, start R and first install rhdf5 by typing: 
+
+```
+source("http://bioconductor.org/biocLite.R")
+biocLite("rhdf5")
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
-
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+Then type 
+```
+install("~/path/to/sleuth")
 ```
 
-Also a quote using `>`:
+to install __sleuth__ from the directory it has been downlaoded to.
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+## Example
+
+To explain how to use __sleuth__ we provide an example based on the data in the "Cuffdiff2" paper:
+
+* [Differential analysis of gene regulation at transcript resolution with RNA-seq](http://www.nature.com/nbt/journal/v31/n1/full/nbt.2450.html)	by Cole Trapnell, David G Henderickson, Martin Savageau, Loyal Goff, John L Rinn and L Pachter, Nature Biotechnology __31__, 46--53 (2013).
+
+The human fibroblast RNA-Seq data for the paper is available on GEO at accession [GSE37704](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704). The samples to be analyzed are the six samples LFB_scramble_hiseq_repA,LFB_scramble_hiseq_repB,LFB_scramble_hiseq_repC,LFB_HOXA1KD_hiseq_repA,LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions that will be compared with __sleuth__.
+
+To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described here. This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processsed data directly from [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/).
+
+The first step in a __sleuth__ analysis is to load the data into R. Begin by typing
+
+```
+first thing
+```
+
+
