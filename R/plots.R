@@ -274,6 +274,39 @@ sleuth_interact <- function(obj, ...) {
   shinyApp(ui = p_layout, server = server_fun)
 }
 
+#' MA plot
+#'
+#' Make a 'MA plot' for a given test. MA plots have the expression mean on the
+#' x-axis and fold change on the y-axis.
+#' @param obj a \code{sleuth} object
+
+#' @param which_beta a character string denoting which beta to use for
+#' highlighting the transcript
+
+#' @param which_model a character string denoting which model to use for the
+#' test
+#' @param point_alpha the alpha for the points
+#' @return a \code{ggplot2} object
+#' @export
+plot_ma <- function(obj, which_beta, which_model = 'full',
+  sig_level = 0.10,
+  point_alpha = 0.2,
+  sig_color = 'red'
+  ) {
+  stopifnot( is(obj, 'sleuth') )
+
+  res <- sleuth_results(obj, which_beta, which_model)
+  res <- dplyr::mutate(res, significant = ifelse( qval < 0.10, TRUE, FALSE ))
+
+  p <- ggplot(res, aes(mean_obs, b))
+  p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+  p <- p + scale_colour_manual(values = c('black', sig_color))
+  p <- p + xlab('mean( log( counts + 0.5 ) )')
+  p <- p + ylab(paste0('beta: ', which_beta))
+
+  p
+}
+
 #' Plot bootstrap summary
 #'
 #' Get a d
