@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{plot_mean_var}
 \alias{plot_mean_var}
-\title{Mean-variance relationship}
+\title{Plot the mean-variance relationship using ggvis}
 \usage{
 plot_mean_var(obj, which_model = "full", point_alpha = 0.4,
   point_size = 2, point_colors = c("black", "dodgerblue"),

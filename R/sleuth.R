@@ -136,6 +136,9 @@ sleuth_prep <- function(
 
     filter_df <- adf(target_id = names(filter_true))
 
+    # TODO: figure out a way to keep filtering consistent downstream w/o
+    # filtering from 'obs_norm'
+
     est_counts_norm <- as_df(t(t(est_counts_spread[filter_bool,]) / est_counts_sf))
     est_counts_norm$target_id <- rownames(est_counts_norm)
     est_counts_norm <- tidyr::gather(est_counts_norm, sample, est_counts, -target_id)

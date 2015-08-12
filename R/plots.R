@@ -98,6 +98,82 @@ plot_pca <- function(obj,
   p
 }
 
+#' Scatter plot
+#'
+#' Somewhat flexible scatter plot on a sleuth object
+#'
+#' @param obj a \code{sleuth} object
+#' @param sample_x the string corresponding to the sample name in \code{obj$sample_to_covariates}
+#' @param sample_y same as \code{sample_x} but for the y-axis
+#' @param offset a linear offset to help deal with zeroes if transforming
+#' @param point_alpha the alpha on the points
+#' @param xy_line if TRUE, plot the xy_line
+#' @param xy_line_color a string denoting the color for the xy line
+#' @param xtrans a \code{function} denoting the transformation to perform on the x axis
+#' @param ytrans same as xtrans for the y-axis
+#' @param xlim a numeric vector of length two denoting the x limits
+#' @param ylim same as xlim but for the y-axis
+#' @return a ggplot object for the scatterplot
+#' @export
+plot_scatter <- function(obj,
+  sample_x = obj$sample_to_covariates$sample[1],
+  sample_y = obj$sample_to_covariates$sample[2],
+  offset = 1,
+  point_alpha = 0.2,
+  xy_line = TRUE,
+  xy_line_color = 'red',
+  xtrans = log,
+  ytrans = log,
+  xlim = NULL,
+  ylim = NULL) {
+
+  abund <- spread_abundance_by(obj$obs_norm, 'est_counts')
+  abund <- abund + offset
+  abund <- as_df(abund)
+
+  abund <- dplyr::mutate(abund, target_id = rownames(abund))
+
+  if (!is.null(xtrans)) {
+    fx <- deparse(substitute(xtrans))
+    sample_x <- paste0( fx, '( ', sample_x)
+  }
+  if (!is.null(ytrans)) {
+    fy <- deparse(substitute(ytrans))
+    sample_y <- paste0( fy, '( ', sample_y)
+  }
+
+  if ( offset != 0 ) {
+    off <- deparse(eval(offset))
+    sample_x <- paste0(sample_x, ' + ', off)
+    sample_y <- paste0(sample_y, ' + ', off)
+  }
+
+  if (!is.null(xtrans)) {
+    sample_x <- paste0(sample_x, ' )')
+  }
+
+  if (!is.null(ytrans)) {
+    sample_y <- paste0(sample_y, ' )')
+  }
+
+  p <- ggplot(abund, aes_string(sample_x, sample_y))
+  p <- p + geom_point(alpha = point_alpha)
+
+  if (xy_line) {
+    p <- p + geom_abline(intercept = 0, slope = 1, colour = xy_line_color)
+  }
+
+  if (!is.null(xlim)) {
+    p <- p + xlim(xlim[1], xlim[2])
+  }
+
+  if (!is.null(ylim)) {
+    p <- p + ylim(ylim[1], ylim[2])
+  }
+
+  p
+}
+
 #' Interactive sleuth visualization with Shiny
 #'
 #' Interactive sleuth visualization with Shiny. To exit, type \code{ESC} in R.
@@ -121,26 +197,43 @@ sleuth_interact <- function(obj, ...) {
   p_layout <- navbarPage(
     'sleuth',
     tabPanel('analysis',
+      plotOutput('scatter')),
+    tabPanel('diagnostics',
       plotOutput('mv_plt')),
     tabPanel('maps',
-      fluidPage(
-        selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
-          selected = 1),
-        selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
-          selected = 2),
-        selectInput('text_labels', label = 'text labels: ',
-          choices = c(TRUE, FALSE), selected = TRUE),
-        selectInput('color_by', label = 'color by: ',
-          choices = c(NULL, poss_covars), selected = NULL),
-        selectInput('center', label = 'center: ',
-          choices = c(TRUE, FALSE), selected = TRUE),
-        selectInput('scale', label = 'scale: ',
-          choices = c(FALSE, TRUE), selected = FALSE),
-        plotOutput('pca_plt')
+      fluidRow(
+        column(1,
+          selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
+            selected = 1)
+          ),
+        column(1,
+          selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
+            selected = 2)
+          ),
+        column(1,
+          selectInput('text_labels', label = 'text labels: ',
+            choices = c(TRUE, FALSE), selected = TRUE)
+          ),
+        column(4,
+          selectInput('color_by', label = 'color by: ',
+            choices = c(NULL, poss_covars), selected = NULL)
+          ),
+        column(1,
+          selectInput('center', label = 'center: ',
+            choices = c(TRUE, FALSE), selected = TRUE)
+          ),
+        column(1,
+          selectInput('scale', label = 'scale: ',
+          choices = c(FALSE, TRUE), selected = FALSE))),
+        fluidRow(plotOutput('pca_plt'))
       ))
-    )
 
   server_fun <- function(input, output) {
+
+    output$scatter <- renderPlot({
+      plot_scatter(obj)
+    })
+
     output$pca_plt <- renderPlot({
 
       color_by <- ifelse(is.null(input$color_by), NULL,
