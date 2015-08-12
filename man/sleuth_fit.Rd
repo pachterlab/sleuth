@@ -26,6 +26,6 @@ This function is a wrapper for fitting a measurement error model using
 }
 \seealso{
 \code{\link{sleuth_prep}} for creating a sleuth object,
-\code{\link{wald_test}} to test whether a coefficient is zero
+\code{\link{sleuth_test}} to test whether a coefficient is zero
 }
 
