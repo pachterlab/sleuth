@@ -109,8 +109,9 @@ plot_pca <- function(obj,
 #' @param point_alpha the alpha on the points
 #' @param xy_line if TRUE, plot the xy_line
 #' @param xy_line_color a string denoting the color for the xy line
-#' @param xtrans a \code{function} denoting the transformation to perform on the x axis
-#' @param ytrans same as xtrans for the y-axis
+#' @param trans a string pointing to a function to use for the transformation.
+#' This function must exist in the global namespace. This means you should be
+#' able to call \code{eval('myfun')} and get a function back.
 #' @param xlim a numeric vector of length two denoting the x limits
 #' @param ylim same as xlim but for the y-axis
 #' @return a ggplot object for the scatterplot
@@ -122,8 +123,7 @@ plot_scatter <- function(obj,
   point_alpha = 0.2,
   xy_line = TRUE,
   xy_line_color = 'red',
-  xtrans = log,
-  ytrans = log,
+  trans = 'log',
   xlim = NULL,
   ylim = NULL) {
 
@@ -133,13 +133,9 @@ plot_scatter <- function(obj,
 
   abund <- dplyr::mutate(abund, target_id = rownames(abund))
 
-  if (!is.null(xtrans)) {
-    fx <- deparse(substitute(xtrans))
-    sample_x <- paste0( fx, '( ', sample_x)
-  }
-  if (!is.null(ytrans)) {
-    fy <- deparse(substitute(ytrans))
-    sample_y <- paste0( fy, '( ', sample_y)
+  if (!is.null(trans)) {
+    sample_x <- paste0( trans, '( ', sample_x)
+    sample_y <- paste0( trans, '( ', sample_y)
   }
 
   if ( offset != 0 ) {
@@ -148,11 +144,8 @@ plot_scatter <- function(obj,
     sample_y <- paste0(sample_y, ' + ', off)
   }
 
-  if (!is.null(xtrans)) {
+  if (!is.null(trans)) {
     sample_x <- paste0(sample_x, ' )')
-  }
-
-  if (!is.null(ytrans)) {
     sample_y <- paste0(sample_y, ' )')
   }
 
@@ -193,13 +186,35 @@ sleuth_interact <- function(obj, ...) {
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
     'sample')
+  samp_names <- obj$sample_to_covariates[['sample']]
 
   p_layout <- navbarPage(
     'sleuth',
+
     tabPanel('analysis',
+      fluidRow(
+        column(3,
+          selectInput('sample_x', label = 'x-axis: ',
+            choices = samp_names,
+            selected = 1)
+          ),
+        column(3,
+          selectInput('sample_y', label = 'y-axis: ',
+            choices = samp_names,
+            selected = samp_names[2])
+          ),
+        column(1,
+          textInput('trans', label = 'transformation: ',
+            value = 'log')),
+        column(1,
+          numericInput('scatter_alpha', label = 'point alpha:', value = 0.2,
+            min = 0, max = 1))
+        ),
       plotOutput('scatter')),
+
     tabPanel('diagnostics',
       plotOutput('mv_plt')),
+
     tabPanel('maps',
       fluidRow(
         column(1,
@@ -231,7 +246,8 @@ sleuth_interact <- function(obj, ...) {
   server_fun <- function(input, output) {
 
     output$scatter <- renderPlot({
-      plot_scatter(obj)
+      plot_scatter(obj, input$sample_x, input$sample_y,
+        trans = input$trans, point_alpha = input$scatter_alpha)
     })
 
     output$pca_plt <- renderPlot({
