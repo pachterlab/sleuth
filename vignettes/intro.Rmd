@@ -24,23 +24,25 @@ __sleuth__ is a tool for the analysis and comparison of multiple related RNA-Seq
 
 To use __sleuth__, RNA-Seq data must first be quantified with [__kallisto__](http://pachterlab.github.io/kallisto/), which is a program for _very_ fast RNA-Seq quantification based on pseudo-alignment. An important feature of __kallisto__ is that it outputs bootstrapped estimates of transcript abundances, which can serve as proxies for technical replicates, allowing for an ascertainment of the variability in estimates due to the random processes underlying RNA-Seq as well as the statistical procedure of read assignment. __kallisto__ can quantify 30 million human reads in less than 3 minutes on a Mac desktop computer using only the read sequences and a transcriptome index that itself takes less than 10 minutes to build. __sleuth__ has also been designed to be lightweight and fast, and therefore RNA-Seq analysis with __kallisto__ and  __sleuth__ is tractable on a laptop computer in a matter of minutes.  
 
-The model __sleuth__ uses for performing differential analysis is a general linear model where there is error in the response. Formally, in the case of two conditions being assayed, for a single transcript in a single sample $i$ ($i \in \{1,2\}$), the (log) "true" abundance $y_i$ measured in read counts is modeled by
+The model __sleuth__ uses for performing differential analysis is a general linear model where there is error in the response. Formally, in the case of two conditions being assayed, for a transcript $t$ in a sample $i$, the (log) "true" abundance $y_i$ measured in read counts is modeled by
 
-$$ y_i = \beta_0 + \beta_1 x_i + \epsilon_i $$
+$$ y_{t,i} = \beta_{t,0} + \beta_{t,1} x_{t,i} + \epsilon_{t,i} $$
 
-where $x_i$ is an indicator variable describing the condition, $\beta_0$ and $\beta_1$ are parameters of the model and $\epsilon_i$ is biological "noise". However, conditioned on $x_i$ and $y_i$ the estimated number of counts from the observations in the experiment is given by 
+where $x_{t,i}$ is an indicator variable describing the condition, $\beta_{t,0}$ and $\beta_{t,1}$ are parameters of the model and $\epsilon_{t,i}$ is biological "noise". However, conditioned on $x_i$ and $y_i$ the estimated number of counts from the observations in the experiment is given by 
 
-$$ d_i = y_i + q_i $$
+$$ d_{t,i} = y_{t,i} + \zeta_{t,i} $$
 
-where $q_i$ represents technical "noise", i.e. uncertainty in the measurement due to effects other than biological variability. The __sleuth__ model incorporates the assumptions that the expectation $E(q_i|y_i) = 0$, that $E(d_i) = \beta_0 + \beta_1 x_i$  and that the response error is _additive_, i.e. the variance $V(d_i) = \sigma_i^2 + \sigma_{qi}^2$ where $\sigma_i^2 = V(\epsilon_i)$ and $\sigma_{qi}^2 = V(q_i|y_i)$. __sleuth__ makes use of the boostraps from __kallisto__ to estimate the $\sigma_{qi}^2$, and the $\sigma_i^2$ are estimated via a shrinkage procedure similar to that used in [Limma Voom](http://www.genomebiology.com/2014/15/2/R29).
+where $\zeta_{t,i}$ represents technical "noise", i.e. uncertainty in the measurement due to effects other than biological variability. The __sleuth__ model incorporates the assumptions that the expectation $E(\zeta_{t,i}|y_{t,i}) = 0$, that $E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}$  and that the response error is _additive_, i.e. the variance $V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2$ where $\sigma_t^2 = V(\epsilon_{t,i})$ and $\sigma_t^2 = V(\zeta_{t,i}|y_{t,i})$. __sleuth__ makes use of the boostraps from __kallisto__ to estimate the $\tau_t^2$, and the $\sigma_t^2$ are estimated via a shrinkage procedure similar to that used in [Limma Voom](http://www.genomebiology.com/2014/15/2/R29).
 
-More generally, __sleuth__ can be used to analyze multiple conditions organized in complicated experimental designs. In the general case the model is
+More generally, __sleuth__ can be used to analyze multiple conditions organized in complicated experimental designs. In the general case the model is given by
 
-$$ Y = X \beta + \epsilon $$
+$$ Y_t = X_t \beta_t + \epsilon_t $$
 
-where $Y, X, \beta$ and $\epsilon$ are all matrices with additional matrices $Q$ and $D$ describing the response error layered on top of $Y$, i.e. 
+where $t$ is a transcript, $Y_t$ is a vector of length $n$ where $n$ is the number of samples, $X_t$ is an $n \times p$ matrix where $p$ is the number of covariates, $\beta_t$ represents the effect sizes and is a vector of length $p$, and $\epsilon_t$ is a vector of length $n$. The response error is described by
 
-$$ D = Y + Q. $$ 
+$$ D_t = Y_t + \zeta_t $$ 
+
+where $\zeta_t$ and $D_t$ are vectors of length $n$.
 
 __sleuth__ has been designed to facilitate the exploration of RNA-Seq data by utilizing the [Shiny](http://shiny.rstudio.com) web application framework by RStudio. The worked example below illustrates how to load data into __sleuth__ and how to open Shiny plots for exploratory data analysis. The code underlying all plots is available via the Shiny interface so that analyses can be fully "open source". 
 
