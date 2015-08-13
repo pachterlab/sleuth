@@ -106,19 +106,19 @@ s2c
 
 Now we build a "sleuth object". This first step is to load the kallisto processed data (abundance estimates, boostraps, etc.) into the object:
 
-```{r eval=FALSE, cache=TRUE}
+```{r eval=TRUE, cache=TRUE}
 so <- sleuth_prep(kal_dirs, names(kal_dirs), s2c, ~ condition)
 ```
 
 Then the parameters for the __sleuth__ response error measurement model are estimated from the data:
 
-```{r eval=FALSE, cache=TRUE}
+```{r eval=TRUE, cache=TRUE}
 so <- sleuth_fit(so)
 ``` 
 
 Next the differential analysis (testing) is performed with
 
-```{r eval=FALSE, cache=TRUE}
+```{r eval=TRUE, cache=TRUE}
 so <- sleuth_test(so, which_beta = 'conditionscramble')
 ```
 
