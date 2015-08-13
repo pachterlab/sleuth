@@ -109,14 +109,9 @@ plot_pca <- function(obj,
 #' @param point_alpha the alpha on the points
 #' @param xy_line if TRUE, plot the xy_line
 #' @param xy_line_color a string denoting the color for the xy line
-<<<<<<< HEAD
-#' @param xtrans a \code{function} denoting the transformation to perform on the x axis
-#' @param ytrans same as xtrans for the y-axis
-=======
 #' @param trans a string pointing to a function to use for the transformation.
 #' This function must exist in the global namespace. This means you should be
 #' able to call \code{eval('myfun')} and get a function back.
->>>>>>> master
 #' @param xlim a numeric vector of length two denoting the x limits
 #' @param ylim same as xlim but for the y-axis
 #' @return a ggplot object for the scatterplot
@@ -128,12 +123,7 @@ plot_scatter <- function(obj,
   point_alpha = 0.2,
   xy_line = TRUE,
   xy_line_color = 'red',
-<<<<<<< HEAD
-  xtrans = log,
-  ytrans = log,
-=======
   trans = 'log',
->>>>>>> master
   xlim = NULL,
   ylim = NULL) {
 
@@ -143,19 +133,9 @@ plot_scatter <- function(obj,
 
   abund <- dplyr::mutate(abund, target_id = rownames(abund))
 
-<<<<<<< HEAD
-  if (!is.null(xtrans)) {
-    fx <- deparse(substitute(xtrans))
-    sample_x <- paste0( fx, '( ', sample_x)
-  }
-  if (!is.null(ytrans)) {
-    fy <- deparse(substitute(ytrans))
-    sample_y <- paste0( fy, '( ', sample_y)
-=======
   if (!is.null(trans)) {
     sample_x <- paste0( trans, '( ', sample_x)
     sample_y <- paste0( trans, '( ', sample_y)
->>>>>>> master
   }
 
   if ( offset != 0 ) {
@@ -164,16 +144,8 @@ plot_scatter <- function(obj,
     sample_y <- paste0(sample_y, ' + ', off)
   }
 
-<<<<<<< HEAD
-  if (!is.null(xtrans)) {
-    sample_x <- paste0(sample_x, ' )')
-  }
-
-  if (!is.null(ytrans)) {
-=======
   if (!is.null(trans)) {
     sample_x <- paste0(sample_x, ' )')
->>>>>>> master
     sample_y <- paste0(sample_y, ' )')
   }
 
@@ -214,15 +186,6 @@ sleuth_interact <- function(obj, ...) {
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
     'sample')
-<<<<<<< HEAD
-
-  p_layout <- navbarPage(
-    'sleuth',
-    tabPanel('analysis',
-      plotOutput('scatter')),
-    tabPanel('diagnostics',
-      plotOutput('mv_plt')),
-=======
   samp_names <- obj$sample_to_covariates[['sample']]
   poss_models <- names(models(obj))
   cat('these are the samp names:', samp_names, '\n')
@@ -273,7 +236,6 @@ sleuth_interact <- function(obj, ...) {
     tabPanel('diagnostics',
       plotOutput('mv_plt')),
 
->>>>>>> master
     tabPanel('maps',
       fluidRow(
         column(1,
@@ -305,12 +267,8 @@ sleuth_interact <- function(obj, ...) {
   server_fun <- function(input, output) {
 
     output$scatter <- renderPlot({
-<<<<<<< HEAD
-      plot_scatter(obj)
-=======
       plot_scatter(obj, input$sample_x, input$sample_y,
         trans = input$trans, point_alpha = input$scatter_alpha)
->>>>>>> master
     })
 
     output$pca_plt <- renderPlot({
@@ -332,8 +290,6 @@ sleuth_interact <- function(obj, ...) {
     output$mv_plt <- renderPlot({
       plot_mean_var(obj)
     })
-<<<<<<< HEAD
-=======
 
     output$which_beta_ctrl <- renderUI({
       cat('hi: ', input$which_model, '\n')
@@ -351,14 +307,11 @@ sleuth_interact <- function(obj, ...) {
       }
       plot_ma(obj, val, input$which_model, sig_level = input$max_fdr)
     })
->>>>>>> master
   }
 
   shinyApp(ui = p_layout, server = server_fun)
 }
 
-<<<<<<< HEAD
-=======
 #' MA plot
 #'
 #' Make a 'MA plot' for a given test. MA plots have the expression mean on the
@@ -392,7 +345,6 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   p
 }
 
->>>>>>> master
 #' Plot bootstrap summary
 #'
 #' Get a d

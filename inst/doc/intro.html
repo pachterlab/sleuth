@@ -135,14 +135,46 @@ s2c</code></pre>
 ## 6 SRR493371   HOXA1KD</code></pre>
 <p>Now we build a “sleuth object”. This first step is to load the kallisto processed data (abundance estimates, boostraps, etc.) into the object:</p>
 <pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(kal_dirs, <span class="kw">names</span>(kal_dirs), s2c, ~<span class="st"> </span>condition)</code></pre>
+<pre><code>## Reading in kallisto results
+## ......
+## Normalizing 'est_counts'
+## 37624 targets passed the filter.</code></pre>
+<pre><code>## Warning in left_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector</code></pre>
+<pre><code>## Normalizing bootstrap samples</code></pre>
 <p>Then the parameters for the <strong>sleuth</strong> response error measurement model are estimated from the data:</p>
 <pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_fit</span>(so)</code></pre>
+<pre><code>## Summarizing bootstraps
+## Fitting measurement error models
+## Shrinkage estimation
+## Computing variance of betas</code></pre>
 <p>Next the differential analysis (testing) is performed with</p>
 <pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_test</span>(so, <span class="dt">which_beta =</span> <span class="st">'conditionscramble'</span>)</code></pre>
 <p>At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the <strong>kallisto</strong> estimates, the model fit, and the testing. In other words it contains the entire analysis of the data.</p>
 <p>To view the analysis type</p>
-<pre><code>sleuth_results(so, 'conditionscramble') %&gt;% head
-sleuth_interact(so)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sleuth_results</span>(so, <span class="st">'conditionscramble'</span>) %&gt;%<span class="st"> </span>head</code></pre>
+<pre><code>##         target_id mean_obs     var_obs      sigma_sq   sigma_q_sq
+## 1 ENST00000000233 7.053875 0.023731313  0.0006071794 0.0014741045
+## 2 ENST00000000412 7.592637 0.026133624  0.0027237269 0.0027548249
+## 3 ENST00000000442 5.643821 0.035557275 -0.0045507217 0.0113651041
+## 4 ENST00000001008 7.145095 0.055433651  0.0007554396 0.0009364099
+## 5 ENST00000002125 4.377060 0.042924783 -0.0338497658 0.0422588436
+## 6 ENST00000002165 7.320110 0.006038117  0.0037896856 0.0005983332
+##   smooth_sigma_sq smooth_sigma_sq_pmax           b       se_b         pval
+## 1     0.001770215          0.001770215 -0.27120894 0.04650677 5.489791e-09
+## 2     0.001275527          0.002723727 -0.26926308 0.06043482 8.372547e-06
+## 3     0.005012146          0.005012146  0.31678472 0.10449003 2.431631e-03
+## 4     0.001668311          0.001668311  0.42457889 0.04167110 2.224704e-24
+## 5     0.023272678          0.023272678  0.34735918 0.20901598 9.653712e-02
+## 6     0.001493903          0.003789686 -0.09179146 0.05408647 8.967316e-02
+##           qval
+## 1 6.800508e-08
+## 2 7.423606e-05
+## 3 1.406525e-02
+## 4 7.215136e-23
+## 5 3.210593e-01
+## 6 3.043859e-01</code></pre>
+<pre><code>sleuth_interact(so)</code></pre>
 </div>
 
 
