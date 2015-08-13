@@ -182,15 +182,23 @@ hr {
 
 <p>To use <strong>sleuth</strong>, RNA-Seq data must first be quantified with <a href="http://pachterlab.github.io/kallisto/"><strong>kallisto</strong></a>, which is a program for <em>very</em> fast RNA-Seq quantification based on pseudo-alignment. An important feature of <strong>kallisto</strong> is that it outputs bootstrapped estimates of transcript abundances, which can serve as proxies for technical replicates, allowing for an ascertainment of the variability in estimates due to the random processes underlying RNA-Seq as well as the statistical procedure of read assignment. <strong>kallisto</strong> can quantify 30 million human reads in less than 3 minutes on a Mac desktop computer using only the read sequences and a transcriptome index that itself takes less than 10 minutes to build. <strong>sleuth</strong> has also been designed to be lightweight and fast, and therefore RNA-Seq analysis with <strong>kallisto</strong> and  <strong>sleuth</strong> is tractable on a laptop computer in a matter of minutes.  </p>
 
-<p>The model <strong>sleuth</strong> uses for performing differential analysis is a general linear model where there is error in the response. Formally, for a single transcript \(i\), the (log) &ldquo;true&rdquo; abundance \(y_i\) measured in read counts is modeled by</p>
+<p>The model <strong>sleuth</strong> uses for performing differential analysis is a general linear model where there is error in the response. Formally, in the case of two conditions being assayed, for a single transcript in a single sample \(i\) (\(i \in \{1,2\}\)), the (log) &ldquo;true&rdquo; abundance \(y_i\) measured in read counts is modeled by</p>
 
 <p>\[ y_i = \beta_0 + \beta_1 x_i + \epsilon_i \]</p>
 
 <p>where \(x_i\) is an indicator variable describing the condition, \(\beta_0\) and \(\beta_1\) are parameters of the model and \(\epsilon_i\) is biological &ldquo;noise&rdquo;. However, conditioned on \(x_i\) and \(y_i\) the estimated number of counts from the observations in the experiment is given by </p>
 
-<p>\[ D_i = y_i + q_i \]</p>
+<p>\[ d_i = y_i + q_i \]</p>
 
-<p>where \(q_i\) represents technical &ldquo;noise&rdquo;, i.e. uncertainty in the measurement due to effects other than biological variability. The <strong>sleuth</strong> model incorporates the assumptions that the expectation \(E(q_i|y_i) = 0\), that \(E(D_i) = \beta_0 + \beta_1 x_i\)  and that the response error is <em>additive</em>, i.e. the variance \(V(D_i) = \sigma_i^2 + \sigma_{qi}^2\) where \(\sigma_i^2 = V(\epsilon_i)\) and \(\sigma_{qi}^2 = V(q_i|y_i)\). <strong>sleuth</strong> makes use of the boostraps from <strong>kallisto</strong> to estimate the \(\sigma_{qi}^2\), and the \(\sigma_i^2\) are estimated via a shrinkage procedure similar to that used in <a href="http://www.genomebiology.com/2014/15/2/R29">Limma Voom</a>.</p>
+<p>where \(q_i\) represents technical &ldquo;noise&rdquo;, i.e. uncertainty in the measurement due to effects other than biological variability. The <strong>sleuth</strong> model incorporates the assumptions that the expectation \(E(q_i|y_i) = 0\), that \(E(d_i) = \beta_0 + \beta_1 x_i\)  and that the response error is <em>additive</em>, i.e. the variance \(V(d_i) = \sigma_i^2 + \sigma_{qi}^2\) where \(\sigma_i^2 = V(\epsilon_i)\) and \(\sigma_{qi}^2 = V(q_i|y_i)\). <strong>sleuth</strong> makes use of the boostraps from <strong>kallisto</strong> to estimate the \(\sigma_{qi}^2\), and the \(\sigma_i^2\) are estimated via a shrinkage procedure similar to that used in <a href="http://www.genomebiology.com/2014/15/2/R29">Limma Voom</a>.</p>
+
+<p>More generally, <strong>sleuth</strong> can be used to analyze multiple conditions organized in complicated experimental designs. In the general case the model is</p>
+
+<p>\[ Y = X \beta + \epsilon \]</p>
+
+<p>where \(Y, X, \beta\) and \(\epsilon\) are all matrices with additional matrices \(Q\) and \(D\) describing the response error layered on top of \(Y\), i.e. </p>
+
+<p>\[ D = Y + Q. \] </p>
 
 <p><strong>sleuth</strong> has been designed to facilitate the exploration of RNA-Seq data by utilizing the <a href="http://shiny.rstudio.com">Shiny</a> web application framework by RStudio. The worked example below illustrates how to load data into <strong>sleuth</strong> and how to open Shiny plots for exploratory data analysis. The code underlying all plots is available via the Shiny interface so that analyses can be fully &ldquo;open source&rdquo;. </p>
 
