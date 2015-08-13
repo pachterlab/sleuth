@@ -62,10 +62,46 @@ The human fibroblast RNA-Seq data for the paper is available on GEO at accession
 
 To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described here. This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processsed data directly from [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/).
 
-The first step in a __sleuth__ analysis is to load the data into R. Begin by typing
+The first step in a __sleuth__ analysis is to load the data into R. Begin by specifying the path to the __kallisto__ runs of the samples:
 
 ```
-first thing
+base_dir <- "../path_to_the_kallisto_runs"
+sample_id <- dir(base_dir)
+kal_dirs <- sapply(sample_id, function(id) file.path(base_dir, id, "kallisto"))
+kal_res <- lapply(sample_fnames, read_kallisto_h5, TRUE)
+```
+
+The next step is to load an auxillary table that describes the experimental design and the relationship between the kallisto directories and the samples:
+```
+s2c <- read.table("../path_to_metadata/hiseq_info.txt", header = TRUE)
+s2c <- select(s2c, sample = run_accession,
+  condition)
+```
+
+The next step is to build a "sleuth object". This first step is to load the kallisto processed data (abundance estimates, boostraps, etc.) into the object:
+
+```
+so <- sleuth_prep(kal_dirs, names(kal_dirs), s2c, ~ condition)
+```
+
+Then the parameters for the __sleuth__ response error measurement model are estimated from the data:
+
+```
+so <- sleuth_fit(so)
+``` 
+
+Next the differential analysis (testing) is performed with
+
+```
+so <- sleuth_test(so, which_beta = 'conditionscramble')
+```
+
+At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the __kallisto__ estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. 
+
+To view the analysis type
+```
+sleuth_results(so, 'conditionscramble') %>% head
+sleuth_interact(so)
 ```
 
 

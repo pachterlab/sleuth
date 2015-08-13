@@ -217,11 +217,46 @@ biocLite(&quot;rhdf5&quot;)
 <li><a href="http://www.nature.com/nbt/journal/v31/n1/full/nbt.2450.html">Differential analysis of gene regulation at transcript resolution with RNA-seq</a> by Cole Trapnell, David G Henderickson, Martin Savageau, Loyal Goff, John L Rinn and L Pachter, Nature Biotechnology <strong>31</strong>, 46&ndash;53 (2013).</li>
 </ul>
 
-<p>The human fibroblast RNA-Seq data for the paper is available on GEO at accession <a href="http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704">GSE37704</a>. To analyze the data, first download the raw reads, install <strong>kallisto</strong> and then quantify the data with boostraps as described here. This step can be skipped for the purposes of the vignette, by downloading the <strong>kallisto</strong> processsed data directly from <a href="http://bio.math.berkeley.edu/sleuth/cuffdiff2/">here</a>.</p>
+<p>The human fibroblast RNA-Seq data for the paper is available on GEO at accession <a href="http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704">GSE37704</a>. The samples to be analyzed are the six samples LFB<em>scramble_hiseq_repA,LFB_scramble_hiseq_repB,LFB_scramble_hiseq_repC,LFB_HOXA1KD_hiseq_repA,LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions that will be compared with __sleuth</em>_.</p>
 
-<p>The first step in a <strong>sleuth</strong> analysis is to load the data into R. Begin by typing</p>
+<p>To analyze the data, first download the raw reads, install <strong>kallisto</strong> and then quantify the data with boostraps as described here. This step can be skipped for the purposes of the vignette, by downloading the <strong>kallisto</strong> processsed data directly from <a href="http://bio.math.berkeley.edu/sleuth/cuffdiff2/">here</a>.</p>
 
-<pre><code>first thing
+<p>The first step in a <strong>sleuth</strong> analysis is to load the data into R. Begin by specifying the path to the <strong>kallisto</strong> runs of the samples:</p>
+
+<pre><code>base_dir &lt;- &quot;../path_to_the_kallisto_runs&quot;
+sample_id &lt;- dir(base_dir)
+kal_dirs &lt;- sapply(sample_id, function(id) file.path(base_dir, id, &quot;kallisto&quot;))
+kal_res &lt;- lapply(sample_fnames, read_kallisto_h5, TRUE)
+</code></pre>
+
+<p>The next step is to load an auxillary table that describes the experimental design and the relationship between the kallisto directories and the samples:</p>
+
+<pre><code>s2c &lt;- read.table(&quot;../path_to_metadata/hiseq_info.txt&quot;, header = TRUE)
+s2c &lt;- select(s2c, sample = run_accession,
+  condition)
+</code></pre>
+
+<p>The next step is to build a &ldquo;sleuth object&rdquo;. This first step is to load the kallisto processed data (abundance estimates, boostraps, etc.) into the object:</p>
+
+<pre><code>so &lt;- sleuth_prep(kal_dirs, names(kal_dirs), s2c, ~ condition)
+</code></pre>
+
+<p>Then the parameters for the <strong>sleuth</strong> response error measurement model are estimated from the data:</p>
+
+<pre><code>so &lt;- sleuth_fit(so)
+</code></pre>
+
+<p>Next the differential analysis (testing) is performed with</p>
+
+<pre><code>so &lt;- sleuth_test(so, which_beta = &#39;conditionscramble&#39;)
+</code></pre>
+
+<p>At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the <strong>kallisto</strong> estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. </p>
+
+<p>To view the analysis type</p>
+
+<pre><code>sleuth_results(so, &#39;conditionscramble&#39;) %&gt;% head
+sleuth_interact(so)
 </code></pre>
 
 </body>
