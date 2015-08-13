@@ -9,10 +9,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# Introduction to sleuth
-
-Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter
-
 ## Overview
 
 __sleuth__ is a tool for the analysis and comparison of multiple related RNA-Seq experiments. Key features include:
@@ -50,17 +46,26 @@ __sleuth__ has been designed to facilitate the exploration of RNA-Seq data by ut
 
 To install this package, start R and first install rhdf5 by typing: 
 
-```
+```{r eval=FALSE}
 source("http://bioconductor.org/biocLite.R")
 biocLite("rhdf5")
 ```
 
-Then type 
-```
-install("~/path/to/sleuth")
+Then install devtools by typing
+
+```{r eval=FALSE}
+install.packages("devtools")
 ```
 
-to install __sleuth__ from the directory it has been downlaoded to.
+and install __sleuth__ by typing
+```{r eval=FALSE}
+devtools::install_github("pachterlab/sleuth")
+```
+
+Next load __sleuth__ with
+```{r}
+library("sleuth")
+```
 
 ## Example
 
@@ -68,41 +73,52 @@ To explain how to use __sleuth__ we provide an example based on the data in the 
 
 * [Differential analysis of gene regulation at transcript resolution with RNA-seq](http://www.nature.com/nbt/journal/v31/n1/full/nbt.2450.html)	by Cole Trapnell, David G Henderickson, Martin Savageau, Loyal Goff, John L Rinn and L Pachter, Nature Biotechnology __31__, 46--53 (2013).
 
-The human fibroblast RNA-Seq data for the paper is available on GEO at accession [GSE37704](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704). The samples to be analyzed are the six samples LFB_scramble_hiseq_repA,LFB_scramble_hiseq_repB,LFB_scramble_hiseq_repC,LFB_HOXA1KD_hiseq_repA,LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions that will be compared with __sleuth__.
+The human fibroblast RNA-Seq data for the paper is available on GEO at accession [GSE37704](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704). The samples to be analyzed are the six samples LFB_scramble_hiseq_repA,LFB_scramble_hiseq_repB,LFB_scramble_hiseq_repC,LFB_HOXA1KD_hiseq_repA,LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions that will be compared with __sleuth__. 
 
-To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described here. This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processsed data directly from [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/).
+To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described [here](pachterlab.github.io/kallisto/). This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processsed data directly by clicking [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/cuffdiff2_data_kallisto_results.zip).
 
-The first step in a __sleuth__ analysis is to load the data into R. Begin by specifying the path to the __kallisto__ runs of the samples:
-
+The first step in a __sleuth__ analysis is to load the data into R. Begin by setting your working directory, e.g. 
+```{r}
+base_dir <- "~/Downloads/cuffdiff2_data_kallisto_results"
 ```
-base_dir <- "../path_to_the_kallisto_runs"
-sample_id <- dir(base_dir)
-kal_dirs <- sapply(sample_id, function(id) file.path(base_dir, id, "kallisto"))
-kal_res <- lapply(sample_fnames, read_kallisto_h5, TRUE)
+Next get the list of sample IDs with
+```{r}
+sample_id <- dir(file.path(base_dir,"results"))
+```
+The result can be displayed by typing 
+```{r}
+sample_id
+```
+In the box above, lines beginning with ## show the output of the command (in what follows we include the output that should appear with each command).
+
+A list of paths to the __kallisto__ results indexed by the sample IDs is collated with
+```{r}
+kal_dirs <- sapply(sample_id, function(id) file.path(base_dir, "results", id, "kallisto"))
+kal_dirs
 ```
 
 The next step is to load an auxillary table that describes the experimental design and the relationship between the kallisto directories and the samples:
-```
-s2c <- read.table("../path_to_metadata/hiseq_info.txt", header = TRUE)
-s2c <- select(s2c, sample = run_accession,
-  condition)
+```{r}
+s2c <- read.table(file.path(base_dir,"hiseq_info.txt"), header = TRUE, stringsAsFactors=FALSE)
+s2c <- dplyr::select(s2c, sample = run_accession, condition)
+s2c
 ```
 
-The next step is to build a "sleuth object". This first step is to load the kallisto processed data (abundance estimates, boostraps, etc.) into the object:
+Now we build a "sleuth object". This first step is to load the kallisto processed data (abundance estimates, boostraps, etc.) into the object:
 
-```
+```{r eval=FALSE, cache=TRUE}
 so <- sleuth_prep(kal_dirs, names(kal_dirs), s2c, ~ condition)
 ```
 
 Then the parameters for the __sleuth__ response error measurement model are estimated from the data:
 
-```
+```{r eval=FALSE, cache=TRUE}
 so <- sleuth_fit(so)
 ``` 
 
 Next the differential analysis (testing) is performed with
 
-```
+```{r eval=FALSE, cache=TRUE}
 so <- sleuth_test(so, which_beta = 'conditionscramble')
 ```
 
