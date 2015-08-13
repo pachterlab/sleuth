@@ -187,16 +187,37 @@ sleuth_interact <- function(obj, ...) {
     colnames(obj$sample_to_covariates),
     'sample')
   samp_names <- obj$sample_to_covariates[['sample']]
+  poss_models <- names(models(obj))
+  cat('these are the samp names:', samp_names, '\n')
 
   p_layout <- navbarPage(
     'sleuth',
+
+    tabPanel('differential analysis',
+      fluidRow(
+        column(1,
+          numericInput('max_fdr', label = 'Fdr cutoff:', value = 0.10,
+            min = 0, max = 1, step = 0.01)),
+        column(3,
+          selectInput('which_model', label = 'fit: ',
+            choices = poss_models,
+            selected = poss_models[1])
+          ),
+        column(2,
+          uiOutput('which_beta_ctrl')
+            ),
+        column(1,
+          numericInput('ma_alpha', label = 'point alpha:', value = 0.2,
+            min = 0, max = 1, step = 0.01))
+        ),
+      plotOutput('ma')),
 
     tabPanel('analysis',
       fluidRow(
         column(3,
           selectInput('sample_x', label = 'x-axis: ',
             choices = samp_names,
-            selected = 1)
+            selected = samp_names[1])
           ),
         column(3,
           selectInput('sample_y', label = 'y-axis: ',
@@ -208,7 +229,7 @@ sleuth_interact <- function(obj, ...) {
             value = 'log')),
         column(1,
           numericInput('scatter_alpha', label = 'point alpha:', value = 0.2,
-            min = 0, max = 1))
+            min = 0, max = 1, step = 0.01))
         ),
       plotOutput('scatter')),
 
@@ -269,6 +290,23 @@ sleuth_interact <- function(obj, ...) {
     output$mv_plt <- renderPlot({
       plot_mean_var(obj)
     })
+
+    output$which_beta_ctrl <- renderUI({
+      cat('hi: ', input$which_model, '\n')
+      poss_tests <- tests(models(obj)[[input$which_model]])
+      print(poss_tests)
+      selectInput('which_beta', 'beta: ', choices = poss_tests)
+    })
+
+    output$ma <- renderPlot({
+      cat('which_beta: ', input$which_beta, '\n')
+      val <- input$which_beta
+      if ( is.null(val) ) {
+        poss_tests <- tests(models(obj)[[input$which_model]])
+        val <- poss_tests[1]
+      }
+      plot_ma(obj, val, input$which_model, sig_level = input$max_fdr)
+    })
   }
 
   shinyApp(ui = p_layout, server = server_fun)
@@ -296,7 +334,7 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   stopifnot( is(obj, 'sleuth') )
 
   res <- sleuth_results(obj, which_beta, which_model)
-  res <- dplyr::mutate(res, significant = ifelse( qval < 0.10, TRUE, FALSE ))
+  res <- dplyr::mutate(res, significant = ifelse( qval < sig_level, TRUE, FALSE ))
 
   p <- ggplot(res, aes(mean_obs, b))
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
