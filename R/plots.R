@@ -109,8 +109,14 @@ plot_pca <- function(obj,
 #' @param point_alpha the alpha on the points
 #' @param xy_line if TRUE, plot the xy_line
 #' @param xy_line_color a string denoting the color for the xy line
+<<<<<<< HEAD
 #' @param xtrans a \code{function} denoting the transformation to perform on the x axis
 #' @param ytrans same as xtrans for the y-axis
+=======
+#' @param trans a string pointing to a function to use for the transformation.
+#' This function must exist in the global namespace. This means you should be
+#' able to call \code{eval('myfun')} and get a function back.
+>>>>>>> master
 #' @param xlim a numeric vector of length two denoting the x limits
 #' @param ylim same as xlim but for the y-axis
 #' @return a ggplot object for the scatterplot
@@ -122,8 +128,12 @@ plot_scatter <- function(obj,
   point_alpha = 0.2,
   xy_line = TRUE,
   xy_line_color = 'red',
+<<<<<<< HEAD
   xtrans = log,
   ytrans = log,
+=======
+  trans = 'log',
+>>>>>>> master
   xlim = NULL,
   ylim = NULL) {
 
@@ -133,6 +143,7 @@ plot_scatter <- function(obj,
 
   abund <- dplyr::mutate(abund, target_id = rownames(abund))
 
+<<<<<<< HEAD
   if (!is.null(xtrans)) {
     fx <- deparse(substitute(xtrans))
     sample_x <- paste0( fx, '( ', sample_x)
@@ -140,6 +151,11 @@ plot_scatter <- function(obj,
   if (!is.null(ytrans)) {
     fy <- deparse(substitute(ytrans))
     sample_y <- paste0( fy, '( ', sample_y)
+=======
+  if (!is.null(trans)) {
+    sample_x <- paste0( trans, '( ', sample_x)
+    sample_y <- paste0( trans, '( ', sample_y)
+>>>>>>> master
   }
 
   if ( offset != 0 ) {
@@ -148,11 +164,16 @@ plot_scatter <- function(obj,
     sample_y <- paste0(sample_y, ' + ', off)
   }
 
+<<<<<<< HEAD
   if (!is.null(xtrans)) {
     sample_x <- paste0(sample_x, ' )')
   }
 
   if (!is.null(ytrans)) {
+=======
+  if (!is.null(trans)) {
+    sample_x <- paste0(sample_x, ' )')
+>>>>>>> master
     sample_y <- paste0(sample_y, ' )')
   }
 
@@ -193,6 +214,7 @@ sleuth_interact <- function(obj, ...) {
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
     'sample')
+<<<<<<< HEAD
 
   p_layout <- navbarPage(
     'sleuth',
@@ -200,6 +222,58 @@ sleuth_interact <- function(obj, ...) {
       plotOutput('scatter')),
     tabPanel('diagnostics',
       plotOutput('mv_plt')),
+=======
+  samp_names <- obj$sample_to_covariates[['sample']]
+  poss_models <- names(models(obj))
+  cat('these are the samp names:', samp_names, '\n')
+
+  p_layout <- navbarPage(
+    'sleuth',
+
+    tabPanel('differential analysis',
+      fluidRow(
+        column(1,
+          numericInput('max_fdr', label = 'Fdr cutoff:', value = 0.10,
+            min = 0, max = 1, step = 0.01)),
+        column(3,
+          selectInput('which_model', label = 'fit: ',
+            choices = poss_models,
+            selected = poss_models[1])
+          ),
+        column(2,
+          uiOutput('which_beta_ctrl')
+            ),
+        column(1,
+          numericInput('ma_alpha', label = 'point alpha:', value = 0.2,
+            min = 0, max = 1, step = 0.01))
+        ),
+      plotOutput('ma')),
+
+    tabPanel('analysis',
+      fluidRow(
+        column(3,
+          selectInput('sample_x', label = 'x-axis: ',
+            choices = samp_names,
+            selected = samp_names[1])
+          ),
+        column(3,
+          selectInput('sample_y', label = 'y-axis: ',
+            choices = samp_names,
+            selected = samp_names[2])
+          ),
+        column(1,
+          textInput('trans', label = 'transformation: ',
+            value = 'log')),
+        column(1,
+          numericInput('scatter_alpha', label = 'point alpha:', value = 0.2,
+            min = 0, max = 1, step = 0.01))
+        ),
+      plotOutput('scatter')),
+
+    tabPanel('diagnostics',
+      plotOutput('mv_plt')),
+
+>>>>>>> master
     tabPanel('maps',
       fluidRow(
         column(1,
@@ -231,7 +305,12 @@ sleuth_interact <- function(obj, ...) {
   server_fun <- function(input, output) {
 
     output$scatter <- renderPlot({
+<<<<<<< HEAD
       plot_scatter(obj)
+=======
+      plot_scatter(obj, input$sample_x, input$sample_y,
+        trans = input$trans, point_alpha = input$scatter_alpha)
+>>>>>>> master
     })
 
     output$pca_plt <- renderPlot({
@@ -253,11 +332,67 @@ sleuth_interact <- function(obj, ...) {
     output$mv_plt <- renderPlot({
       plot_mean_var(obj)
     })
+<<<<<<< HEAD
+=======
+
+    output$which_beta_ctrl <- renderUI({
+      cat('hi: ', input$which_model, '\n')
+      poss_tests <- tests(models(obj)[[input$which_model]])
+      print(poss_tests)
+      selectInput('which_beta', 'beta: ', choices = poss_tests)
+    })
+
+    output$ma <- renderPlot({
+      cat('which_beta: ', input$which_beta, '\n')
+      val <- input$which_beta
+      if ( is.null(val) ) {
+        poss_tests <- tests(models(obj)[[input$which_model]])
+        val <- poss_tests[1]
+      }
+      plot_ma(obj, val, input$which_model, sig_level = input$max_fdr)
+    })
+>>>>>>> master
   }
 
   shinyApp(ui = p_layout, server = server_fun)
 }
 
+<<<<<<< HEAD
+=======
+#' MA plot
+#'
+#' Make a 'MA plot' for a given test. MA plots have the expression mean on the
+#' x-axis and fold change on the y-axis.
+#' @param obj a \code{sleuth} object
+
+#' @param which_beta a character string denoting which beta to use for
+#' highlighting the transcript
+
+#' @param which_model a character string denoting which model to use for the
+#' test
+#' @param point_alpha the alpha for the points
+#' @return a \code{ggplot2} object
+#' @export
+plot_ma <- function(obj, which_beta, which_model = 'full',
+  sig_level = 0.10,
+  point_alpha = 0.2,
+  sig_color = 'red'
+  ) {
+  stopifnot( is(obj, 'sleuth') )
+
+  res <- sleuth_results(obj, which_beta, which_model)
+  res <- dplyr::mutate(res, significant = ifelse( qval < sig_level, TRUE, FALSE ))
+
+  p <- ggplot(res, aes(mean_obs, b))
+  p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+  p <- p + scale_colour_manual(values = c('black', sig_color))
+  p <- p + xlab('mean( log( counts + 0.5 ) )')
+  p <- p + ylab(paste0('beta: ', which_beta))
+
+  p
+}
+
+>>>>>>> master
 #' Plot bootstrap summary
 #'
 #' Get a d

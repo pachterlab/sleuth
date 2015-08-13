@@ -36,11 +36,23 @@ models.sleuth <- function(obj) {
     models(obj$fits[[x]])
   }
 
-  invisible(obj)
+  invisible(obj$fits)
 }
 
+#' @export
 models.sleuth_model <- function(obj) {
   print(obj)
+}
+
+
+#' @export
+tests <- function(obj) {
+  UseMethod('tests')
+}
+
+#' @export
+tests.sleuth_model <- function(obj) {
+  names(obj$wald)
 }
 
 #' Extract Wald test results from a sleuth object

@@ -81,6 +81,7 @@ sleuth_prep <- function(
   ##############################
 
   msg('Reading in kallisto results')
+  sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
   nsamp <- 0
   # append sample column to data
@@ -109,7 +110,8 @@ sleuth_prep <- function(
     msg("Normalizing 'tpm'")
 
     tpm_spread <- spread_abundance_by(obs_raw, "tpm")
-    tpm_sf <- DESeq2::estimateSizeFactorsForMatrix(tpm_spread)
+    #tpm_sf <- DESeq2::estimateSizeFactorsForMatrix(tpm_spread)
+    tpm_sf <- norm_factors(tpm_spread)
     tpm_norm <- t(t(tpm_spread) / tpm_sf) %>%
       as.data.frame(stringsAsFactors = FALSE)
     tpm_norm$target_id <- rownames(tpm_norm)
@@ -132,7 +134,8 @@ sleuth_prep <- function(
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter.'))
-    est_counts_sf <- DESeq2::estimateSizeFactorsForMatrix(est_counts_spread[filter_bool,])
+    #est_counts_sf <- DESeq2::estimateSizeFactorsForMatrix(est_counts_spread[filter_bool,])
+    est_counts_sf <- norm_factors(est_counts_spread[filter_bool,])
 
     filter_df <- adf(target_id = names(filter_true))
 
@@ -166,6 +169,24 @@ sleuth_prep <- function(
   class(ret) <- 'sleuth'
 
   ret
+}
+
+#' Normalization factors
+#'
+#' More or less the DESeq size factors
+#'
+#' @param mat a matrix of estimated counts
+#' @return a vector of length \code{ncol(mat)} with a sequencing depth factor
+#' for each sample
+#' @export
+norm_factors <- function(mat) {
+  nz <- apply(mat, 1, function(row) !any(round(row) == 0))
+  mat_nz <- mat[nz,]
+  p <- ncol(mat)
+  geo_means <- exp(apply(mat_nz, 1, function(row) (1/p) * sum(log(row)) ))
+  s <- sweep(mat_nz, 1, geo_means, `/`)
+
+  apply(s, 2, median)
 }
 
 #' Summarize many bootstrap objects
