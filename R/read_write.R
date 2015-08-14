@@ -110,7 +110,7 @@ print.sleuth <- function(obj) {
 }
 
 
-#' @export
+# @export
 kv_vec_to_df <- function(x, cols = c("gene_id", "transcript_id")) {
   stopifnot(length(x) %% 2 == 0)
 
@@ -126,7 +126,7 @@ kv_vec_to_df <- function(x, cols = c("gene_id", "transcript_id")) {
   res[cols]
 }
 
-#' @export
+# @export
 gtf_attributes_to_gene_trans <- function(gtf_attr) {
   stopifnot(is(gtf_attr, "character"))
 
@@ -134,7 +134,7 @@ gtf_attributes_to_gene_trans <- function(gtf_attr) {
     rbind_all()
 }
 
-#' @export
+# @export
 gtf_gene_names <- function(gtf_attr) {
   stopifnot(is(gtf_attr, "character"))
   all_attr <- strsplit(gtf_attr, " ")
@@ -165,7 +165,7 @@ gtf_gene_names <- function(gtf_attr) {
   data.frame(gene_id = gene_id, transcript_id = trans_id)
 }
 
-#' @export
+# @export
 read_gtf <- function(fname) {
   gtf <- data.table::fread(fname, sep = "\t", header = FALSE,
     data.table = FALSE)
@@ -179,7 +179,7 @@ read_gtf <- function(fname) {
   gtf
 }
 
-#' @export
+# @export
 trans_to_genes_from_gtf <- function(fname) {
   trans <- rtracklayer::import(fname)
   trans <- data.frame(GenomicRanges::mcols(trans), stringsAsFactors = FALSE)
@@ -189,14 +189,14 @@ trans_to_genes_from_gtf <- function(fname) {
   trans
 }
 
-#' Write a kallisto object to HDF5
-#'
-#' Write a kallisto object to HDF5.
-#'
-#' @param kal the kallisto object to write out
-#' @param fname the file name to write out to
-#' @return the kallisto object \code{kal} invisibly.
-#' @export
+# Write a kallisto object to HDF5
+#
+# Write a kallisto object to HDF5.
+#
+# @param kal the kallisto object to write out
+# @param fname the file name to write out to
+# @return the kallisto object \code{kal} invisibly.
+# @export
 write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = TRUE, compression = 6L) {
   stopifnot( is(kal, "kallisto") )
   stopifnot( is(fname, "character") )
