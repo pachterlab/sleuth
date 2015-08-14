@@ -19,10 +19,10 @@ group: navigation
     a major version is released.
 
 - __sleuth__ is spiffy but is it as accurate as other differential expression tools?
-  - Yes. __sleuth__ takes advantage of the boostraps of kallisto, thereby effectively leveraging technical replicates in the determination of differential expression. In our tests on both real and simulated data we find that __sleuth__ is _more_ accurate than currently popular differential expression tools such as Cuffdiff2 and DESeq2. 
+  - Yes. __sleuth__ takes advantage of the boostraps of kallisto, thereby effectively leveraging technical replicates in the determination of differential expression. In our tests on both real and simulated data we find that __sleuth__ is _more_ accurate than currently popular differential expression tools such as Cuffdiff2, DESeq2 and edgeR.
 
 - Can __sleuth__  be used for quantifying abundances of transcripts or genes from RNA-Seq data?
-  - No. __sleuth__ can be used _after_ transcript have been quantified using kallisto.
+  - No. __sleuth__ is used _after_ transcripts have been quantified using [__kallisto__](http://pachterlab.github.io/kallisto/).
 
 - Is __sleuth__ usable with both single-end and paired-end reads?
   - Yes.
@@ -34,11 +34,11 @@ group: navigation
   - Yes. However there are unique challenges in single-cell analysis that are not currently addressed by __sleuth__ (but will be in the near future).
 
 - I've already mapped all my reads and counted the number of alignments to genes. Can I use those mappings with __sleuth__?
-  - No. The mappings are not relevant and not needed for __sleuth__.
+  - No. The mappings are not relevant and therefore cannot be used with __sleuth__.
 
 
-- Are you distributing for use with __sleuth__?
-  - No. __sleuth__ relies on the transcriptome used to quantify the RNA-Seq data being analyzed.
+- Are you distributing transcriptomes for use with __sleuth__?
+  - No. This is unnecessary because __sleuth__ obtains transcript names from the kallisto quantification output. 
 
 - My RNA-Seq was prepared with a stranded library. Is there a special option I need to use with sleuth?
   - No.
