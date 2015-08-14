@@ -28,7 +28,7 @@ where $x_{t,i}$ is an indicator variable describing the condition, $\beta_{t,0}$
 
 $$ d_{t,i} = y_{t,i} + \zeta_{t,i} $$
 
-where $\zeta_{t,i}$ represents technical "noise", i.e. uncertainty in the measurement due to effects other than biological variability. The __sleuth__ model incorporates the assumptions that the expectation $E(\zeta_{t,i}|y_{t,i}) = 0$, that $E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}$  and that the response error is _additive_, i.e. the variance $V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2$ where $\sigma_t^2 = V(\epsilon_{t,i})$ and $\sigma_t^2 = V(\zeta_{t,i}|y_{t,i})$. __sleuth__ makes use of the boostraps from __kallisto__ to estimate the $\tau_t^2$, and the $\sigma_t^2$ are estimated via a shrinkage procedure similar to that used in [Limma Voom](http://www.genomebiology.com/2014/15/2/R29).
+where $\zeta_{t,i}$ represents technical "noise", i.e. uncertainty in the measurement due to effects other than biological variability. The __sleuth__ model incorporates the assumptions that the expectation $E(\zeta_{t,i}|y_{t,i}) = 0$, that $E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}$  and that the response error is _additive_, i.e. the variance $V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2$ where $\sigma_t^2 = V(\epsilon_{t,i})$ and $\sigma_t^2 = V(\zeta_{t,i}|y_{t,i})$. __sleuth__ makes use of the boostraps from __kallisto__ to estimate the $\tau_t^2$, and after subtracting the estimated technical variance the $\sigma_t^2$ are estimated via a shrinkage procedure similar to that used in [Limma Voom](http://www.genomebiology.com/2014/15/2/R29).
 
 More generally, __sleuth__ can be used to analyze multiple conditions organized in complicated experimental designs. In the general case the model is given by
 
@@ -44,7 +44,7 @@ __sleuth__ has been designed to facilitate the exploration of RNA-Seq data by ut
 
 ## Installation
 
-To install this package, start R and first install rhdf5 by typing: 
+To install __sleuth__ start [R](https://www.r-project.org) and first install rhdf5 by typing: 
 
 ```{r eval=FALSE}
 source("http://bioconductor.org/biocLite.R")
@@ -69,7 +69,7 @@ library("sleuth")
 
 ## Example
 
-To explain how to use __sleuth__ we provide an example based on the data in the "Cuffdiff2" paper:
+To explain how to use __sleuth__ we provide an example based on the data in the "Cuffdiff2 paper":
 
 * [Differential analysis of gene regulation at transcript resolution with RNA-seq](http://www.nature.com/nbt/journal/v31/n1/full/nbt.2450.html)	by Cole Trapnell, David G Henderickson, Martin Savageau, Loyal Goff, John L Rinn and L Pachter, Nature Biotechnology __31__, 46--53 (2013).
 
@@ -104,19 +104,21 @@ s2c <- dplyr::select(s2c, sample = run_accession, condition)
 s2c
 ```
 
-Now we build a "sleuth object". This first step is to load the kallisto processed data (abundance estimates, boostraps, etc.) into the object:
+The next stage is to build a "sleuth object". This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the __sleuth__ response error measurement model and (3) perform differential analyis (testing). On a laptop the three steps should take about 2 minutes altogether.
+
+First type
 
 ```{r eval=TRUE}
 so <- sleuth_prep(kal_dirs, names(kal_dirs), s2c, ~ condition)
 ```
 
-Then the parameters for the __sleuth__ response error measurement model are estimated from the data:
+then
 
 ```{r eval=TRUE}
 so <- sleuth_fit(so)
 ``` 
 
-Next the differential analysis (testing) is performed with
+and finally 
 
 ```{r eval=TRUE}
 so <- sleuth_test(so, which_beta = 'conditionscramble')
@@ -124,13 +126,18 @@ so <- sleuth_test(so, which_beta = 'conditionscramble')
 
 At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the __kallisto__ estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. 
 
-To view the analysis type
-```{r}
-results_table <- sleuth_results(so, 'conditionscramble') 
-```
+The best way to view the results is to generate the Shiny webpage that allows for exploratory data analysis:
 
 ```
 sleuth_interact(so)
 ```
+
+To generate a table of results type
+```{r}
+results_table <- sleuth_results(so, 'conditionscramble') 
+```
+
+
+
 
 
