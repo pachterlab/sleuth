@@ -16,7 +16,7 @@ plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
 
 \item{sample_y}{same as \code{sample_x} but for the y-axis}
 
-\item{offset}{a linear offset to help deal with zeroes if transforming}
+\item{offset}{a linear offset to help deal with zeroes if transforming the data}
 
 \item{point_alpha}{the alpha on the points}
 
@@ -36,7 +36,7 @@ able to call \code{eval('myfun')} and get a function back.}
 a ggplot object for the scatterplot
 }
 \description{
-Make a scatter plot of two samples on eachother to assess the correlation
+Make a scatter plot of transcript abundances from two samples to assess the correlation
 between them.
 }
 

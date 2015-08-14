@@ -27,13 +27,13 @@ plot_mean_var(obj, which_model = "full", point_alpha = 0.4,
 a \code{ggplot} object
 }
 \description{
-Plot the mean-variance relationship that is modeling in \code{sleuth}. Each
-dot represents a transcript. The blue dots represent the transcripts that
-are used in the shrinkage estimation. The line represents the smooth fit.
+Plot the mean-variance relationship that for a set of samples. Each
+dot in the plot corresponds to one transcript. The blue dots represent the transcripts that
+are used in the shrinkage estimation. The curve is the smoothed fit.
 }
 \details{
-The x-axis represents the mean expression pooled across all samples. The
-y-axis represents the 'biological' variance after the technical variance has
+The x-axis values are the mean abundance estimates pooled across all samples. The
+y-axis values are the 'biological' variance, estimated after the technical variance has
 been removed.
 }
 

@@ -29,6 +29,6 @@ plot_pca(obj, pc_x = 1L, pc_y = 2L, text_labels = FALSE,
 a gpplot object
 }
 \description{
-Plot PCA for a set of RNA-Seq experiments
+Plot the principal component analysis (PCA) projections for a set of RNA-Seq experiments.
 }
 

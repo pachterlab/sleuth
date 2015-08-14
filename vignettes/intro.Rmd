@@ -75,7 +75,7 @@ To explain how to use __sleuth__ we provide an example based on the data in the 
 
 The human fibroblast RNA-Seq data for the paper is available on GEO at accession [GSE37704](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704). The samples to be analyzed are the six samples LFB_scramble_hiseq_repA,LFB_scramble_hiseq_repB,LFB_scramble_hiseq_repC,LFB_HOXA1KD_hiseq_repA,LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions that will be compared with __sleuth__. 
 
-To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described [here](pachterlab.github.io/kallisto/). This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processsed data directly by clicking [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/cuffdiff2_data_kallisto_results.zip).
+To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described [here](http://pachterlab.github.io/kallisto/starting.html). This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processsed data directly by clicking [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/cuffdiff2_data_kallisto_results.zip).
 
 The first step in a __sleuth__ analysis is to load the data into R. Begin by setting your working directory, e.g. 
 ```{r}

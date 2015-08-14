@@ -22,7 +22,7 @@ test}
 a \code{ggplot2} object
 }
 \description{
-Make a 'MA plot' for a given test. MA plots have the expression mean on the
+Make an 'MA plot' for a given test. MA plots show the mean of abundance across samples for each transcript on the
 x-axis and fold change on the y-axis.
 }
 
