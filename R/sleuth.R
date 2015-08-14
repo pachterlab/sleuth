@@ -143,10 +143,12 @@ sleuth_prep <- function(
     est_counts_norm <- tidyr::gather(est_counts_norm, sample, est_counts, -target_id)
 
     obs_norm <- est_counts_norm
+    obs_norm$target_id <- as.character(obs_norm$target_id)
 
-    obs_norm <- dplyr::left_join(obs_norm,
-      data.table::as.data.table(sample_to_covariates),
-      by = c("sample"))
+    suppressWarnings({
+      obs_norm <- dplyr::left_join(obs_norm,
+        data.table::as.data.table(sample_to_covariates),
+        by = c("sample"))})
     obs_norm <- as_df(obs_norm)
 
     msg("Normalizing bootstrap samples")
