@@ -2,16 +2,12 @@
 % Please edit documentation in R/plots.R
 \name{plot_scatter}
 \alias{plot_scatter}
-\title{Scatter plot}
+\title{Sample to sample scatter plot}
 \usage{
 plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
   sample_y = obj$sample_to_covariates$sample[2], offset = 1,
   point_alpha = 0.2, xy_line = TRUE, xy_line_color = "red",
-<<<<<<< HEAD
-  xtrans = log, ytrans = log, xlim = NULL, ylim = NULL)
-=======
   trans = "log", xlim = NULL, ylim = NULL)
->>>>>>> master
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
@@ -28,15 +24,9 @@ plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
 
 \item{xy_line_color}{a string denoting the color for the xy line}
 
-<<<<<<< HEAD
-\item{xtrans}{a \code{function} denoting the transformation to perform on the x axis}
-
-\item{ytrans}{same as xtrans for the y-axis}
-=======
 \item{trans}{a string pointing to a function to use for the transformation.
 This function must exist in the global namespace. This means you should be
 able to call \code{eval('myfun')} and get a function back.}
->>>>>>> master
 
 \item{xlim}{a numeric vector of length two denoting the x limits}
 
@@ -46,6 +36,7 @@ able to call \code{eval('myfun')} and get a function back.}
 a ggplot object for the scatterplot
 }
 \description{
-Somewhat flexible scatter plot on a sleuth object
+Make a scatter plot of two samples on eachother to assess the correlation
+between them.
 }
 
