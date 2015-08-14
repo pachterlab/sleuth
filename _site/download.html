@@ -142,7 +142,28 @@
 
 <p>The <strong>sleuth</strong> GitHub repository is <a href="http://github.com/pachterlab/sleuth">here</a>.</p>
 
-<h4 id="releases">Releases</h4>
+<h4 id="installation">Installation</h4>
+
+<p>To install <strong>sleuth</strong> start <a href="https://www.r-project.org">R</a> and first install <code>rhdf5</code> by typing:</p>
+
+<pre><code>source("http://bioconductor.org/biocLite.R")
+biocLite("rhdf5")
+</code></pre>
+
+<p>Then install devtools by typing</p>
+
+<pre><code>install.packages("devtools")
+</code></pre>
+
+<p>and install <strong>sleuth</strong> by typing</p>
+
+<pre><code>devtools::install_github("pachterlab/sleuth")
+</code></pre>
+
+<p>Next load <strong>sleuth</strong> with</p>
+
+<pre><code>library("sleuth")
+</code></pre>
 
 <h4 id="licence">Licence</h4>
 
