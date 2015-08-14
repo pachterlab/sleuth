@@ -197,14 +197,14 @@ sleuth_test <- function(obj, which_beta, which_model = 'full') {
   obj
 }
 
-##' Compute the covariance on beta under OLS
-##'
-##' Compute the covariance on beta under OLS
-##' @param sigma a numeric of either length 1 or nrow(X) defining the variance
-##' on D_i
-##' @param X the design matrix
-##' @param A inv(t(X) X) (for speedup)
-##' @return a covariance matrix on beta
+# Compute the covariance on beta under OLS
+#
+# Compute the covariance on beta under OLS
+# @param sigma a numeric of either length 1 or nrow(X) defining the variance
+# on D_i
+# @param X the design matrix
+# @param A inv(t(X) X) (for speedup)
+# @return a covariance matrix on beta
 covar_beta <- function(sigma, X, A) {
   if (length(sigma) == 1) {
     return( sigma * A )
@@ -214,14 +214,14 @@ covar_beta <- function(sigma, X, A) {
   A %*% (t(X) %*% diag(sigma) %*% X) %*% A
 }
 
-##' Measurement error model
-##'
-##' Fit the measurement error model across all samples
-##'
-##' @param obj a \code{sleuth} object
-##' @param design a design matrix
-##' @param bs_summary a list from \code{bs_sigma_summary}
-##' @return a list with a bunch of objects that are useful for shrinking
+# Measurement error model
+#
+# Fit the measurement error model across all samples
+#
+# @param obj a \code{sleuth} object
+# @param design a design matrix
+# @param bs_summary a list from \code{bs_sigma_summary}
+# @return a list with a bunch of objects that are useful for shrinking
 me_model_by_row <- function(obj, design, bs_summary) {
   stopifnot( is(obj, "sleuth") )
 
@@ -238,14 +238,14 @@ me_model_by_row <- function(obj, design, bs_summary) {
   models
 }
 
-##' non-equal var
-##'
-##' word
-##'
-##' @param obj a sleuth object
-##' @param design a design matrix
-##' @param samp_bs_summary the sample boostrap summary computed by sleuth_summarize_bootstrap_col
-##' @return a list with a bunch of objects used for shrinkage :)
+# non-equal var
+#
+# word
+#
+# @param obj a sleuth object
+# @param design a design matrix
+# @param samp_bs_summary the sample boostrap summary computed by sleuth_summarize_bootstrap_col
+# @return a list with a bunch of objects used for shrinkage :)
 me_heteroscedastic_by_row <- function(obj, design, samp_bs_summary, obs_counts) {
   stopifnot( is(obj, "sleuth") )
 
