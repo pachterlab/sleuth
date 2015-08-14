@@ -1,11 +1,10 @@
-#' Bootstrap to matrix
-#'
-#' Takes a \code{kallisto} object and converts the bootstrap results into
-#' a proper \code{matrix}
-#'
-#' @param kal a kallisto object with non-null member \code{bootstrap}
-#' @return a matrix with rownames equal to target_id
-#' @export
+# Bootstrap to matrix
+#
+# Takes a \code{kallisto} object and converts the bootstrap results into
+# a proper \code{matrix}
+#
+# @param kal a kallisto object with non-null member \code{bootstrap}
+# @return a matrix with rownames equal to target_id
 bootstrap2mat <- function(kal, column = "tpm")
 {
     stopifnot(is(kal, "kallisto"))
@@ -25,14 +24,14 @@ bootstrap2mat <- function(kal, column = "tpm")
 }
 
 
-#' Convert kallisto bootstraps into a molten data.frame
-#'
-#' Melt it!
-#'
-#' @param kal a kallisto object
-#' @param column the column to pull out of the kallisto results (default = "tpm")
-#' @return a molten data.frame with columns "target_id", "sample" and the selected variable
-#' @export
+# Convert kallisto bootstraps into a molten data.frame
+#
+# Melt it!
+#
+# @param kal a kallisto object
+# @param column the column to pull out of the kallisto results (default = "tpm")
+# @return a molten data.frame with columns "target_id", "sample" and the selected variable
+# @export
 melt_bootstrap <- function(kal, column = "tpm", transform = identity)
 {
     stopifnot(is(kal, "kallisto"))
@@ -50,18 +49,18 @@ melt_bootstrap <- function(kal, column = "tpm", transform = identity)
       mutate(sample = as.factor(sample))
 }
 
-#' Aggregate bootstrap samples
-#'
-#' A faster way to aggregate bootstrap samples based off of some mapping.
-#'
-#' @param kal a \code{kallisto} object
-#' @param mapping a data.frame containing the mapping with columns
-#' \code{target_id} and a column specified in 'split_by'
-#' @param split_by a character string of length one denoting the column in \code{mapping} to split by (such as \code{gene_id})
-#' @param aggregate_fun a function to aggregate
-#' @return a data.frame nrow(mapping) rows that has been aggregated
-#' groupwise using \code{aggregate_fun}
-#' @export
+# Aggregate bootstrap samples
+#
+# A faster way to aggregate bootstrap samples based off of some mapping.
+#
+# @param kal a \code{kallisto} object
+# @param mapping a data.frame containing the mapping with columns
+# \code{target_id} and a column specified in 'split_by'
+# @param split_by a character string of length one denoting the column in \code{mapping} to split by (such as \code{gene_id})
+# @param aggregate_fun a function to aggregate
+# @return a data.frame nrow(mapping) rows that has been aggregated
+# groupwise using \code{aggregate_fun}
+# @export
 aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
   column = "tpm", aggregate_fun = sum) {
 
@@ -102,14 +101,14 @@ aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
   as.data.frame(m_bs)
 }
 
-#' Summarize bootstrap values
-#'
-#' Compute the mean, sd, var, and coefficient of variation from a kallisto
-#' bootstrap
-#' @param kal a kallisto object with a non-null bootstrap list
-#' @param column the column to select (rho, tpm, est_counts
-#' @return a summarized data.frame
-#' @export
+# Summarize bootstrap values
+#
+# Compute the mean, sd, var, and coefficient of variation from a kallisto
+# bootstrap
+# @param kal a kallisto object with a non-null bootstrap list
+# @param column the column to select (rho, tpm, est_counts
+# @return a summarized data.frame
+# @export
 summarize_bootstrap <- function(kal, column = "tpm", transform = identity)
 {
     stopifnot(is(kal, "kallisto"))
@@ -138,14 +137,14 @@ summarize_bootstrap <- function(kal, column = "tpm", transform = identity)
     bs
 }
 
-#' Normalize bootstrap samples
-#'
-#' Normalize by dividing by the "size factor" for each TPM and estimated counts
-#'
-#' @param kal a kallisto object
-#' @param tpm_size_factor the size factor (numeric length 1)
-#' @param est_counts_size_factor the size factor (numeric length 1)
-#' @export
+# Normalize bootstrap samples
+#
+# Normalize by dividing by the "size factor" for each TPM and estimated counts
+#
+# @param kal a kallisto object
+# @param tpm_size_factor the size factor (numeric length 1)
+# @param est_counts_size_factor the size factor (numeric length 1)
+# @export
 normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
   stopifnot(is(kal, "kallisto"))
 
@@ -175,12 +174,12 @@ normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
 }
 
 
-#' Sample bootstraps
-#'
-#' From a sleuth object, create experiments by randomly sampling bootstraps from each kallisto object
-#' @param obj a \code{kallisto} object
-#' @param n_samples the number of samples to genenerate
-#' @export
+# Sample bootstraps
+#
+# From a sleuth object, create experiments by randomly sampling bootstraps from each kallisto object
+# @param obj a \code{kallisto} object
+# @param n_samples the number of samples to genenerate
+# @export
 sample_bootstrap <- function(obj, n_samples = 100L) {
   stopifnot( is(obj, "sleuth") )
 
@@ -223,19 +222,19 @@ sample_bootstrap <- function(obj, n_samples = 100L) {
   sample_mat
 }
 
-#' @export
+# @export
 dcast_bootstrap <- function(obj, ...) {
   UseMethod("dcast_bootstrap")
 }
 
-#' @export
+# @export
 dcast_bootstrap.sleuth <- function(obj, units, nsamples = NULL) {
   bs <- lapply(obj[["kal"]], dcast_bootstrap, units, nsamples)
 
   do.call(cbind, bs)
 }
 
-#' @export
+# @export
 dcast_bootstrap.kallisto <- function(obj, units, nsamples = NULL) {
   if ( !(units %in% c("est_counts", "tpm")) ) {
     stop(paste0("'", substitute(units),
