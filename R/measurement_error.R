@@ -112,71 +112,6 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   obj
 }
 
-#' Measurement error model with equal variances
-#'
-#' Fit the measurement error model with equal variances across samples and
-#' noise
-#'
-#' @param obj a \code{sleuth} object
-#' @param pass_filt a data.frame with columns \code{target_id} and
-#' \code{count_filt}. \code{count_filt} is a logical where a target labeled as
-#' FALSE does not pass the filter and thus will not be used in testing
-#' @param xform a function to transform a matrix
-#' @return a \code{data.frame}
-#' @export
-me_equal_var <- function(obj, pass_filt, xform = function(x) log(x + 0.5)) {
-  cat("Summarizing bootstraps\n")
-  bs_summary <- bs_sigma_summary(obj, xform)
-
-  # filter things first
-  filt_names <- dplyr::filter(pass_filt, count_filt)[['target_id']]
-
-  bs_summary$obs_counts <- bs_summary$obs_counts[filt_names,]
-  bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[filt_names]
-
-  cat("Fitting ME models\n")
-  mes <- me_model_by_row(obj, obj$design_matrix, bs_summary)
-  tid <- names(mes)
-
-  mes_df <- dplyr::bind_rows(lapply(mes,
-    function(x) {
-      data.frame(rss = x$rss, sigma_sq = x$sigma_sq, sigma_q_sq = x$sigma_q_sq,
-        mean_obs = x$mean_obs, var_obs = x$var_obs)
-    }))
-
-  mes_df$target_id <- tid
-  rm(tid)
-
-  mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
-
-  cat("Shrinkage estimation\n")
-  swg <- sliding_window_grouping(mes_df, "mean_obs", "sigma_sq_pmax",
-    ignore_zeroes = TRUE)
-
-  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, "iqr")
-  l_smooth <- dplyr::select(
-    dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
-    -shrink)
-
-  l_smooth <- mutate(l_smooth,
-    smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
-
-  X <- obj$design_matrix
-  A <- solve( t(X) %*% X )
-
-  cat("Computing var(beta)\n")
-  beta_covars <- lapply(1:nrow(l_smooth),
-    function(i) {
-      row <- l_smooth[i,]
-      with(row,
-        covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
-        )
-    })
-  names(beta_covars) <- l_smooth$target_id
-
-  list(mes = mes, summary = l_smooth, beta_covars = beta_covars)
-}
-
 model_exists <- function(obj, which_model) {
   stopifnot( is(obj, 'sleuth') )
   stopifnot( is(which_model, 'character') )
@@ -262,14 +197,14 @@ sleuth_test <- function(obj, which_beta, which_model = 'full') {
   obj
 }
 
-#' Compute the covariance on beta under OLS
-#'
-#' Compute the covariance on beta under OLS
-#' @param sigma a numeric of either length 1 or nrow(X) defining the variance
-#' on D_i
-#' @param X the design matrix
-#' @param A inv(t(X) X) (for speedup)
-#' @return a covariance matrix on beta
+##' Compute the covariance on beta under OLS
+##'
+##' Compute the covariance on beta under OLS
+##' @param sigma a numeric of either length 1 or nrow(X) defining the variance
+##' on D_i
+##' @param X the design matrix
+##' @param A inv(t(X) X) (for speedup)
+##' @return a covariance matrix on beta
 covar_beta <- function(sigma, X, A) {
   if (length(sigma) == 1) {
     return( sigma * A )
@@ -279,15 +214,14 @@ covar_beta <- function(sigma, X, A) {
   A %*% (t(X) %*% diag(sigma) %*% X) %*% A
 }
 
-#' Measurement error model
-#'
-#' Fit the measurement error model across all samples
-#'
-#' @param obj a \code{sleuth} object
-#' @param design a design matrix
-#' @param bs_summary a list from \code{bs_sigma_summary}
-#' @return a list with a bunch of objects that are useful for shrinking
-#' @export
+##' Measurement error model
+##'
+##' Fit the measurement error model across all samples
+##'
+##' @param obj a \code{sleuth} object
+##' @param design a design matrix
+##' @param bs_summary a list from \code{bs_sigma_summary}
+##' @return a list with a bunch of objects that are useful for shrinking
 me_model_by_row <- function(obj, design, bs_summary) {
   stopifnot( is(obj, "sleuth") )
 
@@ -304,15 +238,14 @@ me_model_by_row <- function(obj, design, bs_summary) {
   models
 }
 
-#' non-equal var
-#'
-#' word
-#'
-#' @param obj a sleuth object
-#' @param design a design matrix
-#' @param samp_bs_summary the sample boostrap summary computed by sleuth_summarize_bootstrap_col
-#' @return a list with a bunch of objects used for shrinkage :)
-#' @export
+##' non-equal var
+##'
+##' word
+##'
+##' @param obj a sleuth object
+##' @param design a design matrix
+##' @param samp_bs_summary the sample boostrap summary computed by sleuth_summarize_bootstrap_col
+##' @return a list with a bunch of objects used for shrinkage :)
 me_heteroscedastic_by_row <- function(obj, design, samp_bs_summary, obs_counts) {
   stopifnot( is(obj, "sleuth") )
 
@@ -424,25 +357,4 @@ me_model <- function(X, y, sigma_q_sq)
     mean_obs = mean_obs,
     var_obs = var_obs
     )
-}
-
-#' @export
-compute_t_me <- function(data, which_sigma, Sxx, n_data, adjust_se = NULL) {
-  #var_b <- (data[,which_sigma] + data[,"sigma_q_sq"]) / (n_data * Sxx)
-  var_b <- (data[,which_sigma] + data[,"sigma_q_sq"]) / (Sxx)
-  se_b <- sqrt( var_b )
-
-  s0 <- 0
-  if (!is.null(adjust_se)) {
-    s0 <- quantile(se_b, adjust_se, na.rm = TRUE)
-    #s0 <- s0 * 10
-  }
-  cat(s0, "\n")
-  cat(quantile(se_b, probs = seq(0, 1, length.out = 10), na.rm = TRUE), "\n")
-
-  data$t_value <- data$b1 / (se_b + s0)
-  data$se_b <- se_b
-  data$pval <- 2 * pt(abs(data$t_value), data$degrees_free[1], lower.tail = FALSE)
-
-  data
 }

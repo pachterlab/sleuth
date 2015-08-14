@@ -187,18 +187,18 @@ norm_factors <- function(mat) {
   apply(s, 2, median)
 }
 
-#' Summarize many bootstrap objects
-#'
-#' Summarize all the bootstrap samples from a kallisto run. The summarized
-#' values are then all put into a data.frame and stored in the \code{sleuth}
-#' object.
-#'
-#' @param obj a \code{sleuth} object
-#' @param force if \code{FALSE}, then will only compute the summary if it has
-#' not yet been set.
-#' @param verbose if \code{TRUE}, print verbosely
-#' @return a \code{kallisto} object with member \code{bootstrap_summary}
-#' updated and containing a data frame.
+##' Summarize many bootstrap objects
+##'
+##' Summarize all the bootstrap samples from a kallisto run. The summarized
+##' values are then all put into a data.frame and stored in the \code{sleuth}
+##' object.
+##'
+##' @param obj a \code{sleuth} object
+##' @param force if \code{FALSE}, then will only compute the summary if it has
+##' not yet been set.
+##' @param verbose if \code{TRUE}, print verbosely
+##' @return a \code{kallisto} object with member \code{bootstrap_summary}
+##' updated and containing a data frame.
 sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
   # TODO: make this into an S3 function 'summarize_bootstrap'
   stopifnot(is(obj, "sleuth"))
@@ -239,14 +239,14 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
   dplyr::bind_rows(res)
 }
 
-#' Spread abundance by a column
-#'
-#' Take a data.frame from a sleuth object (e.g. \code{obs_raw}) and cast it
-#' into a matrix where the rows are the target_ids and the columns are the
-#' sample ids. The values are the variable you are "spreading" on.
-#' @param abund the abundance \code{data.frame} from a \code{sleuth} object
-#' @param var a character array of length one. The variable for which to get "spread" on (e.g. "est_counts").
-#' @export
+##' Spread abundance by a column
+##'
+##' Take a data.frame from a sleuth object (e.g. \code{obs_raw}) and cast it
+##' into a matrix where the rows are the target_ids and the columns are the
+##' sample ids. The values are the variable you are "spreading" on.
+##' @param abund the abundance \code{data.frame} from a \code{sleuth} object
+##' @param var a character array of length one. The variable for which to get "spread" on (e.g. "est_counts").
+##' @export
 spread_abundance_by <- function(abund, var) {
   # var <- lazyeval::lazy(var)
   var_spread <- abund %>%
@@ -258,26 +258,6 @@ spread_abundance_by <- function(abund, var) {
   var_spread["target_id"] <- NULL
 
   as.matrix(var_spread)
-}
-
-#' @export
-obs_transcript_summary <- function(data, pool = TRUE)
-{
-  stopifnot(is(data, "sleuth"))
-
-  obs_abundance <- data$obs_abundance
-
-  if (pool) {
-    obs_abundance %>%
-      group_by(target_id) %>%
-      summarize(
-        mean_tpm = mean(tpm),
-        var_tpm = var(tpm),
-        mean_est_counts = mean(est_counts),
-        var_est_counts = var(est_counts)
-        )
-  }
-
 }
 
 #' @export
@@ -294,13 +274,14 @@ melt_bootstrap_sleuth <- function(obj) {
     }) %>% rbind_all()
 }
 
-#' observations to a matrix
-#'
-#' observations to a matrix
-#'
-#' @param obj is a sleuth object
-#' @param value_name either "est_counts" or "tpm"
-#' @return a matrix with the appropriate names
+# TODO: deprecate?
+##' observations to a matrix
+##'
+##' observations to a matrix
+##'
+##' @param obj is a sleuth object
+##' @param value_name either "est_counts" or "tpm"
+##' @return a matrix with the appropriate names
 obs_to_matrix <- function(obj, value_name) {
 
   obs_counts <- reshape2::dcast(obj$obs_norm, target_id ~ sample,
@@ -315,6 +296,7 @@ obs_to_matrix <- function(obj, value_name) {
 }
 
 
+# TODO: check if works -- currently untested
 #' Get a data.frame from all kallisto objects
 #'
 #' Build a data.frame from all kallisto objects given a column name
