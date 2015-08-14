@@ -1,6 +1,6 @@
-#' Read a kallisto object from HDF5 file
+#' Read a kallisto object from an HDF5 file
 #'
-#' Read a kallisto object from HDF5 file.
+#' Read a kallisto object from an HDF5 file.
 #'
 #' @param fname the file name for the HDF5 file
 #' @param read_bootstrap if \code{TRUE} load bootstraps, otherwise do not

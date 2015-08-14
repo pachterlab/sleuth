@@ -1,7 +1,7 @@
 #' Fit a measurement error model
 #'
 #' This function is a wrapper for fitting a measurement error model using
-#' \code{sleuth}. It performs the bootstrap variance estimation, biological
+#' \code{sleuth}. It performs the technical variance estimation from the boostraps, biological
 #' variance estimation, and shrinkage estimation.
 #'
 #' For most users, simply providing the sleuth object should be sufficient. By

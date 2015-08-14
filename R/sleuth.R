@@ -13,8 +13,8 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
 
 #' Constructor for a 'sleuth' object
 #'
-#' Conceptually, a sleuth is a pack of kallistos. A 'sleuth' object stores
-#' a pack of kallisto results, and can then intelligently operate them while
+#' A sleuth is a group of kallistos. Borrowing this terminology, a 'sleuth' object stores
+#' a group of kallisto results, and can then operate on them while
 #' accounting for covariates, sequencing depth, technical and biological
 #' variance.
 #'
