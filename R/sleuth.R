@@ -14,19 +14,19 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
 #' Constructor for a 'sleuth' object
 #'
 #' Conceptually, a sleuth is a pack of kallistos. A 'sleuth' object stores
-#' a pack of kallisto results, and can then intelligently operate them
-#' depending on conditions and sequencing depth.
+#' a pack of kallisto results, and can then intelligently operate them while
+#' accounting for covariates, sequencing depth, technical and biological
+#' variance.
 #'
 #' @param kal_dirs a character vector of length greater than one where each
 #' string points to a kallisto output directory
 #' @param sample_to_covariates is a \code{data.frame} which contains a mapping
 #' from \code{sample} (a column) to some set of experimental conditions or
-#' covariates
+#' covariates. The column \code{sample} should be in the same order as the
+#' corresponding entry in \code{kal_dirs}
 #' @param full_model is a \code{formula} which explains the full model (design)
 #' of the experiment. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}
-#' @param trans is a character string of either 'log', or 'cpm'. Currently
-#' ignored.
 #' @param filter_fun the function to use when filtering.
 #' @param ... additional arguments passed to other functions
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
@@ -36,13 +36,9 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
 #' @export
 sleuth_prep <- function(
   kal_dirs,
-  sample_names,
   sample_to_covariates,
   full_model,
-  normalize = TRUE,
-  trans = 'log',
   filter_fun = basic_filter,
-  annotation = NULL,
   ...) {
 
   ##############################
@@ -73,9 +69,9 @@ sleuth_prep <- function(
         "' must contain a column names 'sample'"))
   }
 
-  # TODO: check if paths exists and contain a HDF5 file
   # TODO: ensure all kallisto have same number of transcripts
-  # TODO: ensure transcripts are in same order -- if not, sort them
+  # TODO: ensure transcripts are in same order -- if not, report warning that
+  # kallisto index might be correct
 
   # done
   ##############################
@@ -110,7 +106,6 @@ sleuth_prep <- function(
     msg("Normalizing 'tpm'")
 
     tpm_spread <- spread_abundance_by(obs_raw, "tpm")
-    #tpm_sf <- DESeq2::estimateSizeFactorsForMatrix(tpm_spread)
     tpm_sf <- norm_factors(tpm_spread)
     tpm_norm <- t(t(tpm_spread) / tpm_sf) %>%
       as.data.frame(stringsAsFactors = FALSE)
@@ -127,6 +122,8 @@ sleuth_prep <- function(
       design_matrix = model.matrix(full_model, sample_to_covariates)
     )
 
+  # TODO: eventually factor this out
+  normalize <- TRUE
   if ( normalize ) {
     msg("Normalizing 'est_counts'")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
@@ -134,7 +131,6 @@ sleuth_prep <- function(
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter.'))
-    #est_counts_sf <- DESeq2::estimateSizeFactorsForMatrix(est_counts_spread[filter_bool,])
     est_counts_sf <- norm_factors(est_counts_spread[filter_bool,])
 
     filter_df <- adf(target_id = names(filter_true))
@@ -191,7 +187,6 @@ norm_factors <- function(mat) {
 
 #' Summarize many bootstrap objects
 #'
-
 #' Summarize all the bootstrap samples from a kallisto run. The summarized
 #' values are then all put into a data.frame and stored in the \code{sleuth}
 #' object.
@@ -202,7 +197,6 @@ norm_factors <- function(mat) {
 #' @param verbose if \code{TRUE}, print verbosely
 #' @return a \code{kallisto} object with member \code{bootstrap_summary}
 #' updated and containing a data frame.
-#' @export
 sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
   # TODO: make this into an S3 function 'summarize_bootstrap'
   stopifnot(is(obj, "sleuth"))
@@ -228,18 +222,6 @@ sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
   obj$bootstrap_summary <- s_bs
 
   obj
-}
-
-var_fit <- function(obj) {
-  stopifnot(is(obj, "sleuth"))
-  all_data <- inner_join(
-    data.table::data.table(obj$bootstrap_summary),
-    data.table::data.table(obj$obs_norm),
-    by = c("target_id", "sample", "condition")
-    ) %>%
-    as.data.frame(stringsAsFactors = FALSE)
-
-  all_data
 }
 
 sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
@@ -308,26 +290,6 @@ melt_bootstrap_sleuth <- function(obj) {
         rename(bs_sample = sample) %>%
         mutate(sample = cur_samp, condition = cur_cond)
     }) %>% rbind_all()
-}
-
-#' @export
-null_mean_var <- function(obj, transform = identity, min_reads = 1) {
-  stopifnot( is(obj, "sleuth") )
-
-  which_pass <- obj$obs_norm %>%
-    group_by(target_id) %>%
-    summarise(pass = all(est_counts > min_reads)) %>%
-    filter(pass)
-
-  obj$obs_norm %>%
-    data.table::data.table() %>%
-    inner_join(data.table::data.table(which_pass), by = c("target_id")) %>%
-    mutate(trans_counts = transform(est_counts)) %>%
-    group_by(target_id) %>%
-    summarise(
-      counts_mean = mean(trans_counts),
-      counts_var = var(trans_counts)
-      )
 }
 
 #' observations to a matrix

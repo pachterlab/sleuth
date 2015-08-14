@@ -13,12 +13,27 @@ plot_mean_var(obj, which_model = "full", point_alpha = 0.4,
 
 \item{which_model}{which fit to use}
 
-\item{point_alpha}{the alpha of the points (0, 1)}
+\item{point_alpha}{the alpha (opacity) of the points (0, 1)}
+
+\item{point_size}{the size of the points}
+
+\item{smooth_alpha}{the alpha (opacity) of the line}
+
+\item{smooth_size}{the size of the line}
+
+\item{smooth_color}{the color of the smooth line}
 }
 \value{
-a \code{ggvis} object
+a \code{ggplot} object
 }
 \description{
-Plot the mean-variance relationship using ggvis
+Plot the mean-variance relationship that is modeling in \code{sleuth}. Each
+dot represents a transcript. The blue dots represent the transcripts that
+are used in the shrinkage estimation. The line represents the smooth fit.
+}
+\details{
+The x-axis represents the mean expression pooled across all samples. The
+y-axis represents the 'biological' variance after the technical variance has
+been removed.
 }
 

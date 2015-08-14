@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{plot_scatter}
 \alias{plot_scatter}
-\title{Scatter plot}
+\title{Sample to sample scatter plot}
 \usage{
 plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
   sample_y = obj$sample_to_covariates$sample[2], offset = 1,
@@ -36,6 +36,7 @@ able to call \code{eval('myfun')} and get a function back.}
 a ggplot object for the scatterplot
 }
 \description{
-Somewhat flexible scatter plot on a sleuth object
+Make a scatter plot of two samples on eachother to assess the correlation
+between them.
 }
 

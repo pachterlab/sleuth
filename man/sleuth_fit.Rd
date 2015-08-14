@@ -22,9 +22,19 @@ a sleuth object with updated attributes
 }
 \description{
 This function is a wrapper for fitting a measurement error model using
-\code{sleuth}.
+\code{sleuth}. It performs the bootstrap variance estimation, biological
+variance estimation, and shrinkage estimation.
+}
+\details{
+For most users, simply providing the sleuth object should be sufficient. By
+default, this behavior will fit the full model initially specified and store
+it in the sleuth object under 'full'.
+
+To see which models have been fit, users will likely find the function
+\code{\link{models}} helpful.
 }
 \seealso{
+\code{\link{models}} for seeing which models have been fit,
 \code{\link{sleuth_prep}} for creating a sleuth object,
 \code{\link{sleuth_test}} to test whether a coefficient is zero
 }

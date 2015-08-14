@@ -1,7 +1,15 @@
 #' Fit a measurement error model
 #'
 #' This function is a wrapper for fitting a measurement error model using
-#' \code{sleuth}.
+#' \code{sleuth}. It performs the bootstrap variance estimation, biological
+#' variance estimation, and shrinkage estimation.
+#'
+#' For most users, simply providing the sleuth object should be sufficient. By
+#' default, this behavior will fit the full model initially specified and store
+#' it in the sleuth object under 'full'.
+#'
+#' To see which models have been fit, users will likely find the function
+#' \code{\link{models}} helpful.
 #'
 #' @param obj a \code{sleuth} object
 #' @param formula a formula specifying the design to fit
@@ -10,7 +18,8 @@
 #' @param ... additional arguments passed to \code{sliding_window_grouping} and
 #' \code{shrink_df}
 #' @return a sleuth object with updated attributes
-#' @seealso \code{\link{sleuth_prep}} for creating a sleuth object,
+#' @seealso \code{\link{models}} for seeing which models have been fit,
+#' \code{\link{sleuth_prep}} for creating a sleuth object,
 #' \code{\link{sleuth_test}} to test whether a coefficient is zero
 #' @export
 sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
@@ -38,11 +47,6 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   A <- solve( t(X) %*% X )
 
   # TODO: check if normalized. if not, normalize
-  # TODO: implement formula and fit_name
-  if ( is.null(fit_name) ) {
-    fit_name <- 'full'
-    formula <- obj$full_formula
-  }
 
   msg('Summarizing bootstraps')
   # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
