@@ -26,10 +26,13 @@ sleuth_interact <- function(obj, ...) {
     a('sleuth', href = 'http://pimentel.github.io/sleuth', style = 'color: black;'),
 
     tabPanel('summaries',
+      ####
       dataTableOutput('summary_dt')
       ),
 
     tabPanel('maps',
+
+      ####
       fluidRow(
         column(3,
           selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
@@ -62,6 +65,7 @@ sleuth_interact <- function(obj, ...) {
 
     navbarMenu('analyses',
 
+      ####
       tabPanel('MA plots',
         fluidRow(
           column(2,
@@ -79,12 +83,16 @@ sleuth_interact <- function(obj, ...) {
             numericInput('ma_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
-        plotOutput('ma')),
+        fluidRow(plotOutput('ma', click = 'ma_click', hover = 'ma_hover')),
+        fluidRow(verbatimTextOutput('ma_hover_out'))
+        ),
 
+      ####
       tabPanel('mean-variance plot',
         plotOutput('mv_plt')
         ),
 
+      ####
       tabPanel('scatter plots',
         fluidRow(
           column(4,
@@ -121,6 +129,7 @@ sleuth_interact <- function(obj, ...) {
 
     output$summary_dt <- renderDataTable(summary(obj))
 
+    ###
     output$scatter <- renderPlot({
       plot_scatter(obj, input$sample_x, input$sample_y,
         trans = input$trans, point_alpha = input$scatter_alpha,
@@ -128,6 +137,7 @@ sleuth_interact <- function(obj, ...) {
         use_filtered = input$scatter_filt)
     })
 
+    ###
     output$pca_plt <- renderPlot({
 
       color_by <- ifelse(is.null(input$color_by), NULL,
@@ -144,19 +154,19 @@ sleuth_interact <- function(obj, ...) {
 
     })
 
+    ###
     output$mv_plt <- renderPlot({
       plot_mean_var(obj)
     })
 
+    ### MA
     output$which_beta_ctrl <- renderUI({
-      cat('hi: ', input$which_model, '\n')
       poss_tests <- tests(models(obj)[[input$which_model]])
       print(poss_tests)
       selectInput('which_beta', 'beta: ', choices = poss_tests)
     })
 
     output$ma <- renderPlot({
-      cat('which_beta: ', input$which_beta, '\n')
       val <- input$which_beta
       if ( is.null(val) ) {
         poss_tests <- tests(models(obj)[[input$which_model]])
@@ -164,6 +174,16 @@ sleuth_interact <- function(obj, ...) {
       }
       plot_ma(obj, val, input$which_model, sig_level = input$max_fdr,
         point_alpha = input$ma_alpha)
+    })
+    output$ma_hover_out <- renderPrint({
+      wb <- input$which_beta
+      if ( is.null(wb) ) {
+        poss_tests <- tests(models(obj)[[input$which_model]])
+        wb <- poss_tests[1]
+      }
+      res <- sleuth_results(obj, wb, input$which_model)
+      #str(input$ma_hover)
+      nearPoints(res, input$ma_hover, maxpoints = 5)[['target_id']]
     })
   }
 
