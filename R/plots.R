@@ -1,10 +1,10 @@
 #' Mean-variance relationship
 #'
-#' Plot the mean-variance relationship that is modeling in \code{sleuth}. Each
+#' Plot the mean-variance relationship of transcripts as modeled in \code{sleuth}. Each
 #' dot represents a transcript. The blue dots represent the transcripts that
-#' are used in the shrinkage estimation. The line represents the smooth fit.
+#' are used in the shrinkage estimation. The fitted curve represents the smooth fit.
 #'
-#' The x-axis represents the mean expression pooled across all samples. The
+#' The x-axis represents the mean expression of transcripts pooled across all samples. The
 #' y-axis represents the 'biological' variance after the technical variance has
 #' been removed.
 #'
@@ -49,15 +49,13 @@ plot_mean_var <- function(obj,
 
 #' Plot PCA
 #'
-#' Plot PCA for a set of RNA-Seq experiments
+#' Plot projections of samples onto the principal components for a set of RNA-Seq experiments
 #'
 #' @param obj a \code{sleuth} object
-#' @param pc_x integer denoting which principle component to take for the x-axis
-#' @param pc_y integer denoting which principle component to take for the y-axis
+#' @param pc_x integer denoting the principle component to use for the x-axis
+#' @param pc_y integer denoting the principle component to use for the y-axis
 #' @param text_labels if TRUE, use text labels instead of points
 #' @param color_by a variable to color by. if NA, then will leave all as 'black'
-#' @param center center the samples before running PCA
-#' @param scale scale the samples before running PCA
 #' @param ... additional arguments passed to \code{\link{geom_point}} or
 #' \code{\link{geom_text}}
 #' @return a gpplot object
@@ -110,13 +108,12 @@ plot_pca <- function(obj,
 
 #' Sample to sample scatter plot
 #'
-#' Make a scatter plot of two samples on eachother to assess the correlation
-#' between them.
+#' Make a scatter plot of transcripts from two samples. to assess correlation
 #'
 #' @param obj a \code{sleuth} object
 #' @param sample_x the string corresponding to the sample name in \code{obj$sample_to_covariates}
 #' @param sample_y same as \code{sample_x} but for the y-axis
-#' @param offset a linear offset to help deal with zeroes if transforming
+#' @param offset a linear offset to help deal with zeroes if transforming the abundances
 #' @param point_alpha the alpha on the points
 #' @param xy_line if TRUE, plot the xy_line
 #' @param xy_line_color a string denoting the color for the xy line
@@ -180,7 +177,7 @@ plot_scatter <- function(obj,
 
 #' MA plot
 #'
-#' Make a 'MA plot' for a given test. MA plots have the expression mean on the
+#' Make an 'MA plot' for a given test. MA plots display, for each transcript, the mean of abundances across samples on the
 #' x-axis and fold change on the y-axis.
 #'
 #' @param obj a \code{sleuth} object

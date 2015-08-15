@@ -1,6 +1,6 @@
 #' Print sleuth model
 #'
-#' Print a model fitting by sleuth
+#' Print a model that has been fit by sleuth
 #'
 #' @param obj a \code{sleuth_model} object
 #' @return obj (invisible)
