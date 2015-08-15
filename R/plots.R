@@ -195,6 +195,58 @@ plot_scatter <- function(obj,
   p
 }
 
+#' Plot technical variance versus observed variance
+#'
+#' Plot technical variance versus observed variance
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_model a character string denoting which model to use for the
+#' test
+#' @param point_alpha the alpha for the points
+#' @param xy_line if TRUE, plot the xy_line
+#' @param xy_line_color a string denoting the color for the xy line
+#' @param highlight a \code{data.frame} with one column, \code{target_id}.
+#' These points will be highlighted in the plot. if \code{NULL}, no points will be highlighted.
+#' @param highlight_color the color to highlight points.
+#' @return a \code{ggplot2} object
+#' @export
+plot_vars <- function(obj,
+  which_model = 'full',
+  point_alpha = 0.2,
+  xy_line = TRUE,
+  xy_line_color = 'red',
+  highlight = NULL,
+  highlight_color = 'green'
+  ) {
+  stopifnot( is(obj, 'sleuth') )
+
+  cur_summary <- obj$fits[[which_model]][['summary']]
+  cur_summary <- dplyr::mutate(cur_summary, obs_var = sigma_sq + sigma_q_sq)
+  p <- ggplot(cur_summary, aes(sqrt(obs_var), sqrt(sigma_q_sq)))
+  p <- p + geom_point(alpha = point_alpha)
+
+  if (xy_line) {
+    p <- p + geom_abline(intercept = 0, slope = 1, colour = xy_line_color)
+  }
+
+  if (!is.null(highlight)) {
+    suppressWarnings({
+      highlight <- dplyr::semi_join(cur_summary, highlight, by = 'target_id')
+    })
+    if (nrow(highlight) > 0) {
+      p <- p + geom_point(aes(sqrt(obs_var), sqrt(sigma_q_sq)), data = highlight, colour = highlight_color)
+    } else {
+      warning("Couldn't find any transcripts from highlight set in this test.
+        They were probably filtered out.")
+    }
+  }
+
+  p <- p + xlab('observed standard deviation (ols)')
+  p <- p + ylab('bootstrap standard deviation')
+
+  p
+}
+
 #' MA plot
 #'
 #' Make an 'MA plot' for a given test. MA plots display, for each transcript, the mean of abundances across samples on the
