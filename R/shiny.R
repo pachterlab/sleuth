@@ -23,80 +23,85 @@ sleuth_interact <- function(obj, ...) {
   cat('these are the samp names:', samp_names, '\n')
 
   p_layout <- navbarPage(
-    'sleuth',
+    a('sleuth', href = 'http://pimentel.github.io/sleuth', style = 'color: black;'),
 
-    tabPanel('differential analysis',
-      fluidRow(
-        column(1,
-          numericInput('max_fdr', label = 'Fdr cutoff:', value = 0.10,
-            min = 0, max = 1, step = 0.01)),
-        column(3,
-          selectInput('which_model', label = 'fit: ',
-            choices = poss_models,
-            selected = poss_models[1])
-          ),
-        column(2,
-          uiOutput('which_beta_ctrl')
-            ),
-        column(1,
-          numericInput('ma_alpha', label = 'point alpha:', value = 0.2,
-            min = 0, max = 1, step = 0.01))
-        ),
-      plotOutput('ma')),
-
-    tabPanel('analysis',
-      fluidRow(
-        column(3,
-          selectInput('sample_x', label = 'x-axis: ',
-            choices = samp_names,
-            selected = samp_names[1])
-          ),
-        column(3,
-          selectInput('sample_y', label = 'y-axis: ',
-            choices = samp_names,
-            selected = samp_names[2])
-          ),
-        column(1,
-          textInput('trans', label = 'transformation: ',
-            value = 'log')),
-        column(1,
-          numericInput('scatter_alpha', label = 'point alpha:', value = 0.2,
-            min = 0, max = 1, step = 0.01))
-        ),
-      plotOutput('scatter')),
-
-    tabPanel('diagnostics',
-      plotOutput('mv_plt')),
+    tabPanel('summaries',
+      dataTableOutput('summary_dt')
+      ),
 
     tabPanel('maps',
       fluidRow(
-        column(1,
+        column(3,
           selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
             selected = 1)
           ),
-        column(1,
+        column(3,
           selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
             selected = 2)
           ),
-        column(1,
+        column(2,
           selectInput('text_labels', label = 'text labels: ',
             choices = c(TRUE, FALSE), selected = TRUE)
           ),
         column(4,
           selectInput('color_by', label = 'color by: ',
             choices = c(NULL, poss_covars), selected = NULL)
-          ),
-        column(1,
-          selectInput('center', label = 'center: ',
-            choices = c(TRUE, FALSE), selected = TRUE)
-          ),
-        column(1,
-          selectInput('scale', label = 'scale: ',
-          choices = c(FALSE, TRUE), selected = FALSE))),
+          )
+        ),
         fluidRow(plotOutput('pca_plt'))
-      ))
+      ),
+
+    navbarMenu('analyses',
+
+      tabPanel('MA plots',
+        fluidRow(
+          column(2,
+            numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+              min = 0, max = 1, step = 0.01)),
+          column(4,
+            selectInput('which_model', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            ),
+          column(4,
+            uiOutput('which_beta_ctrl')
+            ),
+          column(2,
+            numericInput('ma_alpha', label = 'opacity:', value = 0.2,
+              min = 0, max = 1, step = 0.01))
+          ),
+        plotOutput('ma')),
+
+      tabPanel('mean-variance plot',
+        plotOutput('mv_plt')
+        ),
+
+      tabPanel('scatter plots',
+        fluidRow(
+          column(4,
+            selectInput('sample_x', label = 'x-axis: ',
+              choices = samp_names,
+              selected = samp_names[1])
+            ),
+          column(4,
+            selectInput('sample_y', label = 'y-axis: ',
+              choices = samp_names,
+              selected = samp_names[2])
+            ),
+          column(2,
+            textInput('trans', label = 'transform: ',
+              value = 'log')),
+          column(2,
+            numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
+              min = 0, max = 1, step = 0.01))
+          ),
+        plotOutput('scatter'))
+      )
+    ) # navbarPage
 
   server_fun <- function(input, output) {
+
+    output$summary_dt <- renderDataTable(summary(obj))
 
     output$scatter <- renderPlot({
       plot_scatter(obj, input$sample_x, input$sample_y,
@@ -112,9 +117,7 @@ sleuth_interact <- function(obj, ...) {
         pc_x = as.integer(input$pc_x),
         pc_y = as.integer(input$pc_y),
         text_labels = as.logical(input$text_labels),
-        color_by = color_by,
-        center = as.logical(input$center),
-        scale = as.logical(input$scale)
+        color_by = color_by
         )
 
     })

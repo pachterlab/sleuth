@@ -321,3 +321,19 @@ get_col <- function(obj, ...) {
       data.table::rbindlist() %>%
       as.data.frame()
 }
+
+#' @export
+summary.sleuth <- function(obj, covariates = TRUE) {
+  mapped_reads <- sapply(obj$kal, function(k) sum(k$abundance$est_counts))
+  n_bs <- sapply(obj$kal, function(k) length(k$bootstrap))
+
+  res <- adf(sample = obj$sample_to_covariates[['sample']],
+    mapped_reads = mapped_reads,
+    n_bootstraps = n_bs)
+  if (covariates) {
+    res <- dplyr::left_join(res, obj$sample_to_covariates, by = 'sample')
+  }
+
+  res
+}
+
