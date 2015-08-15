@@ -127,6 +127,8 @@ plot_pca <- function(obj,
 plot_scatter <- function(obj,
   sample_x = obj$sample_to_covariates$sample[1],
   sample_y = obj$sample_to_covariates$sample[2],
+  use_filtered = TRUE,
+  units = 'est_counts',
   offset = 1,
   point_alpha = 0.2,
   xy_line = TRUE,
@@ -135,7 +137,12 @@ plot_scatter <- function(obj,
   xlim = NULL,
   ylim = NULL) {
 
-  abund <- spread_abundance_by(obj$obs_norm, 'est_counts')
+  abund <- NULL
+  if (use_filtered) {
+    abund <- spread_abundance_by(obj$obs_norm_filt, units)
+  } else {
+    abund <- spread_abundance_by(obj$obs_norm, units)
+  }
   abund <- abund + offset
   abund <- as_df(abund)
 

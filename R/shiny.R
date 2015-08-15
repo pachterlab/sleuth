@@ -95,6 +95,15 @@ sleuth_interact <- function(obj, ...) {
             numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
+        fluidRow(
+          column(2,
+            selectInput('scatter_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(2,
+            checkboxInput('scatter_filt', label = 'filter: ',
+              value = TRUE))
+          ),
         plotOutput('scatter'))
       )
     ) # navbarPage
@@ -105,7 +114,9 @@ sleuth_interact <- function(obj, ...) {
 
     output$scatter <- renderPlot({
       plot_scatter(obj, input$sample_x, input$sample_y,
-        trans = input$trans, point_alpha = input$scatter_alpha)
+        trans = input$trans, point_alpha = input$scatter_alpha,
+        units = input$scatter_units,
+        use_filtered = input$scatter_filt)
     })
 
     output$pca_plt <- renderPlot({
