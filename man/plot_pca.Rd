@@ -4,8 +4,9 @@
 \alias{plot_pca}
 \title{Plot PCA}
 \usage{
-plot_pca(obj, pc_x = 1L, pc_y = 2L, text_labels = FALSE,
-  color_by = NULL, center = TRUE, scale = FALSE, ...)
+plot_pca(obj, pc_x = 1L, pc_y = 2L, use_filtered = TRUE,
+  units = "est_counts", text_labels = FALSE, color_by = NULL,
+  center = TRUE, scale = FALSE, ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
@@ -13,6 +14,10 @@ plot_pca(obj, pc_x = 1L, pc_y = 2L, text_labels = FALSE,
 \item{pc_x}{integer denoting the principle component to use for the x-axis}
 
 \item{pc_y}{integer denoting the principle component to use for the y-axis}
+
+\item{use_filtered}{if TRUE, use filtered data. otherwise, use all data}
+
+\item{units}{either 'est_counts' or 'tpm'}
 
 \item{text_labels}{if TRUE, use text labels instead of points}
 

@@ -16,6 +16,10 @@ plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
 
 \item{sample_y}{same as \code{sample_x} but for the y-axis}
 
+\item{use_filtered}{if TRUE, use filtered data. otherwise, use all data}
+
+\item{units}{either 'est_counts' or 'tpm'}
+
 \item{offset}{a linear offset to help deal with zeroes if transforming the abundances}
 
 \item{point_alpha}{the alpha on the points}

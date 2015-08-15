@@ -48,6 +48,15 @@ sleuth_interact <- function(obj, ...) {
             choices = c(NULL, poss_covars), selected = NULL)
           )
         ),
+      fluidRow(
+        column(2,
+          selectInput('pca_units', label = 'units: ',
+            choices = c('est_counts', 'tpm'),
+            selected = 'est_counts')),
+        column(2,
+          checkboxInput('pca_filt', label = 'filter: ',
+            value = TRUE))
+        ),
         fluidRow(plotOutput('pca_plt'))
       ),
 
@@ -128,7 +137,9 @@ sleuth_interact <- function(obj, ...) {
         pc_x = as.integer(input$pc_x),
         pc_y = as.integer(input$pc_y),
         text_labels = as.logical(input$text_labels),
-        color_by = color_by
+        color_by = color_by,
+        use_filtered = input$pca_filt,
+        units = input$pca_units
         )
 
     })

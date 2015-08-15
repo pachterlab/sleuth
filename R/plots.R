@@ -54,6 +54,8 @@ plot_mean_var <- function(obj,
 #' @param obj a \code{sleuth} object
 #' @param pc_x integer denoting the principle component to use for the x-axis
 #' @param pc_y integer denoting the principle component to use for the y-axis
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param units either 'est_counts' or 'tpm'
 #' @param text_labels if TRUE, use text labels instead of points
 #' @param color_by a variable to color by. if NA, then will leave all as 'black'
 #' @param ... additional arguments passed to \code{\link{geom_point}} or
@@ -63,6 +65,8 @@ plot_mean_var <- function(obj,
 plot_pca <- function(obj,
   pc_x = 1L,
   pc_y = 2L,
+  use_filtered = TRUE,
+  units = 'est_counts',
   text_labels = FALSE,
   color_by = NULL,
   center = TRUE,
@@ -70,17 +74,24 @@ plot_pca <- function(obj,
   ...) {
   stopifnot( is(obj, 'sleuth') )
 
-  mat <- tidyr::spread(
-    dplyr::select(obj$obs_norm, target_id, sample, est_counts),
-    sample,
-    est_counts)
-  rownames(mat) <- mat$target_id
-  mat$target_id <- NULL
-  mat <- as.matrix(mat)
+  mat <- NULL
+  if (use_filtered) {
+    mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  } else {
+    mat <- spread_abundance_by(obj$obs_norm, units)
+  }
+
+  # mat <- tidyr::spread(
+  #   dplyr::select(obj$obs_norm, target_id, sample, est_counts),
+  #   sample,
+  #   est_counts)
+  # rownames(mat) <- mat$target_id
+  # mat$target_id <- NULL
+  # mat <- as.matrix(mat)
 
   pca_res <- prcomp(mat, center = center, scale = scale)
 
-  pcs <- sleuth:::as_df(pca_res$rotation[, c(pc_x, pc_y)])
+  pcs <- as_df(pca_res$rotation[, c(pc_x, pc_y)])
   pcs$sample <- rownames(pcs)
   rownames(pcs) <- NULL
 
@@ -113,6 +124,8 @@ plot_pca <- function(obj,
 #' @param obj a \code{sleuth} object
 #' @param sample_x the string corresponding to the sample name in \code{obj$sample_to_covariates}
 #' @param sample_y same as \code{sample_x} but for the y-axis
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param units either 'est_counts' or 'tpm'
 #' @param offset a linear offset to help deal with zeroes if transforming the abundances
 #' @param point_alpha the alpha on the points
 #' @param xy_line if TRUE, plot the xy_line
