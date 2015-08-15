@@ -10,17 +10,13 @@ plot_pca(obj, pc_x = 1L, pc_y = 2L, text_labels = FALSE,
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{pc_x}{integer denoting which principle component to take for the x-axis}
+\item{pc_x}{integer denoting the principle component to use for the x-axis}
 
-\item{pc_y}{integer denoting which principle component to take for the y-axis}
+\item{pc_y}{integer denoting the principle component to use for the y-axis}
 
 \item{text_labels}{if TRUE, use text labels instead of points}
 
 \item{color_by}{a variable to color by. if NA, then will leave all as 'black'}
-
-\item{center}{center the samples before running PCA}
-
-\item{scale}{scale the samples before running PCA}
 
 \item{...}{additional arguments passed to \code{\link{geom_point}} or
 \code{\link{geom_text}}}
@@ -29,6 +25,6 @@ plot_pca(obj, pc_x = 1L, pc_y = 2L, text_labels = FALSE,
 a gpplot object
 }
 \description{
-Plot PCA for a set of RNA-Seq experiments
+Plot projections of samples onto the principal components for a set of RNA-Seq experiments
 }
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_write.R
 \name{read_kallisto_h5}
 \alias{read_kallisto_h5}
-\title{Read a kallisto object from HDF5 file}
+\title{Read a kallisto object from an HDF5 file}
 \usage{
 read_kallisto_h5(fname, read_bootstrap = TRUE)
 }
@@ -15,6 +15,6 @@ read_kallisto_h5(fname, read_bootstrap = TRUE)
 a \code{kallisto} object
 }
 \description{
-Read a kallisto object from HDF5 file.
+Read a kallisto object from an HDF5 file.
 }
 

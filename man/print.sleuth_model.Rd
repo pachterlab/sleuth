@@ -13,6 +13,6 @@
 obj (invisible)
 }
 \description{
-Print a model fitting by sleuth
+Print a model that has been fit by sleuth
 }
 

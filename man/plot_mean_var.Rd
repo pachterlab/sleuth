@@ -27,12 +27,12 @@ plot_mean_var(obj, which_model = "full", point_alpha = 0.4,
 a \code{ggplot} object
 }
 \description{
-Plot the mean-variance relationship that is modeling in \code{sleuth}. Each
+Plot the mean-variance relationship of transcripts as modeled in \code{sleuth}. Each
 dot represents a transcript. The blue dots represent the transcripts that
-are used in the shrinkage estimation. The line represents the smooth fit.
+are used in the shrinkage estimation. The fitted curve represents the smooth fit.
 }
 \details{
-The x-axis represents the mean expression pooled across all samples. The
+The x-axis represents the mean expression of transcripts pooled across all samples. The
 y-axis represents the 'biological' variance after the technical variance has
 been removed.
 }

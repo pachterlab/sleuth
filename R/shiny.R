@@ -140,7 +140,8 @@ sleuth_interact <- function(obj, ...) {
         poss_tests <- tests(models(obj)[[input$which_model]])
         val <- poss_tests[1]
       }
-      plot_ma(obj, val, input$which_model, sig_level = input$max_fdr)
+      plot_ma(obj, val, input$which_model, sig_level = input$max_fdr,
+        point_alpha = input$ma_alpha)
     })
   }
 

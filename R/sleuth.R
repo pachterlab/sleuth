@@ -101,18 +101,6 @@ sleuth_prep <- function(
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
-  if (FALSE) {
-    # ignore TPM stuff for now
-    msg("Normalizing 'tpm'")
-
-    tpm_spread <- spread_abundance_by(obs_raw, "tpm")
-    tpm_sf <- norm_factors(tpm_spread)
-    tpm_norm <- t(t(tpm_spread) / tpm_sf) %>%
-      as.data.frame(stringsAsFactors = FALSE)
-    tpm_norm$target_id <- rownames(tpm_norm)
-    tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
-  }
-
   ret <- list(
       kal = kal_list,
       obs_raw = obs_raw,
@@ -125,7 +113,7 @@ sleuth_prep <- function(
   # TODO: eventually factor this out
   normalize <- TRUE
   if ( normalize ) {
-    msg("Normalizing 'est_counts'")
+    msg("Normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
     filter_bool <- apply(est_counts_spread, 1, filter_fun)
     filter_true <- filter_bool[filter_bool]
@@ -135,33 +123,59 @@ sleuth_prep <- function(
 
     filter_df <- adf(target_id = names(filter_true))
 
-    # TODO: figure out a way to keep filtering consistent downstream w/o
-    # filtering from 'obs_norm'
+    #est_counts_norm <- as_df(t(t(est_counts_spread[filter_bool,]) / est_counts_sf))
+    est_counts_norm <- as_df(t(t(est_counts_spread) / est_counts_sf))
 
-    est_counts_norm <- as_df(t(t(est_counts_spread[filter_bool,]) / est_counts_sf))
     est_counts_norm$target_id <- rownames(est_counts_norm)
     est_counts_norm <- tidyr::gather(est_counts_norm, sample, est_counts, -target_id)
 
     obs_norm <- est_counts_norm
     obs_norm$target_id <- as.character(obs_norm$target_id)
+    rm(est_counts_norm)
+
+    #obs_norm <- as_df(obs_norm)
+
+    # add relevant objs back into sleuth obj
+    # ret$obs_norm <- obs_norm
+    # ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
+
+    # deal w/ TPM
+    msg("Normalizing tpm")
+    tpm_spread <- spread_abundance_by(obs_raw, "tpm")
+    tpm_sf <- norm_factors(tpm_spread[filter_bool,])
+    tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
+    tpm_norm$target_id <- rownames(tpm_norm)
+    tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
 
     suppressWarnings({
+      if ( !all.equal(dplyr::select(obs_norm, target_id, sample),
+          dplyr::select(tpm_norm, target_id, sample)) ) {
+        stop('Invalid column rows. In principle, can simply join. Please report error.')
+      }
+
+      # obs_norm <- dplyr::left_join(obs_norm, data.table::as.data.table(tpm_norm),
+      #   by = c('target_id', 'sample'))
+      obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
       obs_norm <- dplyr::left_join(obs_norm,
         data.table::as.data.table(sample_to_covariates),
-        by = c("sample"))})
-    obs_norm <- as_df(obs_norm)
+        by = c("sample"))
+    })
 
     msg("Normalizing bootstrap samples")
     kal_list <- lapply(seq_along(kal_list), function(i) {
-        normalize_bootstrap(kal_list[[i]],
-          est_counts_size_factor = est_counts_sf[i])
+      normalize_bootstrap(kal_list[[i]],
+        tpm_size_factor = tpm_sf[i],
+        est_counts_size_factor = est_counts_sf[i])
       })
 
-    # add relevant objs back into sleuth obj
+    # ret$tpm_norm_filt <- dplyr::semi_join(tpm_norm, filter_df, by = 'target_id')
+    obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
     ret$est_counts_sf <- est_counts_sf
     ret$filter_bool <- filter_bool
     ret$filter_df <- filter_df
+    ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
+    ret$tpm_sf <- tpm_sf
   }
 
   class(ret) <- 'sleuth'
