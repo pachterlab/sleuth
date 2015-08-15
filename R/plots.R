@@ -263,7 +263,9 @@ plot_vars <- function(obj,
 plot_ma <- function(obj, which_beta, which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
-  sig_color = 'red'
+  sig_color = 'red',
+  highlight = NULL,
+  highlight_color = 'green'
   ) {
   stopifnot( is(obj, 'sleuth') )
 
@@ -275,6 +277,18 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   p <- p + scale_colour_manual(values = c('black', sig_color))
   p <- p + xlab('mean( log( counts + 0.5 ) )')
   p <- p + ylab(paste0('beta: ', which_beta))
+
+  if (!is.null(highlight)) {
+    suppressWarnings({
+      highlight <- dplyr::semi_join(res, highlight, by = 'target_id')
+    })
+    if (nrow(highlight) > 0) {
+      p <- p + geom_point(aes(mean_obs, b), data = highlight, colour = highlight_color)
+    } else {
+      warning("Couldn't find any transcripts from highlight set in this test.
+        They were probably filtered out.")
+    }
+  }
 
   p
 }

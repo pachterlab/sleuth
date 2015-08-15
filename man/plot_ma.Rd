@@ -5,7 +5,8 @@
 \title{MA plot}
 \usage{
 plot_ma(obj, which_beta, which_model = "full", sig_level = 0.1,
-  point_alpha = 0.2, sig_color = "red")
+  point_alpha = 0.2, sig_color = "red", highlight = NULL,
+  highlight_color = "green")
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
