@@ -129,7 +129,7 @@ plot_pca <- function(obj,
 #' the sleuth object for which to group and color by
 #' @param offset the offset so that transformations such as log don't compute -Inf. If NULL, then will not add an offset (one could also use 
 #' @param
-plot_density <- function(obj,
+plot_gorup_density <- function(obj,
   use_filtered = TRUE,
   units = 'est_counts',
   trans = 'log',
@@ -162,6 +162,36 @@ plot_density <- function(obj,
   p <- ggplot(res, aes(expression))
   p <- p + geom_density(aes_string(colour = grouping, fill = grouping), alpha = 0.2)
   p <- p + xlab(mean_str)
+
+  p
+}
+
+plot_sample_density <- function(obj,
+  which_sample = obj$sample_to_covariates$sample[1],
+  use_filtered = TRUE,
+  units = 'est_counts',
+  trans = 'log',
+  offset = 1
+  ) {
+  res <- NULL
+  if (use_filtered) {
+    res <- obj$obs_norm_filt
+  } else {
+    res <- obj$obs_norm
+  }
+
+
+  res <- dplyr::filter(res, sample == which_sample)
+  trans_str <- units
+  if (!is.null(offset) && offset != 0L) {
+    trans_str <- paste0(trans_str, ' + ', offset)
+  }
+  if (!is.null(trans)) {
+    trans_str <- paste0(trans, '( ', trans_str, ') ' )
+  }
+
+  p <- ggplot(res, aes_string(trans_str))
+  p <- p + geom_density(fill = 'dodgerblue', alpha = 0.4)
 
   p
 }

@@ -41,11 +41,29 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
             selectInput('cond_dens_grp', 'grouping: ',
               choices = poss_covars,
               selected = poss_covars[1])
-            )
+            ),
+          column(2,
+            selectInput('cond_dens_units', label = 'units: ',
+              choices = c('tpm', 'est_counts'),
+              selected = 'tpm')),
+          column(2,
+            checkboxInput('cond_dens_filt', label = 'filter: ',
+              value = TRUE)),
+          column(2,
+            textInput('cond_dens_trans', label = 'transform: ',
+              value = 'log')),
+          column(2,
+            numericInput('cond_dens_offset', label = 'offset: ', value = 1))
           ),
-          fluidRow(plotOutput('condition_density'))
-          )
-        ),
+        fluidRow(plotOutput('condition_density')),
+        fluidRow(
+          column(4,
+            selectInput('samp_dens', 'sample: ',
+              choices = samp_names,
+              selected = samp_names[1]))),
+        fluidRow(plotOutput('sample_density'))
+        )
+      ),
 
     tabPanel('maps',
 
@@ -172,7 +190,22 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
 
     output$condition_density <- renderPlot({
       print(input$cond_dens_grp)
-      plot_density(obj, grouping = input$cond_dens_grp)
+      plot_density(obj,
+        grouping = input$cond_dens_grp,
+        units = input$cond_dens_units,
+        use_filtered = input$cond_dens_filt,
+        trans = input$cond_dens_trans,
+        offset = input$cond_dens_offset)
+    })
+
+    output$sample_density <- renderPlot({
+      plot_sample_density(obj,
+        which_sample = input$samp_dens,
+        units = input$cond_dens_units,
+        use_filtered = input$cond_dens_filt,
+        trans = input$cond_dens_trans,
+        offset = input$cond_dens_offset
+        )
     })
 
     ###
