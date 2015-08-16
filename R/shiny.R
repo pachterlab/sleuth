@@ -83,8 +83,10 @@ sleuth_interact <- function(obj, ...) {
             numericInput('ma_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
-        fluidRow(plotOutput('ma', click = 'ma_click', hover = 'ma_hover')),
-        fluidRow(verbatimTextOutput('ma_hover_out'))
+        fluidRow(plotOutput('ma', click = 'ma_click', hover = 'ma_hover',
+            brush = 'ma_brush')),
+        fluidRow(plotOutput('vars')),
+        fluidRow(verbatimTextOutput('ma_brush_out'))
         ),
 
       ####
@@ -160,6 +162,8 @@ sleuth_interact <- function(obj, ...) {
     })
 
     ### MA
+    active_ma <- reactiveValues(highlight = data.frame(target_id = character()))
+
     output$which_beta_ctrl <- renderUI({
       poss_tests <- tests(models(obj)[[input$which_model]])
       print(poss_tests)
@@ -175,17 +179,42 @@ sleuth_interact <- function(obj, ...) {
       plot_ma(obj, val, input$which_model, sig_level = input$max_fdr,
         point_alpha = input$ma_alpha)
     })
-    output$ma_hover_out <- renderPrint({
+
+    output$vars <- renderPlot({
+      plot_vars(obj,
+        which_model = input$which_model,
+        point_alpha = input$ma_alpha,
+        highlight = active_ma$highlight
+        )
+    })
+
+    output$ma_brush_out <- renderPrint({
       wb <- input$which_beta
       if ( is.null(wb) ) {
         poss_tests <- tests(models(obj)[[input$which_model]])
         wb <- poss_tests[1]
       }
       res <- sleuth_results(obj, wb, input$which_model)
-      #str(input$ma_hover)
-      nearPoints(res, input$ma_hover, maxpoints = 5)[['target_id']]
+      if (!is.null(input$ma_brush)) {
+        res <- enclosed_brush(res, input$ma_brush)
+      } else {
+        res <- NULL
+      }
+      active_ma$highlight <- res
+
+      res
     })
   }
 
   shinyApp(ui = p_layout, server = server_fun)
+}
+
+enclosed_brush <- function(df, brush) {
+  xvar <- brush$mapping$x
+  yvar <- brush$mapping$y
+
+  xbool <- brush$xmin <= df[[xvar]] & df[[xvar]] <= brush$xmax
+  ybool <- brush$ymin <= df[[yvar]] & df[[yvar]] <= brush$ymax
+
+  df[xbool & ybool,]
 }
