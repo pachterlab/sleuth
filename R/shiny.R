@@ -29,11 +29,14 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
     a('sleuth', href = 'http://pimentel.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
 
-    tabPanel('experiment summary',
-      dataTableOutput('summary_dt')
-      ),
+    tabPanel('diagnostics'),
 
     navbarMenu('summaries',
+      ####
+      tabPanel('experiment summary',
+        dataTableOutput('summary_dt')
+        ),
+
       ####
       tabPanel('densities',
         fluidRow(
@@ -180,7 +183,15 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
             )
           ),
         dataTableOutput('de_dt')
-        )
+        ),
+
+      tabPanel('bootstrap variance',
+        fluidRow(column(4,
+            textInput('bs_var_input', label = 'transcript: ', value = '')
+            ),
+          actionButton('bs_go', 'view'),
+          verbatimTextOutput('bs_var_output')
+          ))
       )
     ) # navbarPage
 
@@ -189,7 +200,6 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
     output$summary_dt <- renderDataTable(summary(obj))
 
     output$condition_density <- renderPlot({
-      print(input$cond_dens_grp)
       plot_density(obj,
         grouping = input$cond_dens_grp,
         units = input$cond_dens_units,
@@ -246,7 +256,6 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
 
     output$which_beta_ctrl <- renderUI({
       poss_tests <- tests(models(obj)[[input$which_model]])
-      print(poss_tests)
       selectInput('which_beta', 'beta: ', choices = poss_tests)
     })
 
@@ -295,7 +304,6 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
 
     #observe
     output$ma_brush_out <- renderDataTable({
-      print('in da brush')
       wb <- input$which_beta
       if ( is.null(wb) ) {
         poss_tests <- tests(models(obj)[[input$which_model]])
@@ -331,6 +339,14 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
         wb <- poss_tests[1]
       }
       sleuth_results(obj, wb, input$which_model_de)
+    })
+
+    bs_var_text <- eventReactive(input$bs_go, {
+        input$bs_var_input
+      })
+    ### bootstrap var
+    output$bs_var_output <- renderText({
+      bs_var_text()
     })
   }
 
