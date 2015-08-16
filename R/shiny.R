@@ -83,8 +83,8 @@ sleuth_interact <- function(obj, ...) {
             numericInput('ma_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
-        fluidRow(plotOutput('ma', click = 'ma_click', hover = 'ma_hover',
-            brush = 'ma_brush')),
+        fluidRow(plotOutput('ma', brush = 'ma_brush')),
+        #fluidRow(plotOutput('vars', brush = 'vars_brush')),
         fluidRow(plotOutput('vars')),
         fluidRow(dataTableOutput('ma_brush_out'))
         ),
@@ -123,7 +123,22 @@ sleuth_interact <- function(obj, ...) {
             checkboxInput('scatter_filt', label = 'filter: ',
               value = TRUE))
           ),
-        plotOutput('scatter'))
+        plotOutput('scatter')),
+
+      ####
+      tabPanel('DE table',
+        fluidRow(
+          column(4,
+            selectInput('which_model_de', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            ),
+          column(4,
+            uiOutput('which_beta_ctrl_de')
+            )
+          ),
+        dataTableOutput('de_dt')
+        )
       )
     ) # navbarPage
 
@@ -162,7 +177,10 @@ sleuth_interact <- function(obj, ...) {
     })
 
     ### MA
-    active_ma <- reactiveValues(highlight = data.frame(target_id = character()))
+    rv_ma <- reactiveValues(
+      highlight_vars = NULL,
+      highlight_ma = NULL
+      )
 
     output$which_beta_ctrl <- renderUI({
       poss_tests <- tests(models(obj)[[input$which_model]])
@@ -177,7 +195,8 @@ sleuth_interact <- function(obj, ...) {
         val <- poss_tests[1]
       }
       plot_ma(obj, val, input$which_model, sig_level = input$max_fdr,
-        point_alpha = input$ma_alpha)
+        point_alpha = input$ma_alpha,
+        highlight = rv_ma$highlight_ma)
     })
 
     output$vars <- renderPlot({
@@ -190,7 +209,7 @@ sleuth_interact <- function(obj, ...) {
         which_beta = wb,
         which_model = input$which_model,
         point_alpha = input$ma_alpha,
-        highlight = active_ma$highlight,
+        highlight = rv_ma$highlight_vars,
         sig_level = input$max_fdr
         )
     })
@@ -204,12 +223,32 @@ sleuth_interact <- function(obj, ...) {
       res <- sleuth_results(obj, wb, input$which_model)
       if (!is.null(input$ma_brush)) {
         res <- enclosed_brush(res, input$ma_brush)
+        rv_ma$highlight_vars <- res
+        rv_ma$highlight_ma <- NULL
+      } else if ( !is.null(input$vars_brush) ) {
+        # TODO: not quite working... 
+        # res <- enclosed_brush(res, input$vars_brush)
+        rv_ma$highlight_vars <- NULL
+        rv_ma$highlight_ma <- res
       } else {
         res <- NULL
       }
-      active_ma$highlight <- res
 
       res
+    })
+
+    output$which_beta_ctrl_de <- renderUI({
+      poss_tests <- tests(models(obj)[[input$which_model_de]])
+      selectInput('which_beta_de', 'beta: ', choices = poss_tests)
+    })
+
+    output$de_dt <- renderDataTable({
+      wb <- input$which_beta_de
+      if ( is.null(wb) ) {
+        poss_tests <- tests(models(obj)[[input$which_model_de]])
+        wb <- poss_tests[1]
+      }
+      sleuth_results(obj, wb, input$which_model_de)
     })
   }
 
