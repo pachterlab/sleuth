@@ -23,6 +23,56 @@ bootstrap2mat <- function(kal, column = "tpm")
     mat
 }
 
+#' Extract bootstrap for a specific transcript
+#'
+#' Extract bootstrap for a specific transcript
+#'
+#' @param obj an object
+#' @param ... arguments passed to other functions
+#' @return a \code{data.frame} with bootstrap samples
+#' @export
+extract_bootstraps <- function(obj, ...) {
+  UseMethod('extract_bootstraps')
+}
+
+#' @export
+extract_bootstraps.sleuth <- function(obj, transcript, max_bs = 30) {
+  res <- lapply(seq_along(obj$kal),
+    function(i) {
+      cur <- extract_bootstraps(obj$kal[[i]], transcript, max_bs)
+      if (nrow(cur) == 0) {
+        return(cur)
+      }
+      samp <- obj$sample_to_covariates$sample[i]
+      cur$sample <- samp
+      cur
+    })
+  res <- dplyr::bind_rows(res)
+  if (nrow(res) > 0) {
+    return(
+      dplyr::left_join(res, obj$sample_to_covariates, by = c('sample'))
+      )
+  }
+
+  res
+}
+
+#' @export
+extract_bootstraps.kallisto <- function(kal, transcript, max_bs = 30) {
+  max_bs <- min(max_bs, length(kal$bootstrap))
+  t_idx <- which(kal$bootstrap[[1]]$target_id == transcript)
+  if (length(t_idx) == 0) {
+    return( data.frame() )
+  }
+
+  bs <- lapply(1:max_bs,
+    function(i) {
+      dplyr::slice(kal$bootstrap[[i]], t_idx)
+    })
+
+  dplyr::bind_rows(bs)
+}
+
 
 # Convert kallisto bootstraps into a molten data.frame
 #

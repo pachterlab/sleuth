@@ -189,9 +189,18 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
         fluidRow(column(4,
             textInput('bs_var_input', label = 'transcript: ', value = '')
             ),
-          actionButton('bs_go', 'view'),
-          verbatimTextOutput('bs_var_output')
-          ))
+          column(4,
+            selectInput('bs_var_color_by', label = 'color by: ',
+              choices = c(NULL, poss_covars), selected = NULL)
+            ),
+          column(3,
+            selectInput('bs_var_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts'))
+          ),
+          fluidRow(actionButton('bs_go', 'view')),
+          fluidRow(plotOutput('bs_var_plt'))
+          )
       )
     ) # navbarPage
 
@@ -345,9 +354,12 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
       })
+
     ### bootstrap var
-    output$bs_var_output <- renderText({
-      bs_var_text()
+    output$bs_var_plt <- renderPlot({
+      plot_bootstrap(obj, bs_var_text(),
+        units = input$bs_var_units,
+        color_by = input$bs_var_color_by)
     })
   }
 

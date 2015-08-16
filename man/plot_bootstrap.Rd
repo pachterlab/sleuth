@@ -4,7 +4,9 @@
 \alias{plot_bootstrap}
 \title{Plot bootstrap summary}
 \usage{
-plot_bootstrap(bs_df, ...)
+plot_bootstrap(obj, transcript, units = "est_counts",
+  color_by = setdiff(colnames(obj$sample_to_covariates), "sample"),
+  x_axis_angle = 50)
 }
 \arguments{
 \item{bs_df}{a bootstrap summary data.frame from \code{summarize_bootstrap}}

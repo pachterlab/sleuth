@@ -418,13 +418,23 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
 #' @param ... additional arguments to `geom_point`
 #' @return a ggplot2 object
 #' @export
-plot_bootstrap <- function(bs_df, ...)
-{
-    mean_col <- grep("mean_", colnames(bs_df), value = TRUE)
-    cv_col <- grep("cv_", colnames(bs_df), value = TRUE)
+plot_bootstrap <- function(obj,
+  transcript,
+  units = 'est_counts',
+  color_by = setdiff(colnames(obj$sample_to_covariates), 'sample'),
+  x_axis_angle = 50
+  ) {
 
-    ggplot(bs_df, aes_string(mean_col, cv_col)) +
-        geom_point(...)
+  df <- extract_bootstraps(obj, transcript)
+
+  if (nrow(df) == 0) {
+    stop("Couldn't find transcript ", transcript)
+  }
+  p <- ggplot(df, aes_string('sample', units))
+  p <- p + geom_boxplot(aes_string(fill = color_by))
+  p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
+
+  p
 }
 
 #' @export
