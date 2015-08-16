@@ -29,10 +29,23 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
     a('sleuth', href = 'http://pimentel.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
 
-    tabPanel('summaries',
-      ####
+    tabPanel('experiment summary',
       dataTableOutput('summary_dt')
       ),
+
+    navbarMenu('summaries',
+      ####
+      tabPanel('densities',
+        fluidRow(
+          column(4,
+            selectInput('cond_dens_grp', 'grouping: ',
+              choices = poss_covars,
+              selected = poss_covars[1])
+            )
+          ),
+          fluidRow(plotOutput('condition_density'))
+          )
+        ),
 
     tabPanel('maps',
 
@@ -156,6 +169,11 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
   server_fun <- function(input, output) {
 
     output$summary_dt <- renderDataTable(summary(obj))
+
+    output$condition_density <- renderPlot({
+      print(input$cond_dens_grp)
+      plot_density(obj, grouping = input$cond_dens_grp)
+    })
 
     ###
     output$scatter <- renderPlot({
