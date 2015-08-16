@@ -117,6 +117,27 @@ plot_pca <- function(obj,
   p
 }
 
+plot_density <- function(obj,
+  use_filtered = TRUE,
+  units = 'est_counts',
+  grouping = NULL,
+  offset = 1,
+  ) {
+
+  res <- NULL
+  if (use_filtered) {
+    res <- obj$obs_norm_filt
+  } else {
+    res <- obj$obs_norm
+  }
+
+  if ( !is.null(grouping) ) {
+  }
+
+
+  NULL
+}
+
 #' Sample to sample scatter plot
 #'
 #' Make a scatter plot of transcripts from two samples. to assess correlation
@@ -219,7 +240,7 @@ plot_vars <- function(obj,
   xy_line = TRUE,
   xy_line_color = 'red',
   highlight = NULL,
-  highlight_color = 'dodgerblue'
+  highlight_color = 'green'
   ) {
   stopifnot( is(obj, 'sleuth') )
 
@@ -313,6 +334,7 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
 
   p
 }
+
 
 #' Plot bootstrap summary
 #'

@@ -83,6 +83,11 @@ sleuth_interact <- function(obj, ...) {
             numericInput('ma_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
+        fluidRow(column(8,
+            selectizeInput('ma_trans', 'highlight transcripts: ',
+              choices = obj$filter_df[['target_id']],
+              multiple = TRUE, width = '100%'))
+          ),
         fluidRow(plotOutput('ma', brush = 'ma_brush')),
         #fluidRow(plotOutput('vars', brush = 'vars_brush')),
         fluidRow(plotOutput('vars')),
@@ -171,7 +176,7 @@ sleuth_interact <- function(obj, ...) {
 
     })
 
-    ###
+    ### MV plot
     output$mv_plt <- renderPlot({
       plot_mean_var(obj)
     })
@@ -197,6 +202,23 @@ sleuth_interact <- function(obj, ...) {
       plot_ma(obj, val, input$which_model, sig_level = input$max_fdr,
         point_alpha = input$ma_alpha,
         highlight = rv_ma$highlight_ma)
+    })
+
+    observe({
+      if (!is.null(input$ma_trans)) {
+        res <- data.frame(target_id = input$ma_trans, stringsAsFactors = FALSE)
+        rv_ma$highlight_ma <- res
+        rv_ma$highlight_vars <- res
+        wb <- input$which_beta
+        if ( is.null(wb) ) {
+          poss_tests <- tests(models(obj)[[input$which_model]])
+          wb <- poss_tests[1]
+        }
+        sres <- sleuth_results(obj, wb, input$which_model)
+        output$ma_brush_out <- renderDataTable({
+          dplyr::semi_join(sres, res, by = 'target_id' )
+        })
+      }
     })
 
     output$vars <- renderPlot({
@@ -237,6 +259,7 @@ sleuth_interact <- function(obj, ...) {
       res
     })
 
+    ### DE table
     output$which_beta_ctrl_de <- renderUI({
       poss_tests <- tests(models(obj)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
