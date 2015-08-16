@@ -86,7 +86,7 @@ sleuth_interact <- function(obj, ...) {
         fluidRow(plotOutput('ma', click = 'ma_click', hover = 'ma_hover',
             brush = 'ma_brush')),
         fluidRow(plotOutput('vars')),
-        fluidRow(verbatimTextOutput('ma_brush_out'))
+        fluidRow(dataTableOutput('ma_brush_out'))
         ),
 
       ####
@@ -181,14 +181,21 @@ sleuth_interact <- function(obj, ...) {
     })
 
     output$vars <- renderPlot({
+      wb <- input$which_beta
+      if ( is.null(wb) ) {
+        poss_tests <- tests(models(obj)[[input$which_model]])
+        wb <- poss_tests[1]
+      }
       plot_vars(obj,
+        which_beta = wb,
         which_model = input$which_model,
         point_alpha = input$ma_alpha,
-        highlight = active_ma$highlight
+        highlight = active_ma$highlight,
+        sig_level = input$max_fdr
         )
     })
 
-    output$ma_brush_out <- renderPrint({
+    output$ma_brush_out <- renderDataTable({
       wb <- input$which_beta
       if ( is.null(wb) ) {
         poss_tests <- tests(models(obj)[[input$which_model]])

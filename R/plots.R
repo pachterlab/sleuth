@@ -211,19 +211,40 @@ plot_scatter <- function(obj,
 #' @return a \code{ggplot2} object
 #' @export
 plot_vars <- function(obj,
+  which_beta = NULL,
   which_model = 'full',
+  sig_level = 0.10,
   point_alpha = 0.2,
+  sig_color = 'red',
   xy_line = TRUE,
   xy_line_color = 'red',
   highlight = NULL,
-  highlight_color = 'green'
+  highlight_color = 'dodgerblue'
   ) {
   stopifnot( is(obj, 'sleuth') )
 
-  cur_summary <- obj$fits[[which_model]][['summary']]
-  cur_summary <- dplyr::mutate(cur_summary, obs_var = sigma_sq + sigma_q_sq)
+  cur_summary <- NULL
+
+  if (is.null(which_beta)) {
+    cur_summary <- obj$fits[[which_model]][['summary']]
+    cur_summary <- dplyr::mutate(cur_summary,
+      obs_var = sigma_sq + sigma_q_sq)
+  } else {
+    cur_summary <- sleuth_results(obj, which_beta, which_model)
+    cur_summary <- dplyr::mutate(cur_summary,
+      obs_var = sigma_sq + sigma_q_sq,
+      significant = qval < sig_level)
+  }
+
   p <- ggplot(cur_summary, aes(sqrt(obs_var), sqrt(sigma_q_sq)))
-  p <- p + geom_point(alpha = point_alpha)
+
+  if (is.null(which_beta)) {
+    p <- p + geom_point(alpha = point_alpha)
+  } else {
+    p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+    p <- p + scale_colour_manual(values = c('black', sig_color))
+  }
+
 
   if (xy_line) {
     p <- p + geom_abline(intercept = 0, slope = 1, colour = xy_line_color)
