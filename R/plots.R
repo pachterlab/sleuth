@@ -127,9 +127,11 @@ plot_pca <- function(obj,
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param grouping a string from the columns of \code{sample_to_covariates} in
 #' the sleuth object for which to group and color by
-#' @param offset the offset so that transformations such as log don't compute -Inf. If NULL, then will not add an offset (one could also use 
-#' @param
-plot_gorup_density <- function(obj,
+#' @param offset the offset so that transformations such as log don't compute
+#' -Inf. If NULL, then will not add an offset
+#' @return a \code{ggplot2} object
+#' @export
+plot_group_density <- function(obj,
   use_filtered = TRUE,
   units = 'est_counts',
   trans = 'log',
@@ -166,6 +168,21 @@ plot_gorup_density <- function(obj,
   p
 }
 
+#' Plot sample density
+#'
+#' Plot the density of one particular sample
+#'
+#' @param obj a \code{sleuth} object
+
+#' @param which_sample a character string matching a sample in
+#' \code{obj$sample_to_covariates}
+#' @param use_filtered if TRUE, use filtered data. Otherwise use all data
+#' @param units either \code{'est_counts'} or \code{'tpm'}
+#' @param trans a string pointing to a function to use for the transformation.
+#' @param offset the offset so that transformations such as log don't compute
+#' -Inf. If NULL, then will not add an offset
+#' @return a \code{ggplot2} object
+#' @export
 plot_sample_density <- function(obj,
   which_sample = obj$sample_to_covariates$sample[1],
   use_filtered = TRUE,
@@ -245,7 +262,7 @@ plot_scatter <- function(obj,
     sample_y <- paste0( trans, '( ', sample_y)
   }
 
-  if ( offset != 0 ) {
+  if ( (!is.null(offset) && !is.na(offset)) && offset != 0 ) {
     off <- deparse(eval(offset))
     sample_x <- paste0(sample_x, ' + ', off)
     sample_y <- paste0(sample_y, ' + ', off)

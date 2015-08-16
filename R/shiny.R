@@ -29,7 +29,39 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
     a('sleuth', href = 'http://pimentel.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
 
-    tabPanel('diagnostics'),
+    tabPanel('diagnostics',
+      ####
+        fluidRow(
+          column(4,
+            selectInput('sample_x', label = 'x-axis: ',
+              choices = samp_names,
+              selected = samp_names[1])
+            ),
+          column(4,
+            selectInput('sample_y', label = 'y-axis: ',
+              choices = samp_names,
+              selected = samp_names[2])
+            ),
+          column(2,
+            textInput('trans', label = 'transform: ',
+              value = 'log')),
+          column(2,
+            numericInput('scatter_offset', label = 'offset: ', value = 1))
+          ),
+        fluidRow(
+          column(2,
+            selectInput('scatter_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(2,
+            checkboxInput('scatter_filt', label = 'filter',
+              value = TRUE)),
+          column(2,
+            numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
+              min = 0, max = 1, step = 0.01))
+          ),
+        plotOutput('scatter')
+      ),
 
     navbarMenu('summaries',
       ####
@@ -137,38 +169,6 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
         plotOutput('mv_plt')
         ),
 
-      ####
-      tabPanel('scatter plots',
-        fluidRow(
-          column(4,
-            selectInput('sample_x', label = 'x-axis: ',
-              choices = samp_names,
-              selected = samp_names[1])
-            ),
-          column(4,
-            selectInput('sample_y', label = 'y-axis: ',
-              choices = samp_names,
-              selected = samp_names[2])
-            ),
-          column(2,
-            textInput('trans', label = 'transform: ',
-              value = 'log')),
-          column(2,
-            numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
-              min = 0, max = 1, step = 0.01))
-          ),
-        fluidRow(
-          column(2,
-            selectInput('scatter_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
-          column(2,
-            checkboxInput('scatter_filt', label = 'filter',
-              value = TRUE)),
-          column(2,
-            numericInput('scatter_offset', label = 'offset: ', value = 1))
-          ),
-        plotOutput('scatter')),
 
       ####
       tabPanel('DE table',
@@ -200,7 +200,7 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
     output$summary_dt <- renderDataTable(summary(obj))
 
     output$condition_density <- renderPlot({
-      plot_density(obj,
+      plot_group_density(obj,
         grouping = input$cond_dens_grp,
         units = input$cond_dens_units,
         use_filtered = input$cond_dens_filt,
@@ -223,7 +223,8 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
       plot_scatter(obj, input$sample_x, input$sample_y,
         trans = input$trans, point_alpha = input$scatter_alpha,
         units = input$scatter_units,
-        use_filtered = input$scatter_filt)
+        use_filtered = input$scatter_filt,
+        offset = input$scatter_offset)
     })
 
     ###
@@ -353,6 +354,7 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
   shinyApp(ui = p_layout, server = server_fun)
 }
 
+#' @export
 enclosed_brush <- function(df, brush) {
   xvar <- brush$mapping$x
   yvar <- brush$mapping$y
