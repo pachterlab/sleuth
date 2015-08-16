@@ -24,10 +24,10 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
     'sample')
   samp_names <- obj$sample_to_covariates[['sample']]
   poss_models <- names(models(obj))
-  cat('these are the samp names:', samp_names, '\n')
 
   p_layout <- navbarPage(
-    a('sleuth', href = 'http://pimentel.github.io/sleuth', style = 'color: black;'),
+    a('sleuth', href = 'http://pimentel.github.io/sleuth', target = '_blank',
+      style = 'color: black;'),
 
     tabPanel('summaries',
       ####
@@ -87,11 +87,11 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
             numericInput('ma_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
-        fluidRow(column(8,
-            selectizeInput('ma_trans', 'highlight transcripts: ',
-              choices = obj$filter_df[['target_id']],
-              multiple = TRUE, width = '100%'))
-          ),
+        # fluidRow(column(8,
+        #     selectizeInput('ma_trans', 'highlight transcripts: ',
+        #       choices = obj$filter_df[['target_id']],
+        #       multiple = TRUE, width = '100%'))
+        #   ),
         fluidRow(plotOutput('ma', brush = 'ma_brush')),
         #fluidRow(plotOutput('vars', brush = 'vars_brush')),
         fluidRow(plotOutput('vars')),
@@ -129,8 +129,10 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
               choices = c('est_counts', 'tpm'),
               selected = 'est_counts')),
           column(2,
-            checkboxInput('scatter_filt', label = 'filter: ',
-              value = TRUE))
+            checkboxInput('scatter_filt', label = 'filter',
+              value = TRUE)),
+          column(2,
+            numericInput('scatter_offset', label = 'offset: ', value = 1))
           ),
         plotOutput('scatter')),
 
