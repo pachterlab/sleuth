@@ -117,10 +117,23 @@ plot_pca <- function(obj,
   p
 }
 
+#' Plot density
+#'
+#' Plot the density of a some grouping
+#'
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, use filtered data. otherwise use all data
+#' @param units either 'est_counts' or 'tpm'
+#' @param trans a string pointing to a function to use for the transformation.
+#' @param grouping a string from the columns of \code{sample_to_covariates} in
+#' the sleuth object for which to group and color by
+#' @param offset the offset so that transformations such as log don't compute -Inf. If NULL, then will not add an offset (one could also use 
+#' @param
 plot_density <- function(obj,
   use_filtered = TRUE,
   units = 'est_counts',
-  grouping = NULL,
+  trans = 'log',
+  grouping = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   offset = 1
   ) {
 
@@ -131,11 +144,26 @@ plot_density <- function(obj,
     res <- obj$obs_norm
   }
 
-  if ( !is.null(grouping) ) {
+  gdots <- list(target_id = ~target_id)
+  gdots[[grouping]] <- as.formula(paste0('~', grouping))
+  res <- dplyr::group_by_(res, .dots = gdots)
+
+  mean_str <- paste0('mean(', units, ' )')
+  if (!is.null(offset) && offset != 0L) {
+    mean_str <- paste0(mean_str, ' + ', offset)
   }
 
+  if (!is.null(trans)) {
+    mean_str <- paste0( trans, '( ', mean_str, ' )' )
+  }
 
-  NULL
+  res <- dplyr::summarise_(res, .dots = setNames(mean_str, 'expression'))
+
+  p <- ggplot(res, aes(expression))
+  p <- p + geom_density(aes_string(colour = grouping, fill = grouping), alpha = 0.2)
+  p <- p + xlab(mean_str)
+
+  p
 }
 
 #' Sample to sample scatter plot
