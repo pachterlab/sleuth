@@ -4,13 +4,18 @@
 \alias{sleuth_interact}
 \title{Interactive sleuth visualization with Shiny}
 \usage{
-sleuth_interact(obj, ...)
+sleuth_interact(obj, select_trans = FALSE, ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object already processed and has run
 \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}}
 
-\item{...}{additional parameters sent to ploltting functions}
+\item{select_trans}{if TRUE, output a transcript selection box in the MA
+plot. FALSE by default, since it takes a bit longer to load (about 30-40s).
+Be patient and wait for the table to show up on the initial screen before
+clicking any of the tabs.}
+
+\item{...}{additional parameters sent to plotting functions}
 }
 \value{
 a \code{\link{shinyApp}} result

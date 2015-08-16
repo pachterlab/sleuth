@@ -121,7 +121,7 @@ plot_density <- function(obj,
   use_filtered = TRUE,
   units = 'est_counts',
   grouping = NULL,
-  offset = 1,
+  offset = 1
   ) {
 
   res <- NULL

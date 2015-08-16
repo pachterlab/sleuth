@@ -4,7 +4,8 @@
 \alias{plot_vars}
 \title{Plot technical variance versus observed variance}
 \usage{
-plot_vars(obj, which_model = "full", point_alpha = 0.2, xy_line = TRUE,
+plot_vars(obj, which_beta = NULL, which_model = "full", sig_level = 0.1,
+  point_alpha = 0.2, sig_color = "red", xy_line = TRUE,
   xy_line_color = "red", highlight = NULL, highlight_color = "green")
 }
 \arguments{
