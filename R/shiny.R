@@ -12,7 +12,7 @@
 #' @return a \code{\link{shinyApp}} result
 #' @export
 #' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_test}}
-sleuth_interact <- function(obj, select_trans = FALSE, ...) {
+sleuth_live <- function(obj, select_trans = FALSE, ...) {
   stopifnot( is(obj, 'sleuth') )
   if ( !require('shiny') ) {
     stop("'sleuth_interact()' requires 'shiny'. Please install it using
@@ -100,43 +100,49 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
         )
       ),
 
-    tabPanel('maps',
-
+    navbarMenu('maps',
+      ###
+      tabPanel('sample heatmap',
+        checkboxInput('samp_heat_filt', label = 'filter', value = TRUE),
+        plotOutput('samp_heat_plt')
+        ),
       ####
-      fluidRow(
-        column(3,
-          selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
-            selected = 1)
+      tabPanel('PCA',
+        fluidRow(
+          column(3,
+            selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
+              selected = 1)
+            ),
+          column(3,
+            selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
+              selected = 2)
+            ),
+          column(2,
+            selectInput('text_labels', label = 'text labels: ',
+              choices = c(TRUE, FALSE), selected = TRUE)
+            ),
+          column(4,
+            selectInput('color_by', label = 'color by: ',
+              choices = c(NULL, poss_covars), selected = NULL)
+            )
           ),
-        column(3,
-          selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
-            selected = 2)
+        fluidRow(
+          column(2,
+            selectInput('pca_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(2,
+            checkboxInput('pca_filt', label = 'filter: ',
+              value = TRUE))
           ),
-        column(2,
-          selectInput('text_labels', label = 'text labels: ',
-            choices = c(TRUE, FALSE), selected = TRUE)
-          ),
-        column(4,
-          selectInput('color_by', label = 'color by: ',
-            choices = c(NULL, poss_covars), selected = NULL)
-          )
-        ),
-      fluidRow(
-        column(2,
-          selectInput('pca_units', label = 'units: ',
-            choices = c('est_counts', 'tpm'),
-            selected = 'est_counts')),
-        column(2,
-          checkboxInput('pca_filt', label = 'filter: ',
-            value = TRUE))
-        ),
         fluidRow(plotOutput('pca_plt'))
+        )
       ),
 
     navbarMenu('analyses',
 
       ####
-      tabPanel('MA plots',
+      tabPanel('MA plot',
         fluidRow(
           column(2,
             numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
@@ -234,6 +240,11 @@ sleuth_interact <- function(obj, select_trans = FALSE, ...) {
         units = input$scatter_units,
         use_filtered = input$scatter_filt,
         offset = input$scatter_offset)
+    })
+
+    ###
+    output$samp_heat_plt <- renderPlot({
+      plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt)
     })
 
     ###

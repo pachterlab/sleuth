@@ -437,61 +437,41 @@ plot_bootstrap <- function(obj,
   p
 }
 
+#' Plot sample heatmap
+#'
+#' Plot sample heatmap using the Jensen-Shannon divergence
+#'
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, use filtered data. otherwise, use everything
+#' @param color_high the 'high' color
+#' @param color_low the 'low' color
+#' @param x_axis_angle the angle at which to put the x-axis labels
+#' @return a \code{ggplot2} object
 #' @export
-prep_bs_plots <- function(obj) {
-  stopifnot( is(obj, "sleuth") )
-
-  bs <- lapply(obj[["kal"]], dcast_bootstrap, "est_counts")
-  obj$dcast_bs <- bs
-
-  obj
-}
-
-#' @export
-plot_transcript_variability <- function(obj, target_id, group_string = NULL) {
-  target_exp <- lapply(seq_along(obj$dcast_bs),
-    function(i)
-    {
-      m_est <- reshape2::melt(obj$dcast_bs[[i]][target_id,],
-        value.name = "est_counts")
-      suppressWarnings(cbind(m_est, obj$sample_to_condition[i,]))
-    }) %>%
-      rbind_all()
-
-  plt <- ggplot(target_exp, aes(sample, est_counts))
-
-  if (is.null(group_string)) {
-    plt <- plt + geom_boxplot()
+plot_sample_heatmap <- function(obj,
+  use_filtered = TRUE,
+  color_high = 'white',
+  color_low = 'dodgerblue',
+  x_axis_angle = 50
+  ) {
+  abund <- NULL
+  if (use_filtered) {
+    abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm')
   } else {
-    plt <- plt + geom_boxplot(aes_string(fill = group_string))
+    abund <- spread_abundance_by(obj$obs_norm, 'tpm')
   }
+  all_pairs <- apply_all_pairs(abund, sleuth:::jsd)
 
-  if (!is(target_id, "character")) {
-    target_id <- rownames(obj$dcast_bs[[1]])[target_id]
-  }
+  all_pairs <- reshape2::melt(all_pairs, varnames = c('sample_x', 'sample_y'),
+    value.name = 'jsd')
 
-  list(plt = plt + ggtitle(target_id), target_id = target_id)
-}
+  p <- ggplot(all_pairs, aes(sample_x, sample_y))
+  p <- p + geom_tile(aes(fill = jsd))
+  p <- p + geom_text(aes(label = round(jsd, 3)))
+  p <- p + scale_fill_gradient(high = color_high, low = color_low)
+  p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
+  p <- p + xlab('')
+  p <- p + ylab('')
 
-#' @export
-plot_transcript <- function(obj, trans_name, group_string = NULL) {
-  stopifnot( is(obj, "sleuth") )
-
-  if ( !is(trans_name, "character") ) {
-    stopifnot( is(trans_name, "numeric") || is(trans_name, "integer"))
-    trans_name <- rownames(obj$dcast_bs[[1]])[trans_name]
-  }
-
-  target_exp <- obj$obs_norm %>%
-    filter(target_id == trans_name)
-
-  plt <- ggplot(target_exp, aes(sample, est_counts))
-
-  if (is.null(group_string)) {
-    plt <- plt + geom_boxplot()
-  } else {
-    plt <- plt + geom_boxplot(aes_string(fill = group_string))
-  }
-
-  plt + ggtitle(trans_name)
+  p
 }

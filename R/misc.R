@@ -92,3 +92,28 @@ jsd <- function(p, q) {
   m <- (p + q)/2
   (kld(p, m) + kld(q, m)) / 2
 }
+
+apply_all_pairs <- function(mat, fun) {
+  ids <- colnames(mat)
+
+  res <- matrix(NA, nrow = length(ids), ncol = length(ids))
+  dimnames(res) <- list(ids, ids)
+
+  all_pairs <- utils::combn(ids, 2)
+  for (i in 1:ncol(all_pairs)) {
+    j <- all_pairs[1,i]
+    k <- all_pairs[2,i]
+
+    cur <- fun(mat[,j], mat[,k])
+
+    res[j,k] <- cur
+    res[k,j] <- cur
+  }
+
+  for (i in 1:length(ids)) {
+    res[i,i] <- fun(mat[,i], mat[,i])
+  }
+
+
+  res
+}
