@@ -316,7 +316,8 @@ plot_vars <- function(obj,
     cur_summary <- dplyr::mutate(cur_summary,
       obs_var = sigma_sq + sigma_q_sq)
   } else {
-    cur_summary <- sleuth_results(obj, which_beta, which_model)
+    cur_summary <- sleuth_results(obj, which_beta, which_model,
+      rename_cols = FALSE, show_all = FALSE)
     cur_summary <- dplyr::mutate(cur_summary,
       obs_var = sigma_sq + sigma_q_sq,
       significant = qval < sig_level)
@@ -374,8 +375,9 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   ) {
   stopifnot( is(obj, 'sleuth') )
 
-  res <- sleuth_results(obj, which_beta, which_model)
-  res <- dplyr::mutate(res, significant = ifelse( qval < sig_level, TRUE, FALSE ))
+  res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+    show_all = FALSE)
+  res <- dplyr::mutate(res, significant = qval < sig_level)
 
   p <- ggplot(res, aes(mean_obs, b))
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)

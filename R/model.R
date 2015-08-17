@@ -63,11 +63,16 @@ tests.sleuth_model <- function(obj) {
 #' @param which_beta a character string denoting which coefficient test to
 #' extract
 #' @param which_model a character string denoting which model to extract
+#' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
+#' consistent with vignette
+#' @param show_all if \code{TRUE} will show all transcripts (not only the ones
+#' passing filters). The transcripts that do not pass filters will have
+#' \code{NA} values in most columns.
 #' @return a \code{data.frame}
 #' @seealso \code{\link{wald_test}} to compute tests, \code{\link{models}} to
 #' view which models and betas have been tested
 #' @export
-sleuth_results <- function(obj, which_beta, which_model = 'full') {
+sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
   stopifnot( is(obj, 'sleuth') )
 
   if ( !model_exists(obj, which_model) ) {
@@ -91,19 +96,36 @@ sleuth_results <- function(obj, which_beta, which_model = 'full') {
   }
 
   # obj$fits[[which_model]]$wald[[which_beta]]
-  res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
-    target_id,
-    mean = mean_obs,
-    var = var_obs,
-    tech_var = sigma_q_sq,
-    sigma_sq,
-    smooth_sigma_sq,
-    final_sigma_sq = smooth_sigma_sq_pmax,
-    b,
-    se_b,
-    pval,
-    qval
-    )
+  res <- NULL
+  if (rename_cols) {
+    res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
+      target_id,
+      mean_obs,
+      var_obs,
+      tech_var = sigma_q_sq,
+      sigma_sq,
+      smooth_sigma_sq,
+      final_sigma_sq = smooth_sigma_sq_pmax,
+      b,
+      se_b,
+      pval,
+      qval
+      )
+  } else {
+    res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
+      target_id,
+      mean_obs,
+      var_obs,
+      sigma_q_sq,
+      sigma_sq,
+      smooth_sigma_sq,
+      smooth_sigma_sq_pmax,
+      b,
+      se_b,
+      pval,
+      qval
+      )
+  }
 
   if ( !is.null(obj$target_mapping) ) {
     res <- dplyr::left_join(
@@ -111,12 +133,15 @@ sleuth_results <- function(obj, which_beta, which_model = 'full') {
       data.table::as.data.table(obj$target_mapping),
       by = 'target_id')
   }
-  tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
-  res <- dplyr::left_join(
-    data.table::as.data.table(tids),
-    data.table::as.data.table(res),
-    by = 'target_id'
-    )
+
+  if (show_all) {
+    tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
+    res <- dplyr::left_join(
+      data.table::as.data.table(tids),
+      data.table::as.data.table(res),
+      by = 'target_id'
+      )
+  }
   res <- as_df(res)
 
   res

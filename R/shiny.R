@@ -290,22 +290,22 @@ sleuth_live <- function(obj, ...) {
         highlight = rv_ma$highlight_ma)
     })
 
-    observe({
-      if (!is.null(input$ma_trans)) {
-        res <- data.frame(target_id = input$ma_trans, stringsAsFactors = FALSE)
-        rv_ma$highlight_ma <- res
-        rv_ma$highlight_vars <- res
-        wb <- input$which_beta
-        if ( is.null(wb) ) {
-          poss_tests <- tests(models(obj)[[input$which_model]])
-          wb <- poss_tests[1]
-        }
-        sres <- sleuth_results(obj, wb, input$which_model)
-        output$ma_brush_out <- renderDataTable({
-          dplyr::semi_join(sres, res, by = 'target_id' )
-        })
-      }
-    })
+    # observe({
+    #   if (!is.null(input$ma_trans)) {
+    #     res <- data.frame(target_id = input$ma_trans, stringsAsFactors = FALSE)
+    #     rv_ma$highlight_ma <- res
+    #     rv_ma$highlight_vars <- res
+    #     wb <- input$which_beta
+    #     if ( is.null(wb) ) {
+    #       poss_tests <- tests(models(obj)[[input$which_model]])
+    #       wb <- poss_tests[1]
+    #     }
+    #     sres <- sleuth_results(obj, wb, input$which_model, rename_cols = TRUE, show_all = TRUE)
+    #     output$ma_brush_out <- renderDataTable({
+    #       dplyr::semi_join(sres, res, by = 'target_id' )
+    #     })
+    #   }
+    # })
 
     output$vars <- renderPlot({
       wb <- input$which_beta
@@ -329,7 +329,8 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj)[[input$which_model]])
         wb <- poss_tests[1]
       }
-      res <- sleuth_results(obj, wb, input$which_model)
+      res <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE, show_all = FALSE)
+      # print(head(res))
       if (!is.null(input$ma_brush)) {
         res <- enclosed_brush(res, input$ma_brush)
         rv_ma$highlight_vars <- res
@@ -341,6 +342,15 @@ sleuth_live <- function(obj, ...) {
         rv_ma$highlight_ma <- res
       } else {
         res <- NULL
+      }
+
+      # TODO: total hack -- fix this correctly eventually
+      if (is(res, 'data.frame')) {
+        res <- dplyr::rename(res,
+          mean = mean_obs,
+          var = var_obs,
+          tech_var = sigma_q_sq,
+          final_sigma_sq = smooth_sigma_sq_pmax)
       }
 
       res
