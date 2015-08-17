@@ -5,7 +5,7 @@
 \title{Constructor for a 'sleuth' object}
 \usage{
 sleuth_prep(kal_dirs, sample_to_covariates, full_model,
-  filter_fun = basic_filter, ...)
+  filter_fun = basic_filter, target_mapping = NULL, ...)
 }
 \arguments{
 \item{kal_dirs}{a character vector of length greater than one where each
@@ -22,6 +22,13 @@ of the experiment. It must be consistent with the data.frame supplied in
 
 \item{filter_fun}{the function to use when filtering.}
 
+\item{target_mapping}{a \code{data.frame} that has at least one column
+'target_id' and others that denote the mapping for each target. if it is not
+\code{NULL}, \code{target_mapping} is joined with many outputs where it
+might be useful. For example, you might have columns 'target_id',
+'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
+mappings.}
+
 \item{...}{additional arguments passed to other functions}
 }
 \value{
@@ -35,7 +42,7 @@ accounting for covariates, sequencing depth, technical and biological
 variance.
 }
 \seealso{
-\code{\link{sleuth_fit}} to fit a model, \code{\link{wald_test}} to
+\code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
 test whether a coeffient is zero
 }
 

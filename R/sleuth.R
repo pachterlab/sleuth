@@ -28,10 +28,16 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
 #' of the experiment. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}
 #' @param filter_fun the function to use when filtering.
+#' @param target_mapping a \code{data.frame} that has at least one column
+#' 'target_id' and others that denote the mapping for each target. if it is not
+#' \code{NULL}, \code{target_mapping} is joined with many outputs where it
+#' might be useful. For example, you might have columns 'target_id',
+#' 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
+#' mappings.
 #' @param ... additional arguments passed to other functions
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
-#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{wald_test}} to
+#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
 #' test whether a coeffient is zero
 #' @export
 sleuth_prep <- function(
@@ -39,6 +45,7 @@ sleuth_prep <- function(
   sample_to_covariates,
   full_model,
   filter_fun = basic_filter,
+  target_mapping = NULL,
   ...) {
 
   ##############################
@@ -66,7 +73,17 @@ sleuth_prep <- function(
 
   if (!("sample" %in% colnames(sample_to_covariates))) {
     stop(paste0("'", substitute(sample_to_covariates),
-        "' must contain a column names 'sample'"))
+        "' (sample_to_covariates) must contain a column named 'sample'"))
+  }
+
+  if ( !is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
+    stop(paste0("'", substitute(target_mapping),
+        "' (target_mapping) must be a data.frame or NULL"))
+  }
+
+  if (!("target_id" %in% colnames(target_mapping))) {
+    stop(paste0("'", substitute(target_mapping),
+        "' (target_mapping) must contain a column named 'target_id'"))
   }
 
   # TODO: ensure all kallisto have same number of transcripts
@@ -107,7 +124,8 @@ sleuth_prep <- function(
       sample_to_covariates = sample_to_covariates,
       bootstrap_summary = NA,
       full_formula = full_model,
-      design_matrix = model.matrix(full_model, sample_to_covariates)
+      design_matrix = model.matrix(full_model, sample_to_covariates),
+      target_mapping = target_mapping
     )
 
   # TODO: eventually factor this out
@@ -123,7 +141,6 @@ sleuth_prep <- function(
 
     filter_df <- adf(target_id = names(filter_true))
 
-    #est_counts_norm <- as_df(t(t(est_counts_spread[filter_bool,]) / est_counts_sf))
     est_counts_norm <- as_df(t(t(est_counts_spread) / est_counts_sf))
 
     est_counts_norm$target_id <- rownames(est_counts_norm)
@@ -132,12 +149,6 @@ sleuth_prep <- function(
     obs_norm <- est_counts_norm
     obs_norm$target_id <- as.character(obs_norm$target_id)
     rm(est_counts_norm)
-
-    #obs_norm <- as_df(obs_norm)
-
-    # add relevant objs back into sleuth obj
-    # ret$obs_norm <- obs_norm
-    # ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
 
     # deal w/ TPM
     msg("Normalizing tpm")
@@ -168,7 +179,6 @@ sleuth_prep <- function(
         est_counts_size_factor = est_counts_sf[i])
       })
 
-    # ret$tpm_norm_filt <- dplyr::semi_join(tpm_norm, filter_df, by = 'target_id')
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
     ret$est_counts_sf <- est_counts_sf

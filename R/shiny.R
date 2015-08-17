@@ -4,15 +4,11 @@
 #'
 #' @param obj a \code{sleuth} object already processed and has run
 #' \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}
-#' @param select_trans if TRUE, output a transcript selection box in the MA
-#' plot. FALSE by default, since it takes a bit longer to load (about 30-40s).
-#' Be patient and wait for the table to show up on the initial screen before
-#' clicking any of the tabs.
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result
 #' @export
 #' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_test}}
-sleuth_live <- function(obj, select_trans = FALSE, ...) {
+sleuth_live <- function(obj, ...) {
   stopifnot( is(obj, 'sleuth') )
   if ( !require('shiny') ) {
     stop("'sleuth_interact()' requires 'shiny'. Please install it using

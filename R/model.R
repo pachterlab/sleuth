@@ -85,7 +85,7 @@ sleuth_results <- function(obj, which_beta, which_model = 'full') {
   }
 
   if ( !(which_beta %in% names(obj$fits[[which_model]]$wald)) ) {
-    stop("'", which_beta, "' is available in '", which_model,
+    stop("'", which_beta, "' is not available in '", which_model,
       "'. Check models(", substitute(obj),
       ") to see list of tests that have been run or run wald_test().")
   }
@@ -93,17 +93,25 @@ sleuth_results <- function(obj, which_beta, which_model = 'full') {
   # obj$fits[[which_model]]$wald[[which_beta]]
   res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
     target_id,
-    mean_obs,
-    var_obs,
+    mean = mean_obs,
+    var = var_obs,
+    tech_var = sigma_q_sq,
     sigma_sq,
-    sigma_q_sq,
     smooth_sigma_sq,
-    smooth_sigma_sq_pmax,
+    final_sigma_sq = smooth_sigma_sq_pmax,
     b,
     se_b,
     pval,
     qval
     )
+
+  if ( !is.null(obj$target_mapping) ) {
+    res <- dplyr::left_join(
+      data.table::as.data.table(res),
+      data.table::as.data.table(obj$target_mapping),
+      by = 'target_id')
+    res <- as_df(res)
+  }
 
   res
 }
