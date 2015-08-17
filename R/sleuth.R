@@ -79,12 +79,13 @@ sleuth_prep <- function(
   if ( !is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
     stop(paste0("'", substitute(target_mapping),
         "' (target_mapping) must be a data.frame or NULL"))
+  } else if (is(target_mapping, 'data.frame')){
+    if (!("target_id" %in% colnames(target_mapping))) {
+      stop(paste0("'", substitute(target_mapping),
+          "' (target_mapping) must contain a column named 'target_id'"))
+    }
   }
 
-  if (!("target_id" %in% colnames(target_mapping))) {
-    stop(paste0("'", substitute(target_mapping),
-        "' (target_mapping) must contain a column named 'target_id'"))
-  }
 
   # TODO: ensure all kallisto have same number of transcripts
   # TODO: ensure transcripts are in same order -- if not, report warning that
@@ -93,7 +94,7 @@ sleuth_prep <- function(
   # done
   ##############################
 
-  msg('Reading in kallisto results')
+  msg('reading in kallisto results')
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
   nsamp <- 0
@@ -131,7 +132,7 @@ sleuth_prep <- function(
   # TODO: eventually factor this out
   normalize <- TRUE
   if ( normalize ) {
-    msg("Normalizing est_counts")
+    msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
     filter_bool <- apply(est_counts_spread, 1, filter_fun)
     filter_true <- filter_bool[filter_bool]
@@ -151,7 +152,7 @@ sleuth_prep <- function(
     rm(est_counts_norm)
 
     # deal w/ TPM
-    msg("Normalizing tpm")
+    msg("normalizing tpm")
     tpm_spread <- spread_abundance_by(obs_raw, "tpm")
     tpm_sf <- norm_factors(tpm_spread[filter_bool,])
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
@@ -172,7 +173,7 @@ sleuth_prep <- function(
         by = c("sample"))
     })
 
-    msg("Normalizing bootstrap samples")
+    msg("normalizing bootstrap samples")
     kal_list <- lapply(seq_along(kal_list), function(i) {
       normalize_bootstrap(kal_list[[i]],
         tpm_size_factor = tpm_sf[i],

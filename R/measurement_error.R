@@ -48,7 +48,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   # TODO: check if normalized. if not, normalize
 
-  msg('Summarizing bootstraps')
+  msg('summarizing bootstraps')
   # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
   bs_summary <- bs_sigma_summary(obj, function(x) log(x + 0.5))
 
@@ -57,7 +57,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   bs_summary$obs_counts <- bs_summary$obs_counts[obj$filter_df$target_id, ]
   bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[obj$filter_df$target_id]
 
-  msg('Fitting measurement error models')
+  msg('fitting measurement error models')
 
   mes <- me_model_by_row(obj, obj$design_matrix, bs_summary)
   tid <- names(mes)
@@ -73,7 +73,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
 
-  msg('Shrinkage estimation')
+  msg('shrinkage estimation')
   swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
     ignore_zeroes = TRUE, ...)
 
@@ -86,7 +86,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
 
-  msg('Computing variance of betas')
+  msg('computing variance of betas')
   beta_covars <- lapply(1:nrow(l_smooth),
     function(i) {
       row <- l_smooth[i,]

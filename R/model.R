@@ -110,8 +110,14 @@ sleuth_results <- function(obj, which_beta, which_model = 'full') {
       data.table::as.data.table(res),
       data.table::as.data.table(obj$target_mapping),
       by = 'target_id')
-    res <- as_df(res)
   }
+  tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
+  res <- dplyr::left_join(
+    data.table::as.data.table(tids),
+    data.table::as.data.table(res),
+    by = 'target_id'
+    )
+  res <- as_df(res)
 
   res
 }
