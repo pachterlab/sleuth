@@ -25,15 +25,18 @@ print.sleuth_model <- function(obj) {
 #'
 #' @param obj
 #' @export
-models <- function(obj) {
+models <- function(obj, ...) {
   UseMethod('models')
 }
 
 #' @export
-models.sleuth <- function(obj) {
-  for (x in names(obj$fits)) {
-    cat('[ ', x,' ]\n')
-    models(obj$fits[[x]])
+models.sleuth <- function(obj, verbose = TRUE) {
+
+  if (verbose) {
+    for (x in names(obj$fits)) {
+      cat('[ ', x,' ]\n')
+      models(obj$fits[[x]])
+    }
   }
 
   invisible(obj$fits)
@@ -127,12 +130,6 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
       )
   }
 
-  if ( !is.null(obj$target_mapping) ) {
-    res <- dplyr::left_join(
-      data.table::as.data.table(res),
-      data.table::as.data.table(obj$target_mapping),
-      by = 'target_id')
-  }
 
   if (show_all) {
     tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
@@ -141,6 +138,13 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
       data.table::as.data.table(res),
       by = 'target_id'
       )
+  }
+
+  if ( !is.null(obj$target_mapping) ) {
+    res <- dplyr::left_join(
+      data.table::as.data.table(res),
+      data.table::as.data.table(obj$target_mapping),
+      by = 'target_id')
   }
   res <- as_df(res)
 

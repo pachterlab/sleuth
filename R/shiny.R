@@ -19,7 +19,7 @@ sleuth_live <- function(obj, ...) {
     colnames(obj$sample_to_covariates),
     'sample')
   samp_names <- obj$sample_to_covariates[['sample']]
-  poss_models <- names(models(obj))
+  poss_models <- names(models(obj, verbose = FALSE))
 
   p_layout <- navbarPage(
     a('sleuth', href = 'http://pimentel.github.io/sleuth', target = '_blank',
@@ -57,7 +57,7 @@ sleuth_live <- function(obj, ...) {
             numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
-        plotOutput('scatter')
+        fluidRow(plotOutput('scatter', brush = 'scatter_brush'))
       ),
 
     navbarMenu('summaries',
@@ -240,6 +240,21 @@ sleuth_live <- function(obj, ...) {
         offset = as.numeric(input$scatter_offset))
     })
 
+    output$scatter_vars <- renderPlot({
+      wb <- input$which_beta
+      if ( is.null(wb) ) {
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+        wb <- poss_tests[1]
+      }
+      plot_vars(obj,
+        which_beta = wb,
+        which_model = input$which_model,
+        point_alpha = input$ma_alpha,
+        highlight = rv_ma$highlight_vars,
+        sig_level = input$max_fdr
+        )
+    })
+
     ###
     output$samp_heat_plt <- renderPlot({
       plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt)
@@ -270,24 +285,25 @@ sleuth_live <- function(obj, ...) {
 
     ### MA
     rv_ma <- reactiveValues(
-      highlight_vars = NULL,
-      highlight_ma = NULL
+      highlight_vars = NULL
       )
 
     output$which_beta_ctrl <- renderUI({
-      poss_tests <- tests(models(obj)[[input$which_model]])
+      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
       selectInput('which_beta', 'beta: ', choices = poss_tests)
     })
 
     output$ma <- renderPlot({
       val <- input$which_beta
       if ( is.null(val) ) {
-        poss_tests <- tests(models(obj)[[input$which_model]])
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
         val <- poss_tests[1]
       }
-      plot_ma(obj, val, input$which_model, sig_level = input$max_fdr,
-        point_alpha = input$ma_alpha,
-        highlight = rv_ma$highlight_ma)
+      plot_ma(obj, val,
+        input$which_model,
+        sig_level = input$max_fdr,
+        point_alpha = input$ma_alpha
+        )
     })
 
     # observe({
@@ -310,7 +326,7 @@ sleuth_live <- function(obj, ...) {
     output$vars <- renderPlot({
       wb <- input$which_beta
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj)[[input$which_model]])
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
         wb <- poss_tests[1]
       }
       plot_vars(obj,
@@ -326,21 +342,16 @@ sleuth_live <- function(obj, ...) {
     output$ma_brush_out <- renderDataTable({
       wb <- input$which_beta
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj)[[input$which_model]])
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
         wb <- poss_tests[1]
       }
-      res <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE, show_all = FALSE)
+      res <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
+        show_all = FALSE)
       # print(head(res))
       if (!is.null(input$ma_brush)) {
         res <- enclosed_brush(res, input$ma_brush)
         rv_ma$highlight_vars <- res
-        rv_ma$highlight_ma <- NULL
-      } else if ( !is.null(input$vars_brush) ) {
-        # TODO: not quite working... 
-        # res <- enclosed_brush(res, input$vars_brush)
-        rv_ma$highlight_vars <- NULL
-        rv_ma$highlight_ma <- res
-      } else {
+      }  else {
         res <- NULL
       }
 
@@ -358,14 +369,14 @@ sleuth_live <- function(obj, ...) {
 
     ### DE table
     output$which_beta_ctrl_de <- renderUI({
-      poss_tests <- tests(models(obj)[[input$which_model_de]])
+      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
     })
 
     output$de_dt <- renderDataTable({
       wb <- input$which_beta_de
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj)[[input$which_model_de]])
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
       sleuth_results(obj, wb, input$which_model_de)

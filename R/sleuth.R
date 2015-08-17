@@ -137,7 +137,7 @@ sleuth_prep <- function(
     filter_bool <- apply(est_counts_spread, 1, filter_fun)
     filter_true <- filter_bool[filter_bool]
 
-    msg(paste0(sum(filter_bool), ' targets passed the filter.'))
+    msg(paste0(sum(filter_bool), ' targets passed the filter'))
     est_counts_sf <- norm_factors(est_counts_spread[filter_bool,])
 
     filter_df <- adf(target_id = names(filter_true))

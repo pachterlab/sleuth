@@ -4,7 +4,7 @@
 \alias{models}
 \title{View which models have been fit}
 \usage{
-models(obj)
+models(obj, ...)
 }
 \arguments{
 \item{obj}{}
