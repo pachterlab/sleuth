@@ -57,7 +57,9 @@ sleuth_live <- function(obj, ...) {
             numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
-        fluidRow(plotOutput('scatter', brush = 'scatter_brush'))
+        fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
+        fluidRow(plotOutput('scatter_vars')),
+        fluidRow(dataTableOutput('scatter_brush_table'))
       ),
 
     navbarMenu('summaries',
@@ -232,6 +234,7 @@ sleuth_live <- function(obj, ...) {
     })
 
     ###
+    rv_scatter <- reactiveValues(highlight = NULL)
     output$scatter <- renderPlot({
       plot_scatter(obj, input$sample_x, input$sample_y,
         trans = input$trans, point_alpha = input$scatter_alpha,
@@ -249,10 +252,52 @@ sleuth_live <- function(obj, ...) {
       plot_vars(obj,
         which_beta = wb,
         which_model = input$which_model,
-        point_alpha = input$ma_alpha,
-        highlight = rv_ma$highlight_vars,
+        point_alpha = input$scatter_alpha,
+        highlight = rv_scatter$highlight_vars,
         sig_level = input$max_fdr
         )
+    })
+
+    output$scatter_brush_table <- renderDataTable({
+      res <- NULL
+      wb <- input$which_beta
+      if ( is.null(wb) ) {
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+        wb <- poss_tests[1]
+      }
+      sr <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
+        show_all = TRUE)
+      if (!is.null(input$scatter_brush)) {
+        if (input$scatter_filt) {
+          res <- spread_abundance_by(obj$obs_norm_filt, input$scatter_units)
+        } else {
+          res <- spread_abundance_by(obj$obs_norm, input$scatter_units)
+        }
+        cur_brush <- input$scatter_brush
+        cur_brush$mapping$x <- input$sample_x
+        cur_brush$mapping$y <- input$sample_y
+        res <- enclosed_brush(res, cur_brush)
+        res$target_id <- rownames(res)
+        rv_scatter$highlight_vars <- res
+      }  else {
+        res <- NULL
+      }
+
+      # TODO: total hack -- fix this correctly eventually
+      if (is(res, 'data.frame')) {
+        res <- dplyr::inner_join(
+          data.table::as.data.table(sr),
+          data.table::as.data.table(dplyr::select(res, target_id)),
+          by = 'target_id')
+        res <- dplyr::rename(res,
+          mean = mean_obs,
+          var = var_obs,
+          tech_var = sigma_q_sq,
+          final_sigma_sq = smooth_sigma_sq_pmax)
+        res <- as_df(res)
+      }
+
+      res
     })
 
     ###
@@ -399,6 +444,7 @@ sleuth_live <- function(obj, ...) {
 
 #' @export
 enclosed_brush <- function(df, brush) {
+  df <- as_df(df)
   xvar <- brush$mapping$x
   yvar <- brush$mapping$y
 

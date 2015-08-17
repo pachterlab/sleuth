@@ -337,12 +337,17 @@ plot_vars <- function(obj,
   }
 
   if (!is.null(highlight)) {
+    highlight_in <- data.frame()
     suppressWarnings({
-      highlight <- dplyr::semi_join(cur_summary, highlight, by = 'target_id')
+      highlight_in <- dplyr::semi_join(cur_summary, highlight, by = 'target_id')
     })
     if (nrow(highlight) > 0) {
-      p <- p + geom_point(aes(sqrt(obs_var), sqrt(sigma_q_sq)), data = highlight, colour = highlight_color)
+      p <- p + geom_point(aes(sqrt(obs_var), sqrt(sigma_q_sq)), data = highlight_in, colour = highlight_color)
     } else {
+      warning("Couldn't find any transcripts from highlight set in this sleuth_test. They were probably filtered out.")
+    }
+
+    if ( nrow(highlight_in) > 0 && (nrow(highlight_in) != nrow(highlight)) ) {
       warning("Couldn't find any transcripts from highlight set in this sleuth_test. They were probably filtered out.")
     }
   }
