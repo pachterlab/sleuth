@@ -4,7 +4,6 @@ http://pimentel.github.io/sleuth/atom.xml
 http://pimentel.github.io/sleuth/download.html
 http://pimentel.github.io/sleuth/faq.html
 http://pimentel.github.io/sleuth/index.html
-http://pimentel.github.io/sleuth/inst/doc/intro.Rmd
 http://pimentel.github.io/sleuth/license.html
 http://pimentel.github.io/sleuth/manual.html
 http://pimentel.github.io/sleuth/pseudobam.html

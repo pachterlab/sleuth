@@ -77,10 +77,6 @@
   
     
       
-    
-  
-    
-      
       	
       	<li><a href="/license.html">License</a></li>
       	
@@ -213,7 +209,7 @@ s2c</code></pre>
 ##  conditionscramble</code></pre>
 <p>At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the <strong>kallisto</strong> estimates, the model fit, and the testing. In other words it contains the entire analysis of the data.</p>
 <p>The best way to view the results is to generate the Shiny webpage that allows for exploratory data analysis:</p>
-<pre><code>sleuth_interact(so)</code></pre>
+<pre><code>sleuth_live(so)</code></pre>
 <p>To generate a table of results type</p>
 <pre class="sourceCode r"><code class="sourceCode r">results_table &lt;-<span class="st"> </span><span class="kw">sleuth_results</span>(so, <span class="st">'conditionscramble'</span>) </code></pre>
 
