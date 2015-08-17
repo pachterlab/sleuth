@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Plot technical variance versus observed variance</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_vars"><tr><td>plot_vars</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Plot technical variance versus observed variance</h2>
+
+<h3>Description</h3>
+
+<p>Plot technical variance versus observed variance
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_vars(obj, which_beta = NULL, which_model = "full", sig_level = 0.1,
+  point_alpha = 0.2, sig_color = "red", xy_line = TRUE,
+  xy_line_color = "red", highlight = NULL, highlight_color = "green")
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>which_model</code></td>
+<td>
+<p>a character string denoting which model to use for the
+test</p>
+</td></tr>
+<tr valign="top"><td><code>point_alpha</code></td>
+<td>
+<p>the alpha for the points</p>
+</td></tr>
+<tr valign="top"><td><code>xy_line</code></td>
+<td>
+<p>if TRUE, plot the xy_line</p>
+</td></tr>
+<tr valign="top"><td><code>xy_line_color</code></td>
+<td>
+<p>a string denoting the color for the xy line</p>
+</td></tr>
+<tr valign="top"><td><code>highlight</code></td>
+<td>
+<p>a <code>data.frame</code> with one column, <code>target_id</code>.
+These points will be highlighted in the plot. if <code>NULL</code>, no points will be highlighted.</p>
+</td></tr>
+<tr valign="top"><td><code>highlight_color</code></td>
+<td>
+<p>the color to highlight points.</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>ggplot2</code> object
+</p>
+
+
+</body></html>

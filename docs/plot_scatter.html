@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Sample to sample scatter plot</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_scatter"><tr><td>plot_scatter</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Sample to sample scatter plot</h2>
+
+<h3>Description</h3>
+
+<p>Make a scatter plot of transcripts from two samples. to assess correlation
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
+  sample_y = obj$sample_to_covariates$sample[2], use_filtered = TRUE,
+  units = "est_counts", offset = 1, point_alpha = 0.2, xy_line = TRUE,
+  xy_line_color = "red", trans = "log", xlim = NULL, ylim = NULL)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>sample_x</code></td>
+<td>
+<p>the string corresponding to the sample name in <code>obj$sample_to_covariates</code></p>
+</td></tr>
+<tr valign="top"><td><code>sample_y</code></td>
+<td>
+<p>same as <code>sample_x</code> but for the y-axis</p>
+</td></tr>
+<tr valign="top"><td><code>use_filtered</code></td>
+<td>
+<p>if TRUE, use filtered data. otherwise, use all data</p>
+</td></tr>
+<tr valign="top"><td><code>units</code></td>
+<td>
+<p>either 'est_counts' or 'tpm'</p>
+</td></tr>
+<tr valign="top"><td><code>offset</code></td>
+<td>
+<p>a linear offset to help deal with zeroes if transforming the abundances</p>
+</td></tr>
+<tr valign="top"><td><code>point_alpha</code></td>
+<td>
+<p>the alpha on the points</p>
+</td></tr>
+<tr valign="top"><td><code>xy_line</code></td>
+<td>
+<p>if TRUE, plot the xy_line</p>
+</td></tr>
+<tr valign="top"><td><code>xy_line_color</code></td>
+<td>
+<p>a string denoting the color for the xy line</p>
+</td></tr>
+<tr valign="top"><td><code>trans</code></td>
+<td>
+<p>a string pointing to a function to use for the transformation.
+This function must exist in the global namespace. This means you should be
+able to call <code>eval('myfun')</code> and get a function back.</p>
+</td></tr>
+<tr valign="top"><td><code>xlim</code></td>
+<td>
+<p>a numeric vector of length two denoting the x limits</p>
+</td></tr>
+<tr valign="top"><td><code>ylim</code></td>
+<td>
+<p>same as xlim but for the y-axis</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a ggplot object for the scatterplot
+</p>
+
+
+</body></html>
