@@ -37,6 +37,3 @@ Next load __sleuth__ with
 library("sleuth")
 ~~~
 
-#### Licence
-
-__sleuth__ is distributed under the GPL license.

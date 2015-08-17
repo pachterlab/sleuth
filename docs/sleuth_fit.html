@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Fit a measurement error model</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for sleuth_fit"><tr><td>sleuth_fit</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Fit a measurement error model</h2>
+
+<h3>Description</h3>
+
+<p>This function is a wrapper for fitting a measurement error model using
+<code>sleuth</code>. It performs the technical variance estimation from the boostraps, biological
+variance estimation, and shrinkage estimation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+sleuth_fit(obj, formula = NULL, fit_name = NULL, ...)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>formula</code></td>
+<td>
+<p>a formula specifying the design to fit</p>
+</td></tr>
+<tr valign="top"><td><code>fit_name</code></td>
+<td>
+<p>the name to store the fit in the sleuth
+object</p>
+</td></tr>
+<tr valign="top"><td><code>...</code></td>
+<td>
+<p>additional arguments passed to <code>sliding_window_grouping</code> and
+<code>shrink_df</code></p>
+</td></tr>
+</table>
+
+
+<h3>Details</h3>
+
+<p>For most users, simply providing the sleuth object should be sufficient. By
+default, this behavior will fit the full model initially specified and store
+it in the sleuth object under 'full'.
+</p>
+<p>To see which models have been fit, users will likely find the function
+<code>models</code> helpful.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a sleuth object with updated attributes
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>models</code> for seeing which models have been fit,
+<code>sleuth_prep</code> for creating a sleuth object,
+<code>sleuth_test</code> to test whether a coefficient is zero
+</p>
+
+
+</body></html>

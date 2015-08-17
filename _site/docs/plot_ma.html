@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: MA plot</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_ma"><tr><td>plot_ma</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>MA plot</h2>
+
+<h3>Description</h3>
+
+<p>Make an 'MA plot' for a given test. MA plots display, for each transcript, the mean of abundances across samples on the
+x-axis and fold change on the y-axis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_ma(obj, which_beta, which_model = "full", sig_level = 0.1,
+  point_alpha = 0.2, sig_color = "red", highlight = NULL,
+  highlight_color = "green")
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>which_beta</code></td>
+<td>
+<p>a character string denoting which beta to use for
+highlighting the transcript</p>
+</td></tr>
+<tr valign="top"><td><code>which_model</code></td>
+<td>
+<p>a character string denoting which model to use for the
+test</p>
+</td></tr>
+<tr valign="top"><td><code>point_alpha</code></td>
+<td>
+<p>the alpha for the points</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>ggplot2</code> object
+</p>
+
+
+</body></html>

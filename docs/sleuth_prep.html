@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Constructor for a 'sleuth' object</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for sleuth_prep"><tr><td>sleuth_prep</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Constructor for a 'sleuth' object</h2>
+
+<h3>Description</h3>
+
+<p>A sleuth is a group of kallistos. Borrowing this terminology, a 'sleuth' object stores
+a group of kallisto results, and can then operate on them while
+accounting for covariates, sequencing depth, technical and biological
+variance.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+sleuth_prep(kal_dirs, sample_to_covariates, full_model,
+  filter_fun = basic_filter, ...)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>kal_dirs</code></td>
+<td>
+<p>a character vector of length greater than one where each
+string points to a kallisto output directory</p>
+</td></tr>
+<tr valign="top"><td><code>sample_to_covariates</code></td>
+<td>
+<p>is a <code>data.frame</code> which contains a mapping
+from <code>sample</code> (a column) to some set of experimental conditions or
+covariates. The column <code>sample</code> should be in the same order as the
+corresponding entry in <code>kal_dirs</code></p>
+</td></tr>
+<tr valign="top"><td><code>full_model</code></td>
+<td>
+<p>is a <code>formula</code> which explains the full model (design)
+of the experiment. It must be consistent with the data.frame supplied in
+<code>sample_to_covariates</code></p>
+</td></tr>
+<tr valign="top"><td><code>filter_fun</code></td>
+<td>
+<p>the function to use when filtering.</p>
+</td></tr>
+<tr valign="top"><td><code>...</code></td>
+<td>
+<p>additional arguments passed to other functions</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>sleuth</code> object containing all kallisto samples, metadata,
+and summary statistics
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>sleuth_fit</code> to fit a model, <code>wald_test</code> to
+test whether a coeffient is zero
+</p>
+
+
+</body></html>
