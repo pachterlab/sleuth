@@ -151,13 +151,13 @@ s2c</code></pre></div>
 ## 4 SRR493369   HOXA1KD
 ## 5 SRR493370   HOXA1KD
 ## 6 SRR493371   HOXA1KD</code></pre>
-<p>The next stage is to build a “sleuth object”. This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the <strong>sleuth</strong> response error measurement model and (3) perform differential analyis (testing). On a laptop the three steps should take about 2 minutes altogether.</p>
+<p>Now the “sleuth object” can be constructed. This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the <strong>sleuth</strong> response error measurement model and (3) perform differential analyis (testing). On a laptop the three steps should take about 2 minutes altogether.</p>
 <p>First type</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(kal_dirs, s2c, ~<span class="st"> </span>condition)</code></pre></div>
 <pre><code>## reading in kallisto results
 ## ......
 ## normalizing est_counts
-## 37624 targets passed the filter
+## 42193 targets passed the filter
 ## normalizing tpm
 ## normalizing bootstrap samples</code></pre>
 <p>then</p>
@@ -177,10 +177,26 @@ s2c</code></pre></div>
 ##      conditionscramble
 ## tests:
 ##  conditionscramble</code></pre>
-<p>At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the <strong>kallisto</strong> estimates, the model fit, and the testing. In other words it contains the entire analysis of the data.</p>
+<p>At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the <strong>kallisto</strong> estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. There is, however, one piece of information that can be useful to add in, but that is optional. In reading the kallisto output <strong>sleuth</strong> has no information about <em>genes</em>, but this can be added allowing for searching and analysis by gene instead of transcript.</p>
+<p>Since the example was constructed with the ENSEMBL human transcriptome, we will add gene names from ENSEMBL using biomaRt (there are other ways to do this as well):</p>
+<p>First, install biomaRt with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">source</span>(<span class="st">&quot;http://bioconductor.org/biocLite.R&quot;</span>)
+<span class="kw">biocLite</span>(<span class="st">&quot;biomaRt&quot;</span>)</code></pre></div>
+<p>Then collect gene names with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mart &lt;-<span class="st"> </span>biomaRt::<span class="kw">useMart</span>(<span class="dt">biomart =</span> <span class="st">&quot;ensembl&quot;</span>, <span class="dt">dataset =</span> <span class="st">&quot;hsapiens_gene_ensembl&quot;</span>)</code></pre></div>
+<pre><code>## Creating a generic function for 'nchar' from package 'base' in package 'S4Vectors'</code></pre>
+<p>and add them into the <strong>sleuth</strong> table with</p>
+<pre><code>t2g &lt;- biomaRt::getBM(attributes = c(&quot;ensembl_transcript_id&quot;, &quot;ensembl_gene_id&quot;,
+    &quot;external_gene_name&quot;), mart = mart)
+t2g &lt;- dplyr::rename(t2g, target_id = ensembl_transcript_id,
+  ens_gene = ensembl_gene_id, ext_gene = external_gene_name)
+so &lt;- sleuth_prep(kal_dirs, s2c, ~ condition, target_mapping = t2g)
+so &lt;- sleuth_fit(so)
+so &lt;- sleuth_test(so, which_beta = 'conditionscramble')</code></pre>
+<p>This addition of metadata to transcript IDs is very general, and can be used to add in other information.</p>
 <p>The best way to view the results is to generate the Shiny webpage that allows for exploratory data analysis:</p>
-<pre><code>sleuth_interact(so)</code></pre>
-<p>To generate a table of results type</p>
+<pre><code>sleuth_live(so)</code></pre>
+<p>To generate a table of results for analysis within R type</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">results_table &lt;-<span class="st"> </span><span class="kw">sleuth_results</span>(so, <span class="st">'conditionscramble'</span>) </code></pre></div>
 </div>
 

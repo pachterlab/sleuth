@@ -3,14 +3,15 @@
 #' A basic filter to be used.
 #'
 #' @param row this is a vector of numerics that will be passedin
-#' @param mean_reads the minimum mean number of reads
+#' @param min_reads the minimum mean number of reads
 #' @param min_prop the minimum proportion of reads to pass this filter
 #' @return a logical of length 1
 #' @export
-basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
-  mean(row > mean_reads) > min_prop
+basic_filter <- function(row, min_reads = 5, min_prop = 0.8) {
+  mean(row > min_reads) > min_prop
 }
 
+# currently defunct
 filter_df_all_groups <- function(df, fun, group_df, ...) {
   grps <- setdiff(colnames(group_df), 'sample')
   res <- sapply(unique(grps),
@@ -24,6 +25,7 @@ filter_df_all_groups <- function(df, fun, group_df, ...) {
   vals
 }
 
+# currently defunct
 filter_df_by_groups <- function(df, fun, group_df, ...) {
   stopifnot(ncol(group_df) == 2)
   grps <- as.character(group_df[[setdiff(colnames(group_df), 'sample')]])
@@ -159,6 +161,8 @@ sleuth_prep <- function(
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
     filter_bool <- apply(est_counts_spread, 1, filter_fun)
+    # filter_bool <- filter_df_all_groups(est_counts_spread, filter_fun,
+    #   sample_to_covariates)
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
