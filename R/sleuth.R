@@ -11,6 +11,30 @@ basic_filter <- function(row, mean_reads = 5, min_prop = 0.8) {
   mean(row > mean_reads) > min_prop
 }
 
+filter_df_all_groups <- function(df, fun, group_df, ...) {
+  grps <- setdiff(colnames(group_df), 'sample')
+  res <- sapply(unique(grps),
+    function(g) {
+      apply(filter_df_by_groups(df, fun, group_df[,c('sample', g)], ...), 1, any)
+    })
+
+  vals <- apply(res, 1, any)
+  names(vals) <- rownames(df)
+
+  vals
+}
+
+filter_df_by_groups <- function(df, fun, group_df, ...) {
+  stopifnot(ncol(group_df) == 2)
+  grps <- as.character(group_df[[setdiff(colnames(group_df), 'sample')]])
+  sapply(unique(grps),
+    function(g) {
+      valid_samps <- grps %in% g
+      valid_samps <- group_df$sample[valid_samps]
+      apply(df[,valid_samps], 1, fun, ...)
+    })
+}
+
 #' Constructor for a 'sleuth' object
 #'
 #' A sleuth is a group of kallistos. Borrowing this terminology, a 'sleuth' object stores
