@@ -104,7 +104,7 @@ s2c <- dplyr::select(s2c, sample = run_accession, condition)
 s2c
 ```
 
-The next stage is to build a "sleuth object". This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the __sleuth__ response error measurement model and (3) perform differential analyis (testing). On a laptop the three steps should take about 2 minutes altogether.
+Now the "sleuth object" can be constructed. This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the __sleuth__ response error measurement model and (3) perform differential analyis (testing). On a laptop the three steps should take about 2 minutes altogether.
 
 First type
 
@@ -130,18 +130,47 @@ In general, one can see the possible tests that could be performed using the `wh
 models(so)
 ```
 
-At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the __kallisto__ estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. 
+At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the __kallisto__ estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. There is, however, one piece of information that can be useful to add in, but that is optional. In reading the kallisto output __sleuth__ has no information about _genes_, but this can be added allowing for searching and analysis by gene instead of transcript. 
+
+Since the example was constructed with the ENSEMBL human transcriptome, we will add gene names from ENSEMBL using biomaRt (there are other ways to do this as well):
+
+First, install biomaRt with
+
+```{r eval=FALSE}
+source("http://bioconductor.org/biocLite.R")
+biocLite("biomaRt")
+```
+
+Then collect gene names with
+
+```{r eval=TRUE}
+mart <- biomaRt::useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl")
+```
+
+and add them into the __sleuth__ table with
+
+```
+t2g <- biomaRt::getBM(attributes = c("ensembl_transcript_id", "ensembl_gene_id",
+    "external_gene_name"), mart = mart)
+t2g <- dplyr::rename(t2g, target_id = ensembl_transcript_id,
+  ens_gene = ensembl_gene_id, ext_gene = external_gene_name)
+so <- sleuth_prep(kal_dirs, s2c, ~ condition, target_mapping = t2g)
+```
+
+This addition of metadata to transcript IDs is very general, and can be used to add in other information.
 
 The best way to view the results is to generate the Shiny webpage that allows for exploratory data analysis:
 
 ```
-sleuth_interact(so)
+sleuth_live(so)
 ```
 
-To generate a table of results type
+To generate a table of results for analysis within R type
 ```{r}
 results_table <- sleuth_results(so, 'conditionscramble') 
 ```
+
+
 
 
 
