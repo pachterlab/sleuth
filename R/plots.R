@@ -58,8 +58,6 @@ plot_mean_var <- function(obj,
 #' @param units either 'est_counts' or 'tpm'
 #' @param text_labels if TRUE, use text labels instead of points
 #' @param color_by a variable to color by. if NA, then will leave all as 'black'
-#' @param ... additional arguments passed to \code{\link{geom_point}} or
-#' \code{\link{geom_text}}
 #' @return a gpplot object
 #' @export
 plot_pca <- function(obj,
@@ -69,8 +67,8 @@ plot_pca <- function(obj,
   units = 'est_counts',
   text_labels = FALSE,
   color_by = NULL,
-  center = TRUE,
-  scale = FALSE,
+  point_size = 3,
+  point_alpha = 0.8,
   ...) {
   stopifnot( is(obj, 'sleuth') )
 
@@ -81,15 +79,7 @@ plot_pca <- function(obj,
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
 
-  # mat <- tidyr::spread(
-  #   dplyr::select(obj$obs_norm, target_id, sample, est_counts),
-  #   sample,
-  #   est_counts)
-  # rownames(mat) <- mat$target_id
-  # mat$target_id <- NULL
-  # mat <- as.matrix(mat)
-
-  pca_res <- prcomp(mat, center = center, scale = scale)
+  pca_res <- prcomp(mat)
 
   pcs <- as_df(pca_res$rotation[, c(pc_x, pc_y)])
   pcs$sample <- rownames(pcs)
@@ -111,7 +101,7 @@ plot_pca <- function(obj,
   if ( text_labels ) {
     p <- p + geom_text(aes(label = sample))
   } else {
-    p <- p + geom_point()
+    p <- p + geom_point(size = point_size, alpha = point_alpha)
   }
 
   p
@@ -341,7 +331,6 @@ plot_vars <- function(obj,
     p <- p + scale_colour_manual(values = c('black', sig_color))
   }
 
-
   if (xy_line) {
     p <- p + geom_abline(intercept = 0, slope = 1, colour = xy_line_color)
   }
@@ -353,12 +342,11 @@ plot_vars <- function(obj,
     if (nrow(highlight) > 0) {
       p <- p + geom_point(aes(sqrt(obs_var), sqrt(sigma_q_sq)), data = highlight, colour = highlight_color)
     } else {
-      warning("Couldn't find any transcripts from highlight set in this test.
-        They were probably filtered out.")
+      warning("Couldn't find any transcripts from highlight set in this sleuth_test. They were probably filtered out.")
     }
   }
 
-  p <- p + xlab('observed standard deviation (ols)')
+  p <- p + xlab('raw standard deviation')
   p <- p + ylab('bootstrap standard deviation')
 
   p

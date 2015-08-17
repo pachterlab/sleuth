@@ -6,7 +6,7 @@
 \usage{
 plot_pca(obj, pc_x = 1L, pc_y = 2L, use_filtered = TRUE,
   units = "est_counts", text_labels = FALSE, color_by = NULL,
-  center = TRUE, scale = FALSE, ...)
+  point_size = 3, point_alpha = 0.8, ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
@@ -22,9 +22,6 @@ plot_pca(obj, pc_x = 1L, pc_y = 2L, use_filtered = TRUE,
 \item{text_labels}{if TRUE, use text labels instead of points}
 
 \item{color_by}{a variable to color by. if NA, then will leave all as 'black'}
-
-\item{...}{additional arguments passed to \code{\link{geom_point}} or
-\code{\link{geom_text}}}
 }
 \value{
 a gpplot object

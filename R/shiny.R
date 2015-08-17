@@ -28,6 +28,7 @@ sleuth_live <- function(obj, select_trans = FALSE, ...) {
   p_layout <- navbarPage(
     a('sleuth', href = 'http://pimentel.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
+    windowTitle = 'sleuth',
 
     tabPanel('diagnostics',
       ####
@@ -82,7 +83,7 @@ sleuth_live <- function(obj, select_trans = FALSE, ...) {
               choices = c('tpm', 'est_counts'),
               selected = 'tpm')),
           column(2,
-            checkboxInput('cond_dens_filt', label = 'filter: ',
+            checkboxInput('cond_dens_filt', label = 'filter',
               value = TRUE)),
           column(2,
             textInput('cond_dens_trans', label = 'transform: ',
@@ -117,23 +118,24 @@ sleuth_live <- function(obj, select_trans = FALSE, ...) {
             selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
               selected = 2)
             ),
-          column(2,
-            selectInput('text_labels', label = 'text labels: ',
-              choices = c(TRUE, FALSE), selected = TRUE)
-            ),
           column(4,
             selectInput('color_by', label = 'color by: ',
               choices = c(NULL, poss_covars), selected = NULL)
-            )
+            ),
+          column(2,
+            numericInput('pca_point_size', label = 'size: ', value = 3))
           ),
         fluidRow(
           column(2,
             selectInput('pca_units', label = 'units: ',
               choices = c('est_counts', 'tpm'),
               selected = 'est_counts')),
-          column(2,
-            checkboxInput('pca_filt', label = 'filter: ',
-              value = TRUE))
+          column(3,
+            checkboxInput('pca_filt', label = 'filter',
+              value = TRUE),
+            checkboxInput('text_labels', label = 'text labels',
+              value = TRUE)
+            )
           ),
         fluidRow(plotOutput('pca_plt'))
         )
@@ -191,7 +193,7 @@ sleuth_live <- function(obj, select_trans = FALSE, ...) {
         dataTableOutput('de_dt')
         ),
 
-      tabPanel('bootstrap variance',
+      tabPanel('transcript view',
         fluidRow(column(4,
             textInput('bs_var_input', label = 'transcript: ', value = '')
             ),
@@ -204,7 +206,7 @@ sleuth_live <- function(obj, select_trans = FALSE, ...) {
               choices = c('est_counts', 'tpm'),
               selected = 'est_counts'))
           ),
-          fluidRow(actionButton('bs_go', 'view')),
+          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
           fluidRow(plotOutput('bs_var_plt'))
           )
       )
@@ -239,7 +241,7 @@ sleuth_live <- function(obj, select_trans = FALSE, ...) {
         trans = input$trans, point_alpha = input$scatter_alpha,
         units = input$scatter_units,
         use_filtered = input$scatter_filt,
-        offset = input$scatter_offset)
+        offset = as.numeric(input$scatter_offset))
     })
 
     ###
@@ -259,7 +261,8 @@ sleuth_live <- function(obj, select_trans = FALSE, ...) {
         text_labels = as.logical(input$text_labels),
         color_by = color_by,
         use_filtered = input$pca_filt,
-        units = input$pca_units
+        units = input$pca_units,
+        point_size = input$pca_point_size
         )
 
     })
