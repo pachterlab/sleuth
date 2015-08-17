@@ -28,6 +28,11 @@ sleuth_live <- function(obj, ...) {
 
     tabPanel('diagnostics',
       ####
+      fluidRow(
+        column(12,
+          p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
+          ),
+          offset = 1),
         fluidRow(
           column(4,
             selectInput('sample_x', label = 'x-axis: ',
@@ -64,12 +69,22 @@ sleuth_live <- function(obj, ...) {
 
     navbarMenu('summaries',
       ####
-      tabPanel('experiment summary',
-        dataTableOutput('summary_dt')
+      tabPanel('experimental data',
+      fluidRow(
+        column(12,
+          p(h3('experimental data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
+          ),
+          offset = 1),
+        fluidRow(dataTableOutput('summary_dt'))
         ),
 
       ####
       tabPanel('densities',
+      fluidRow(
+        column(12,
+          p(h3('distribution of abundances'), "Distributions of abundances of individual samples or groupings by covariates.")
+          ),
+          offset = 1),
         fluidRow(
           column(4,
             selectInput('cond_dens_grp', 'grouping: ',
@@ -102,11 +117,21 @@ sleuth_live <- function(obj, ...) {
     navbarMenu('maps',
       ###
       tabPanel('sample heatmap',
-        checkboxInput('samp_heat_filt', label = 'filter', value = TRUE),
-        plotOutput('samp_heat_plt')
+      fluidRow(
+        column(12,
+          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples")
+          ),
+          offset = 1),
+        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+        fluidRow(plotOutput('samp_heat_plt'))
         ),
       ####
       tabPanel('PCA',
+      fluidRow(
+        column(12,
+          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components")
+          ),
+          offset = 1),
         fluidRow(
           column(3,
             selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
@@ -143,6 +168,11 @@ sleuth_live <- function(obj, ...) {
 
       ####
       tabPanel('MA plot',
+      fluidRow(
+        column(12,
+          p(h3('MA plot'), "Plot of abundance versus fixed effect (e.g. fold change). Select a set of transcripts to explore their variance across samples. ")
+          ),
+          offset = 1),
         fluidRow(
           column(2,
             numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
@@ -172,12 +202,22 @@ sleuth_live <- function(obj, ...) {
 
       ####
       tabPanel('mean-variance plot',
-        plotOutput('mv_plt')
+      fluidRow(
+        column(12,
+          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth" )
+          ),
+          offset = 1),
+        fluidRow(plotOutput('mv_plt'))
         ),
 
 
       ####
-      tabPanel('DE table',
+      tabPanel('transcript table',
+      fluidRow(
+        column(12,
+          p(h3('transcript table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics" )
+          ),
+          offset = 1),
         fluidRow(
           column(4,
             selectInput('which_model_de', label = 'fit: ',
@@ -192,6 +232,11 @@ sleuth_live <- function(obj, ...) {
         ),
 
       tabPanel('transcript view',
+      fluidRow(
+        column(12,
+          p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample" )
+          ),
+          offset = 1),
         fluidRow(column(4,
             textInput('bs_var_input', label = 'transcript: ', value = '')
             ),
@@ -285,10 +330,11 @@ sleuth_live <- function(obj, ...) {
 
       # TODO: total hack -- fix this correctly eventually
       if (is(res, 'data.frame')) {
-        res <- dplyr::inner_join(
+        res <- dplyr::left_join(
           data.table::as.data.table(sr),
           data.table::as.data.table(dplyr::select(res, target_id)),
           by = 'target_id')
+        #print(head(res))
         res <- dplyr::rename(res,
           mean = mean_obs,
           var = var_obs,
