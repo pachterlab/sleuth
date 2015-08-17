@@ -31,15 +31,15 @@ bootstrap2mat <- function(kal, column = "tpm")
 #' @param ... arguments passed to other functions
 #' @return a \code{data.frame} with bootstrap samples
 #' @export
-extract_bootstraps <- function(obj, ...) {
-  UseMethod('extract_bootstraps')
+get_bootstraps <- function(obj, ...) {
+  UseMethod('get_bootstraps')
 }
 
 #' @export
-extract_bootstraps.sleuth <- function(obj, transcript, max_bs = 30) {
+get_bootstraps.sleuth <- function(obj, transcript, max_bs = 30) {
   res <- lapply(seq_along(obj$kal),
     function(i) {
-      cur <- extract_bootstraps(obj$kal[[i]], transcript, max_bs)
+      cur <- get_bootstraps(obj$kal[[i]], transcript, max_bs)
       if (nrow(cur) == 0) {
         return(cur)
       }
@@ -58,7 +58,7 @@ extract_bootstraps.sleuth <- function(obj, transcript, max_bs = 30) {
 }
 
 #' @export
-extract_bootstraps.kallisto <- function(kal, transcript, max_bs = 30) {
+get_bootstraps.kallisto <- function(kal, transcript, max_bs = 30) {
   max_bs <- min(max_bs, length(kal$bootstrap))
   t_idx <- which(kal$bootstrap[[1]]$target_id == transcript)
   if (length(t_idx) == 0) {

@@ -73,3 +73,22 @@ dot <- function(count, max_dots = 50) {
 
   count
 }
+
+kld <- function(p, q) {
+  stopifnot(length(p) == length(q))
+
+  which_valid <- which(p > 0 & q > 0)
+
+  p <- p[which_valid]
+  q <- q[which_valid]
+
+  sum(p * (log(p) - log(q)))
+}
+
+jsd <- function(p, q) {
+  p <- p / sum(p)
+  q <- q / sum(q)
+
+  m <- (p + q)/2
+  (kld(p, m) + kld(q, m)) / 2
+}

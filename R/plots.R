@@ -425,7 +425,7 @@ plot_bootstrap <- function(obj,
   x_axis_angle = 50
   ) {
 
-  df <- extract_bootstraps(obj, transcript)
+  df <- get_bootstraps(obj, transcript)
 
   if (nrow(df) == 0) {
     stop("Couldn't find transcript ", transcript)
