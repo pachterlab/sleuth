@@ -26,7 +26,7 @@ install.packages('devtools')
 Then you can install sleuth:
 
 ```
-devtools::install_github('pachterlab/github')
+devtools::install_github('pachterlab/sleuth')
 ```
 
 # Copyright
