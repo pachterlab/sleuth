@@ -22,7 +22,7 @@ sleuth_live <- function(obj, ...) {
   poss_models <- names(models(obj, verbose = FALSE))
 
   p_layout <- navbarPage(
-    a('sleuth', href = 'http://pimentel.github.io/sleuth', target = '_blank',
+    a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
     windowTitle = 'sleuth',
 
@@ -119,7 +119,7 @@ sleuth_live <- function(obj, ...) {
       tabPanel('sample heatmap',
       fluidRow(
         column(12,
-          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples")
+          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
           ),
           offset = 1),
         fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
@@ -129,7 +129,7 @@ sleuth_live <- function(obj, ...) {
       tabPanel('PCA',
       fluidRow(
         column(12,
-          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components")
+          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components.")
           ),
           offset = 1),
         fluidRow(
@@ -204,7 +204,7 @@ sleuth_live <- function(obj, ...) {
       tabPanel('mean-variance plot',
       fluidRow(
         column(12,
-          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth" )
+          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
           ),
           offset = 1),
         fluidRow(plotOutput('mv_plt'))
@@ -215,7 +215,7 @@ sleuth_live <- function(obj, ...) {
       tabPanel('transcript table',
       fluidRow(
         column(12,
-          p(h3('transcript table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics" )
+          p(h3('transcript table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
           ),
           offset = 1),
         fluidRow(
@@ -234,7 +234,7 @@ sleuth_live <- function(obj, ...) {
       tabPanel('transcript view',
       fluidRow(
         column(12,
-          p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample" )
+          p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
           ),
           offset = 1),
         fluidRow(column(4,
