@@ -270,7 +270,8 @@ sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
   s_bs <- inner_join(
     data.table::data.table(tpm_bs),
     data.table::data.table(data.table(counts_bs)),
-    by = c("target_id", "sample", "condition")
+    #by = c("target_id", "sample", "condition")
+    by = c("target_id", "sample")
     ) %>%
     as.data.frame(stringsAsFactors = FALSE)
 
@@ -283,10 +284,9 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
   res <- lapply(seq_along(obj$kal), function(i)
     {
       cur_samp <- obj$sample_to_covariates$sample[i]
-      cur_cond <- obj$sample_to_covariates$condition[i]
 
       dplyr::mutate(summarize_bootstrap(obj$kal[[i]], col, transform),
-        sample = cur_samp, condition = cur_cond)
+        sample = cur_samp)
     })
 
   dplyr::bind_rows(res)
