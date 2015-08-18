@@ -7,7 +7,7 @@ group: navigation
 {% include JB/setup %}
 
 The text below is the __sleuth__ `R` vignette. You can also access it in `R` by
-typing `vignettes('intro', package = 'sleuth')`
+typing `vignette('intro', package = 'sleuth')`
 
 
 <div id="overview" class="section level2">
