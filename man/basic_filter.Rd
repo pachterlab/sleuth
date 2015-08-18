@@ -4,12 +4,12 @@
 \alias{basic_filter}
 \title{Basic row filter}
 \usage{
-basic_filter(row, mean_reads = 5, min_prop = 0.8)
+basic_filter(row, min_reads = 5, min_prop = 0.8)
 }
 \arguments{
 \item{row}{this is a vector of numerics that will be passedin}
 
-\item{mean_reads}{the minimum mean number of reads}
+\item{min_reads}{the minimum mean number of reads}
 
 \item{min_prop}{the minimum proportion of reads to pass this filter}
 }

@@ -279,13 +279,21 @@ sleuth_live <- function(obj, ...) {
     })
 
     ###
-    rv_scatter <- reactiveValues(highlight = NULL)
+    rv_scatter <- reactiveValues(highlight = NULL, data = NULL)
+
     output$scatter <- renderPlot({
-      plot_scatter(obj, input$sample_x, input$sample_y,
+      p <- plot_scatter(obj, input$sample_x, input$sample_y,
         trans = input$trans, point_alpha = input$scatter_alpha,
         units = input$scatter_units,
         use_filtered = input$scatter_filt,
         offset = as.numeric(input$scatter_offset))
+      # get the data in the form that it is displayed in the plot
+      x <- eval(p$mapping$x, envir = p$data)
+      y <- eval(p$mapping$y, envir = p$data)
+      rv_scatter$data <- data.frame(target_id = p$data$target_id, x = x, y = y,
+        stringsAsFactors = FALSE)
+
+      p
     })
 
     output$scatter_vars <- renderPlot({
@@ -303,6 +311,7 @@ sleuth_live <- function(obj, ...) {
         )
     })
 
+
     output$scatter_brush_table <- renderDataTable({
       res <- NULL
       wb <- input$which_beta
@@ -313,16 +322,10 @@ sleuth_live <- function(obj, ...) {
       sr <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
         show_all = TRUE)
       if (!is.null(input$scatter_brush)) {
-        if (input$scatter_filt) {
-          res <- spread_abundance_by(obj$obs_norm_filt, input$scatter_units)
-        } else {
-          res <- spread_abundance_by(obj$obs_norm, input$scatter_units)
-        }
         cur_brush <- input$scatter_brush
-        cur_brush$mapping$x <- input$sample_x
-        cur_brush$mapping$y <- input$sample_y
-        res <- enclosed_brush(res, cur_brush)
-        res$target_id <- rownames(res)
+        cur_brush$mapping$x <- 'x'
+        cur_brush$mapping$y <- 'y'
+        res <- enclosed_brush(rv_scatter$data, cur_brush)
         rv_scatter$highlight_vars <- res
       }  else {
         res <- NULL
@@ -330,11 +333,10 @@ sleuth_live <- function(obj, ...) {
 
       # TODO: total hack -- fix this correctly eventually
       if (is(res, 'data.frame')) {
-        res <- dplyr::left_join(
+        res <- dplyr::inner_join(
           data.table::as.data.table(sr),
           data.table::as.data.table(dplyr::select(res, target_id)),
           by = 'target_id')
-        #print(head(res))
         res <- dplyr::rename(res,
           mean = mean_obs,
           var = var_obs,
@@ -438,7 +440,6 @@ sleuth_live <- function(obj, ...) {
       }
       res <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
         show_all = FALSE)
-      # print(head(res))
       if (!is.null(input$ma_brush)) {
         res <- enclosed_brush(res, input$ma_brush)
         rv_ma$highlight_vars <- res

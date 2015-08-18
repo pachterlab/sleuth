@@ -234,7 +234,8 @@ plot_scatter <- function(obj,
   xy_line_color = 'red',
   trans = 'log',
   xlim = NULL,
-  ylim = NULL) {
+  ylim = NULL
+  ) {
 
   abund <- NULL
   if (use_filtered) {
