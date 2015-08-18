@@ -4,30 +4,57 @@ Investigate transcript abundance from
 [kallisto](https://github.com/pimentel/kallisto) and differential expression
 analysis from RNA-Seq data.
 
-# Dependencies
+# Installation
 
-All depencies except `rhd5` are available on CRAN so they should get pulled in
-when you install `sleuth`. Here is how to `rhdf5`:
+The easiest way to install is using the `devtools` package through Bioconductor.
 
 ```{r}
 source("http://bioconductor.org/biocLite.R")
-biocLite("rhdf5")
+biocLite("devtools")    # only if devtools not yet installed
+biocLite("pachterlab/sleuth")
 ```
 
-# Installation
+These commands will install `sleuth` along with all of its dependencies. You
+can then load `sleuth` like any other R package:
 
-The easiest way to install is using the `devtools` package. If you don't have
-the devtools package, you can get it from CRAN:
-
-```
-install.packages('devtools')
+```{r}
+library('sleuth')
 ```
 
-Then you can install sleuth:
+# Documentation
 
+We recommend going through the vignette, first though:
+
+```{r}
+vignette('intro', package = 'sleuth')
 ```
-devtools::install_github('pachterlab/github')
+
+Detailed documentation can be accessed inside of R using the `help()` command:
+
+```{r}
+help(package = 'sleuth')
 ```
+
+Specific function documentation can also be accessed using `?` as you would for
+any other function in R:
+
+```{r}
+?sleuth_prep
+```
+
+# Conventions
+
+- All sleuth "core" functionality is prefixed by `sleuth_` (e.g.
+`sleuth_prep()`).
+- All sleuth plots are prefixed with `plot_` (e.g. `plot_ma()`)
+
+
+# Further help
+
+Please visit the [sleuth website](https://github.com/pachterlab/sleuth) for
+ways to get help. In particular, you might find the [kallisto-sleuth
+users](https://groups.google.com/forum/#!forum/sleuth-sleuth-users) Google
+group helpful.
 
 # Copyright
 
