@@ -51,7 +51,7 @@ any other function in R:
 
 # Further help
 
-Please visit the [sleuth website](https://github.com/pachterlab/sleuth) for
+Please visit the [sleuth website](https://pachterlab.github.io/sleuth) for
 ways to get help. In particular, you might find the [kallisto-sleuth
 users](https://groups.google.com/forum/#!forum/sleuth-sleuth-users) Google
 group helpful.
