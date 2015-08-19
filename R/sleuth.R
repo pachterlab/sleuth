@@ -7,8 +7,8 @@
 #' @param min_prop the minimum proportion of reads to pass this filter
 #' @return a logical of length 1
 #' @export
-basic_filter <- function(row, min_reads = 5, min_prop = 0.8) {
-  mean(row > min_reads) > min_prop
+basic_filter <- function(row, min_reads = 5, min_prop = 0.47) {
+  mean(row >= min_reads) >= min_prop
 }
 
 # currently defunct

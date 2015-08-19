@@ -29,7 +29,7 @@ might be useful. For example, you might have columns 'target_id',
 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
 mappings.}
 
-\item{...}{additional arguments passed to other functions}
+\item{...}{additional arguments passed to the filter function}
 }
 \value{
 a \code{sleuth} object containing all kallisto samples, metadata,
