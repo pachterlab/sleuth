@@ -60,7 +60,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' might be useful. For example, you might have columns 'target_id',
 #' 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
 #' mappings.
-#' @param ... additional arguments passed to other functions
+#' @param ... additional arguments passed to the filter function
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
@@ -160,7 +160,7 @@ sleuth_prep <- function(
   if ( normalize ) {
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
-    filter_bool <- apply(est_counts_spread, 1, filter_fun)
+    filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
     # filter_bool <- filter_df_all_groups(est_counts_spread, filter_fun,
     #   sample_to_covariates)
     filter_true <- filter_bool[filter_bool]
