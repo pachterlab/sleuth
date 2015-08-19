@@ -456,7 +456,7 @@ plot_sample_heatmap <- function(obj,
   } else {
     abund <- spread_abundance_by(obj$obs_norm, 'tpm')
   }
-  all_pairs <- apply_all_pairs(abund, sleuth:::jsd)
+  all_pairs <- apply_all_pairs(abund, jsd)
 
   all_pairs <- reshape2::melt(all_pairs, varnames = c('sample_x', 'sample_y'),
     value.name = 'jsd')
@@ -468,6 +468,74 @@ plot_sample_heatmap <- function(obj,
   p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
   p <- p + xlab('')
   p <- p + ylab('')
+
+  p
+}
+
+#' QQ norm plot
+#'
+#' Create a Q-Q norm plot of the Wald statistics. The x-axis has the
+#' theoretical quantile you would expect from a standard normal distribution.
+#' The y-axis has the observed quantiles. It is a \code{ggplot2} version of
+#' what you would get from \code{\link{qqnorm}} and \code{\link{qqline}}.
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_beta a character string denoting which beta to use for
+#' highlighting the transcript
+#' @param which_model a character string denoting which model to use for the
+#' test
+#' @param sig_level the significance level for Fdr
+#' @param point_alpha the alpha for the points
+#' @param sig_color what color to make the 'significant' transcripts
+#' @param highlight a \code{data.frame} with one column, \code{target_id}.
+#' These points will be highlighted in the plot. if \code{NULL}, no points will
+#' be highlighted.
+#' @param highlight_color the color to highlight points.
+#' @param line_color what color to make the QQ line
+#' @return a \code{ggplot2} object
+#' @export
+plot_qqnorm <- function(obj, which_beta, which_model = 'full',
+  sig_level = 0.10,
+  point_alpha = 0.2,
+  sig_color = 'red',
+  highlight = NULL,
+  highlight_color = 'green',
+  line_color = 'blue'
+  ) {
+  stopifnot( is(obj, 'sleuth') )
+
+  res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+    show_all = FALSE)
+  res <- dplyr::mutate(res, wald_stat = b / se_b)
+  res <- dplyr::filter(res, !is.na(wald_stat))
+  res <- dplyr::mutate(res, significant = qval < sig_level)
+  pnts <- stats::qqnorm(res$wald_stat, plot.it = FALSE)
+  res <- dplyr::mutate(res, theoretical = pnts[['x']], observed = pnts[['y']])
+
+  y <- quantile(res$observed, c(0.25, 0.75))
+  x <- qnorm(c(0.25, 0.75))
+
+  slope <- diff(y) / diff(x)
+  intercept <- y[1L] - slope * x[1L]
+
+  p <- ggplot(res, aes(theoretical, observed))
+  p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+  p <- p + scale_colour_manual(values = c('black', sig_color))
+  p <- p + xlab('theoretical quantile')
+  p <- p + ylab(paste0('observed quantile: ', which_beta))
+  p <- p + geom_abline(intercept = intercept, slope = slope, color = line_color)
+
+  if (!is.null(highlight)) {
+    suppressWarnings({
+      highlight <- dplyr::semi_join(res, highlight, by = 'target_id')
+    })
+    if (nrow(highlight) > 0) {
+      p <- p + geom_point(aes(mean_obs, b), data = highlight, colour = highlight_color)
+    } else {
+      warning("Couldn't find any transcripts from highlight set in this test.
+        They were probably filtered out.")
+    }
+  }
 
   p
 }
