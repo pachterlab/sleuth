@@ -76,12 +76,7 @@ sleuth_live <- function(obj, ...) {
           ))),
 
     navbarMenu('diagnostics',
-      tabPanel('Q-Q plot',
-        ####
-        fluidRow(
-          plotOutput('qqplot')
-          )
-        ),
+
       tabPanel('scatter plots',
         ####
         fluidRow(
@@ -121,7 +116,25 @@ sleuth_live <- function(obj, ...) {
         fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
         fluidRow(plotOutput('scatter_vars')),
         fluidRow(dataTableOutput('scatter_brush_table'))
+        ),
+
+      tabPanel('Q-Q plot',
+        ####
+        fluidRow(
+          column(4,
+            selectInput('which_model_qq', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            ),
+          column(4,
+            uiOutput('which_beta_ctrl_qq')
+            )
+          ),
+        fluidRow(
+          plotOutput('qqplot')
+          )
         )
+
       ),
 
     navbarMenu('summaries',
@@ -336,10 +349,15 @@ sleuth_live <- function(obj, ...) {
 
   server_fun <- function(input, output) {
 
+    output$which_beta_ctrl_qq <- renderUI({
+      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
+      selectInput('which_beta_qq', 'beta: ', choices = poss_tests)
+    })
+
     output$qqplot <- renderPlot({
-      wb <- input$which_beta
+      wb <- input$which_beta_qq
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
         wb <- poss_tests[1]
       }
       plot_qqnorm(obj, wb)
