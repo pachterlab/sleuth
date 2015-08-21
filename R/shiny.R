@@ -25,13 +25,69 @@ sleuth_live <- function(obj, ...) {
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
     windowTitle = 'sleuth',
-
-    tabPanel('diagnostics',
-      ####
+    tabPanel('welcome',
       fluidRow(
-        column(12,
-          p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
-          ),
+       div(h3('sleuth live'), align = 'center')
+       ),
+     fluidRow(
+       column(10, offset = 1,
+          p('This Shiny app is designed for exploratory data analysis of
+          kallisto-sleuth processed RNA-Seq data. There are four menu tabs
+          that can be used to choose plots and tables to view:'),
+          tags$ol(
+            tags$li(
+              strong('Diagnostics: '), 'provides access to various diagnostics for both
+              kallisto and sleuth.',
+              tags$ul(
+                tags$li('The scatter plots allow for a comparison of transcript abundance
+                  estimates among samples. Users can select outliers for analysis;
+                  dragging a box over a set of points highlights them in a companion
+                  plot showing the raw and bootstrap (technical) variances, and
+                  highlighted transcript names are displayed in a table.'
+                  ),
+                tags$li('the QQ plot shows the quantile relationship between the expected
+                  and empirically obtained Wald statistics. This is useful for
+                  validating the model assumptions. The mean variance plot shows the
+                  results of the shrinkage procedure used to estimate biological
+                  variance.'
+                  )
+                ) #ul
+              ),
+
+            tags$li(strong('Summaries: '), 'provides summary statistics for the experiments being
+              analyzed. The experiment table lists the samples processed, the number
+              of reads pseudoaligned in each and the conditions associated to
+              samples .The density plots show the distribution of abundances in
+              different experiments.'),
+
+            tags$li(strong('Maps: '), 'provides low dimensional visualizations of the high
+              dimensional transcript abundance data. The sample heatmap
+              displays the Jensen-Shannon divergence between samples, and the
+              PCA plot offers a visualization of projections of transcript
+              abundances onto the principal components.'),
+
+            tags$li(strong('Analyses: '), 'provides plots and tables for analysis of the
+              data. The MA plot displays the estimated magnitude of effect vs.
+              abundance for transcripts. The transcript table shows the test
+              results and transcript view displays box plots for transcript
+              abundances across samples.')
+
+              ) #ol
+          ))),
+
+    navbarMenu('diagnostics',
+      tabPanel('Q-Q plot',
+        ####
+        fluidRow(
+          plotOutput('qqplot')
+          )
+        ),
+      tabPanel('scatter plots',
+        ####
+        fluidRow(
+          column(12,
+            p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
+            ),
           offset = 1),
         fluidRow(
           column(4,
@@ -65,6 +121,7 @@ sleuth_live <- function(obj, ...) {
         fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
         fluidRow(plotOutput('scatter_vars')),
         fluidRow(dataTableOutput('scatter_brush_table'))
+        )
       ),
 
     navbarMenu('summaries',
@@ -256,6 +313,15 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
+
+    output$qqplot <- renderPlot({
+      wb <- input$which_beta
+      if ( is.null(wb) ) {
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+        wb <- poss_tests[1]
+      }
+      plot_qqnorm(obj, wb)
+    })
 
     output$summary_dt <- renderDataTable(summary(obj))
 
