@@ -129,12 +129,13 @@ plot_group_density <- function(obj,
   offset = 1
   ) {
 
-  res <- NULL
-  if (use_filtered) {
-    res <- obj$obs_norm_filt
-  } else {
-    res <- obj$obs_norm
-  }
+  res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
+  # res <- NULL
+  # if (use_filtered) {
+  #   res <- obj$obs_norm_filt
+  # } else {
+  #   res <- obj$obs_norm
+  # }
 
   gdots <- list(target_id = ~target_id)
   gdots[[grouping]] <- as.formula(paste0('~', grouping))
