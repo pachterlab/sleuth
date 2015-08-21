@@ -48,6 +48,25 @@ models.sleuth_model <- function(obj) {
 }
 
 
+#' Extract design matrix
+#'
+#' Getter method for extracting a design matrix from a sleuth object
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_model a character string of the model
+#' @return the \code{model.matrix} used to fit \code{which_model}
+#' @export
+design_matrix <- function(obj, which_model = 'full') {
+  stopifnot( is(obj, 'sleuth') )
+
+  if (!model_exists(obj, which_model)) {
+    stop("'", which_model, "' does not exist in ", substitute(obj),
+      ". Please check  models(", substitute(obj), ") for fitted models.")
+  }
+
+  obj[['fits']][[which_model]][['design_matrix']]
+}
+
 #' @export
 tests <- function(obj) {
   UseMethod('tests')
