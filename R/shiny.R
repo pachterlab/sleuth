@@ -178,9 +178,15 @@ sleuth_live <- function(obj, ...) {
           ),
 
         fluidRow(
-          column(4,
+          column(3,
             checkboxInput('norm_tbl', label = 'normalized ',
-              value = TRUE))
+              value = TRUE)),
+          column(3,
+            checkboxInput('filt_tbl', label = 'filter ',
+              value = TRUE)),
+          column(3,
+            checkboxInput('covar_tbl', label = 'covariates ',
+              value = FALSE))
           ),
 
         fluidRow(dataTableOutput('kallisto_table'))
@@ -362,14 +368,11 @@ sleuth_live <- function(obj, ...) {
 
     ###
     output$kallisto_table <- renderDataTable({
-      kal_tbl <- NULL
-      if (input$norm_tbl) {
-        kal_tbl <- obj$obs_norm
-      } else {
-        kal_tbl <- obj$obs_raw
-      }
-
-      dplyr::arrange(kal_tbl, target_id, sample)
+      kallisto_table(obj,
+        use_filtered = input$filt_tbl,
+        normalized = input$norm_tbl,
+        include_covariates = input$covar_tbl
+        )
     })
 
     ###
