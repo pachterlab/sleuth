@@ -145,6 +145,7 @@ sleuth_prep <- function(
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
+  obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
   ret <- list(
       kal = kal_list,
       obs_raw = obs_raw,
@@ -161,8 +162,6 @@ sleuth_prep <- function(
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
     filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
-    # filter_bool <- filter_df_all_groups(est_counts_spread, filter_fun,
-    #   sample_to_covariates)
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
@@ -177,6 +176,7 @@ sleuth_prep <- function(
 
     obs_norm <- est_counts_norm
     obs_norm$target_id <- as.character(obs_norm$target_id)
+    obs_norm$sample <- as.character(obs_norm$sample)
     rm(est_counts_norm)
 
     # deal w/ TPM
@@ -186,6 +186,15 @@ sleuth_prep <- function(
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
     tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
+    tpm_norm$sample <- as.character(tpm_norm$sample)
+
+    msg('merging in metadata')
+    # put everyone in the same order to avoid a slow join
+    obs_norm <- dplyr::arrange(obs_norm, target_id, sample)
+    tpm_norm <- dplyr::arrange(tpm_norm, target_id, sample)
+
+    stopifnot( all.equal(obs_raw$target_id, obs_norm$target_id) &&
+      all.equal(obs_raw$sample, obs_norm$sample) )
 
     suppressWarnings({
       if ( !all.equal(dplyr::select(obs_norm, target_id, sample),
@@ -196,11 +205,24 @@ sleuth_prep <- function(
       # obs_norm <- dplyr::left_join(obs_norm, data.table::as.data.table(tpm_norm),
       #   by = c('target_id', 'sample'))
       obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
-      obs_norm <- dplyr::left_join(obs_norm,
-        data.table::as.data.table(sample_to_covariates),
-        by = c("sample"))
-      # TODO: join in len and eff_len
     })
+
+
+
+    # add in eff_len and len
+    obs_norm <- dplyr::mutate(obs_norm,
+      eff_len = obs_raw$eff_len,
+      len = obs_raw$len)
+
+    # suppressWarnings({
+    #   obs_norm <- dplyr::inner_join(
+    #     data.table::as.data.table(obs_norm),
+    #     data.table::as.data.table(
+    #       dplyr::select(obs_raw, target_id, sample, len, eff_len)
+    #       ),
+    #     by = c('target_id', 'sample')
+    #     )
+    # })
 
     msg("normalizing bootstrap samples")
     kal_list <- lapply(seq_along(kal_list), function(i) {
@@ -326,6 +348,48 @@ melt_bootstrap_sleuth <- function(obj) {
         rename(bs_sample = sample) %>%
         mutate(sample = cur_samp, condition = cur_cond)
     }) %>% rbind_all()
+}
+
+#' Get kallisto abundance table from a sleuth object
+#'
+#' Get back the kallisto abundance table from a sleuth object.
+#'
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, return the filtered data
+#' @param normalized if TRUE, return the normalized data. Otherwise, return
+#' the raw data
+#' @param include_covariates if TRUE, join the covariates
+#' @return a \code{data.frame} with at least columns
+#' @export
+kallisto_table <- function(obj,
+  use_filtered = FALSE,
+  normalized = TRUE,
+  include_covariates = TRUE) {
+
+  res <- NULL
+  if (use_filtered && normalized) {
+    res <- obj$obs_norm_filt
+  } else if (normalized) {
+    res <- obj$obs_norm
+  } else {
+    res <- obj$obs_raw
+  }
+
+  if (use_filtered && !normalized) {
+    res <- dplyr::semi_join(
+      data.table::as.data.table(res),
+      data.table::as.data.table(obj$filter_df),
+      by = 'target_id')
+  }
+
+  if (include_covariates) {
+    res <- dplyr::left_join(
+      data.table::as.data.table(res),
+      data.table::as.data.table(obj$sample_to_covariates),
+      by = 'sample')
+  }
+
+  as_df(res)
 }
 
 # TODO: deprecate?
