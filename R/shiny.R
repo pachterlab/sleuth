@@ -168,6 +168,22 @@ sleuth_live <- function(obj, ...) {
               choices = samp_names,
               selected = samp_names[1]))),
         fluidRow(plotOutput('sample_density'))
+        ),
+      tabPanel('kallisto table',
+
+        fluidRow(
+        column(12, p(h3('kallisto abundance table'), "All of the abundance
+            estimates pulled in from kallisto results into the sleuth
+            object."))
+          ),
+
+        fluidRow(
+          column(4,
+            checkboxInput('norm_tbl', label = 'normalized ',
+              value = TRUE))
+          ),
+
+        fluidRow(dataTableOutput('kallisto_table'))
         )
       ),
 
@@ -345,6 +361,18 @@ sleuth_live <- function(obj, ...) {
     })
 
     ###
+    output$kallisto_table <- renderDataTable({
+      kal_tbl <- NULL
+      if (input$norm_tbl) {
+        kal_tbl <- obj$obs_norm
+      } else {
+        kal_tbl <- obj$obs_raw
+      }
+
+      dplyr::arrange(kal_tbl, target_id, sample)
+    })
+
+    ###
     rv_scatter <- reactiveValues(highlight = NULL, data = NULL)
 
     output$scatter <- renderPlot({
@@ -464,23 +492,6 @@ sleuth_live <- function(obj, ...) {
         point_alpha = input$ma_alpha
         )
     })
-
-    # observe({
-    #   if (!is.null(input$ma_trans)) {
-    #     res <- data.frame(target_id = input$ma_trans, stringsAsFactors = FALSE)
-    #     rv_ma$highlight_ma <- res
-    #     rv_ma$highlight_vars <- res
-    #     wb <- input$which_beta
-    #     if ( is.null(wb) ) {
-    #       poss_tests <- tests(models(obj)[[input$which_model]])
-    #       wb <- poss_tests[1]
-    #     }
-    #     sres <- sleuth_results(obj, wb, input$which_model, rename_cols = TRUE, show_all = TRUE)
-    #     output$ma_brush_out <- renderDataTable({
-    #       dplyr::semi_join(sres, res, by = 'target_id' )
-    #     })
-    #   }
-    # })
 
     output$vars <- renderPlot({
       wb <- input$which_beta

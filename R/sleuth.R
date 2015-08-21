@@ -199,6 +199,7 @@ sleuth_prep <- function(
       obs_norm <- dplyr::left_join(obs_norm,
         data.table::as.data.table(sample_to_covariates),
         by = c("sample"))
+      # TODO: join in len and eff_len
     })
 
     msg("normalizing bootstrap samples")
