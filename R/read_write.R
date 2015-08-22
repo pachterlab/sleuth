@@ -6,7 +6,7 @@
 #' @param read_bootstrap if \code{TRUE} load bootstraps, otherwise do not
 #' @return a \code{kallisto} object
 #' @export
-read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
+read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_boostrap = NULL) {
   stopifnot(is(fname, "character"))
 
   fname <- path.expand(fname)
@@ -26,6 +26,10 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
     num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
     if (num_bootstrap > 0) {
       msg("Found ", num_bootstrap, " bootstrap samples\n")
+      if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap) {
+        msg("Only reading ", max_bootstrap, " bootstrap samples\n")
+        num_bootstrap <- max_bootstrap
+      }
       bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
         {
           .read_bootstrap_hdf5(fname, i, abund)
