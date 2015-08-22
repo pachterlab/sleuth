@@ -4,7 +4,7 @@
 \alias{read_kallisto_h5}
 \title{Read a kallisto object from an HDF5 file}
 \usage{
-read_kallisto_h5(fname, read_bootstrap = TRUE)
+read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 }
 \arguments{
 \item{fname}{the file name for the HDF5 file}
