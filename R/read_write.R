@@ -37,22 +37,27 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
   if (read_bootstrap) {
     num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
     if (num_bootstrap > 0) {
-      msg("Found ", num_bootstrap, " bootstrap samples\n")
+      msg("Found ", num_bootstrap, " bootstrap samples")
       bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
         {
           .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {
-      msg("No bootstrap samples found\n ")
+      msg("No bootstrap samples found")
     }
   }
 
   abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
-  invisible(structure(
-      list(abundance = abund,
-        bootstrap = bs_samples),
-      class = "kallisto"))
+  res <- list(abundance = abund, bootstrap = bs_samples)
+  class(res) <- 'kallisto'
+
+  attr(res, 'index_version') <- rhdf5::h5read(fname, 'aux/index_version')
+  attr(res, 'kallisto_version') <- rhdf5::h5read(fname, 'aux/kallisto_version')
+  attr(res, 'start_time') <- rhdf5::h5read(fname, 'aux/start_time')
+  attr(res, 'num_targets') <- nrow(abund)
+
+  invisible(res)
 }
 
 # read a bootstrap from an HDF5 file and return a \code{data.frame}
@@ -73,6 +78,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
 # @return a S3 \code{kallisto} object with the following members:
 read_kallisto <- function(output_dir, read_bootstrap = TRUE)
 {
+  # TODO: function needs to be reworked for plaintext case
     if (!file.exists(output_dir) || !file.info(output_dir)$isdir) {
         stop(paste0("'", output_dir, "' is not a valid path"))
     }
