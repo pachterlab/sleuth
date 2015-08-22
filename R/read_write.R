@@ -12,10 +12,22 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
   fname <- path.expand(fname)
 
   if (!file.exists(fname)) {
-    stop("Can't file file: '", fname, "'")
+    stop("Can't find file: '", fname, "'")
   }
 
   target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  if ( length(target_id) != length(unique(target_id))) {
+    warning('Some target_ids in your kallisto index are exactly the same.
+      We will make this unique but strongly suggest you change the names of the FASTA and recreate the index.')
+    warning('These are the repeats: ')
+    tid_counts <- table(target_id)
+
+    warning(paste(names(tid_counts[which(tid_counts > 1)]), collapse = ', ') )
+    rm(tid_counts)
+
+    target_id <- make.unique(target_id, sep = '_')
+  }
+
   abund <- adf(target_id = target_id)
   abund$est_counts <- as.numeric(rhdf5::h5read(fname, "est_counts"))
   abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
@@ -52,14 +64,13 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
   bs
 }
 
-#' Read a kallisto data set
-#'
-#' Read a kallisto data set
-#'
-#' @param output_dir the directory of the output data
-#' @param read_bootstrap if TRUE, then searches for bootstrap data, else doesn't read it.
-#' @return a S3 \code{kallisto} object with the following members:
-#' @export
+# Read a kallisto data set
+#
+# Read a kallisto data set
+#
+# @param output_dir the directory of the output data
+# @param read_bootstrap if TRUE, then searches for bootstrap data, else doesn't read it.
+# @return a S3 \code{kallisto} object with the following members:
 read_kallisto <- function(output_dir, read_bootstrap = TRUE)
 {
     if (!file.exists(output_dir) || !file.info(output_dir)$isdir) {
