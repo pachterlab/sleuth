@@ -43,7 +43,7 @@ sleuth_live <- function(obj, ...) {
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
     windowTitle = 'sleuth',
-    tabPanel('welcome',
+    tabPanel('overview',
       fluidRow(
        div(h3('sleuth live'), align = 'center')
        ),
