@@ -21,7 +21,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   if ( length(target_id) != length(unique(target_id))) {
     tid_counts <- table(target_id)
     warning('Some target_ids in your kallisto index are exactly the same. We will make these unique but strongly suggest you change the names of the FASTA and recreate the index.',
-      'These are the repeats: ',
+      ' These are the repeats: ',
       paste(names(tid_counts[which(tid_counts > 1)]), collapse = ', '))
     rm(tid_counts)
 
