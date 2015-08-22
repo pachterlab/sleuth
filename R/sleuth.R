@@ -60,6 +60,8 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' might be useful. For example, you might have columns 'target_id',
 #' 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
 #' mappings.
+#' @param max_bootstrap maximum number of bootstrap values to read for each
+#' transcript.
 #' @param ... additional arguments passed to the filter function
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
@@ -72,6 +74,7 @@ sleuth_prep <- function(
   full_model,
   filter_fun = basic_filter,
   target_mapping = NULL,
+  max_bootstrap = NULL,
   ...) {
 
   ##############################
@@ -112,6 +115,9 @@ sleuth_prep <- function(
     }
   }
 
+  if ( !is.null(max_bootstrap) && max_bootstrap <= 0 ) {
+    stop("max_bootstrap must be > 0")
+  }
 
   # TODO: ensure all kallisto have same number of transcripts
   # TODO: ensure transcripts are in same order -- if not, report warning that
@@ -135,7 +141,7 @@ sleuth_prep <- function(
         stop(paste0('Could not find HDF5 file: ', fname))
       }
 
-      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE)})
+      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
 
