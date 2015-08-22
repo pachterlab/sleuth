@@ -3,7 +3,7 @@ Title: Tools for investigating RNA-Seq
 Version: 0.27.1
 Authors@R: c(person("Harold", "Pimentel", , "haroldpimentel@gmail.com", role = c("aut", "cre")))
 Description: Investigate transcript abundance from "kallisto" and differential expression analysis from RNA-Seq data.
-License: GPL-2
+License: GPL-3
 LazyData: true
 URL: https://github.com/pachterlab/sleuth
 BugReports: https://github.com/pachterlab/sleuth/issues

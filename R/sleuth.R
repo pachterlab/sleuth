@@ -249,8 +249,8 @@ sleuth_prep <- function(
     # })
 
     msg("normalizing bootstrap samples")
-    kal_list <- lapply(seq_along(kal_list), function(i) {
-      normalize_bootstrap(kal_list[[i]],
+    ret$kal <- lapply(seq_along(ret$kal), function(i) {
+      normalize_bootstrap(ret$kal[[i]],
         tpm_size_factor = tpm_sf[i],
         est_counts_size_factor = est_counts_sf[i])
       })
