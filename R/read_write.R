@@ -19,12 +19,10 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 
   target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
   if ( length(target_id) != length(unique(target_id))) {
-    warning('Some target_ids in your kallisto index are exactly the same.
-      We will make this unique but strongly suggest you change the names of the FASTA and recreate the index.')
-    warning('These are the repeats: ')
     tid_counts <- table(target_id)
-
-    warning(paste(names(tid_counts[which(tid_counts > 1)]), collapse = ', ') )
+    warning('Some target_ids in your kallisto index are exactly the same. We will make these unique but strongly suggest you change the names of the FASTA and recreate the index.',
+      'These are the repeats: ',
+      paste(names(tid_counts[which(tid_counts > 1)]), collapse = ', '))
     rm(tid_counts)
 
     target_id <- make.unique(target_id, sep = '_')
