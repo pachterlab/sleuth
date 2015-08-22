@@ -10,6 +10,9 @@ read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 \item{fname}{the file name for the HDF5 file}
 
 \item{read_bootstrap}{if \code{TRUE} load bootstraps, otherwise do not}
+
+\item{max_bootstrap}{an integer denoting the number of bootstraps to read.
+if \code{NULL} read everything available}
 }
 \value{
 a \code{kallisto} object
