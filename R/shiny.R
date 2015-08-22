@@ -138,15 +138,6 @@ sleuth_live <- function(obj, ...) {
       ),
 
     navbarMenu('summaries',
-      ####
-      tabPanel('experimental data',
-      fluidRow(
-        column(12,
-          p(h3('experimental data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
-          ),
-          offset = 1),
-        fluidRow(dataTableOutput('summary_dt'))
-        ),
 
       ####
       tabPanel('densities',
@@ -182,6 +173,42 @@ sleuth_live <- function(obj, ...) {
               selected = samp_names[1]))),
         fluidRow(plotOutput('sample_density'))
         ),
+
+
+      ###
+      tabPanel('design matrix',
+
+      fluidRow(
+        column(12,
+          p(h3('design matrix'), "View the design matrix used to fit each model.")
+          ),
+          offset = 1),
+
+        fluidRow(
+          column(4,
+            selectInput('which_model_design', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            )
+          ),
+
+        fluidRow(
+          verbatimTextOutput('design_matrix')
+          #tableOutput('design_matrix')
+          )
+        ),
+
+      ####
+      tabPanel('experimental data',
+      fluidRow(
+        column(12,
+          p(h3('experimental data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
+          ),
+          offset = 1),
+        fluidRow(dataTableOutput('summary_dt'))
+        ),
+
+      ###
       tabPanel('kallisto table',
 
         fluidRow(
@@ -204,19 +231,11 @@ sleuth_live <- function(obj, ...) {
 
         fluidRow(dataTableOutput('kallisto_table'))
         )
+
       ),
 
     navbarMenu('maps',
-      ###
-      tabPanel('sample heatmap',
-      fluidRow(
-        column(12,
-          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
-          ),
-          offset = 1),
-        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
-        fluidRow(plotOutput('samp_heat_plt'))
-        ),
+
       ####
       tabPanel('PCA',
       fluidRow(
@@ -253,7 +272,19 @@ sleuth_live <- function(obj, ...) {
             )
           ),
         fluidRow(plotOutput('pca_plt'))
+        ),
+
+      ###
+      tabPanel('sample heatmap',
+      fluidRow(
+        column(12,
+          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
+          ),
+          offset = 1),
+        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+        fluidRow(plotOutput('samp_heat_plt'))
         )
+
       ),
 
     navbarMenu('analyses',
@@ -391,6 +422,11 @@ sleuth_live <- function(obj, ...) {
         normalized = input$norm_tbl,
         include_covariates = input$covar_tbl
         )
+    })
+
+    output$design_matrix <- renderPrint({
+    #output$design_matrix <- renderTable({
+      design_matrix(obj, input$which_model_design)
     })
 
     ###
