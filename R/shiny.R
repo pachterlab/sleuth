@@ -95,6 +95,16 @@ sleuth_live <- function(obj, ...) {
 
     navbarMenu('diagnostics',
 
+      ####
+      tabPanel('mean-variance plot',
+      fluidRow(
+        column(12,
+          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
+          ),
+          offset = 1),
+        fluidRow(plotOutput('mv_plt'))
+        ),
+
       tabPanel('scatter plots',
         ####
         fluidRow(
@@ -139,6 +149,9 @@ sleuth_live <- function(obj, ...) {
       tabPanel('Q-Q plot',
         ####
         fluidRow(
+          column(2,
+            numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
+              min = 0, max = 1, step = 0.01)),
           column(4,
             selectInput('which_model_qq', label = 'fit: ',
               choices = poss_models,
@@ -341,22 +354,13 @@ sleuth_live <- function(obj, ...) {
         fluidRow(dataTableOutput('ma_brush_out'))
         ),
 
-      ####
-      tabPanel('mean-variance plot',
-      fluidRow(
-        column(12,
-          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
-          ),
-          offset = 1),
-        fluidRow(plotOutput('mv_plt'))
-        ),
 
 
       ####
-      tabPanel('transcript table',
+      tabPanel('tests table',
       fluidRow(
         column(12,
-          p(h3('transcript table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+          p(h3('tests table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
           ),
           offset = 1),
         fluidRow(
@@ -409,7 +413,8 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
         wb <- poss_tests[1]
       }
-      plot_qqnorm(obj, wb)
+      plot_qqnorm(obj, wb, which_model = input$which_model_qq,
+        sig_level = input$max_fdr_qq)
     })
 
     output$summary_dt <- renderDataTable(summary(obj))
