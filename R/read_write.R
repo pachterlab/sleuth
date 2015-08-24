@@ -51,6 +51,12 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
   abund$len <- as.numeric(rhdf5::h5read(fname, "aux/lengths"))
 
+  num_processed <- if ( h5check(fname, '/aux', 'num_processed') ) {
+    as.integer(rhdf5::h5read(fname, 'aux/num_processed'))
+  } else {
+    NA_integer_
+  }
+
   bs_samples <- list()
   if (read_bootstrap) {
     num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
@@ -78,8 +84,18 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   attr(res, 'kallisto_version') <- rhdf5::h5read(fname, 'aux/kallisto_version')
   attr(res, 'start_time') <- rhdf5::h5read(fname, 'aux/start_time')
   attr(res, 'num_targets') <- nrow(abund)
+  attr(res, 'num_mapped') <- sum(abund$est_counts)
+  attr(res, 'num_processed') <- num_processed
 
   invisible(res)
+}
+
+h5check <- function(fname, group, name) {
+  objs <- rhdf5::h5ls(fname)
+  objs <- dplyr::rename(objs, grp = group, nm = name)
+  objs <- dplyr::filter(objs, grp == group, nm == name)
+
+  nrow(objs) == 1
 }
 
 # read a bootstrap from an HDF5 file and return a \code{data.frame}

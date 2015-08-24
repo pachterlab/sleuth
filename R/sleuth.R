@@ -167,11 +167,14 @@ sleuth_prep <- function(
     })
   msg('')
 
+  kal_versions <- check_kal_pack(kal_list)
+
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
   ret <- list(
       kal = kal_list,
+      kal_versions = kal_versions,
       obs_raw = obs_raw,
       sample_to_covariates = sample_to_covariates,
       bootstrap_summary = NA,
@@ -267,6 +270,25 @@ sleuth_prep <- function(
   class(ret) <- 'sleuth'
 
   ret
+}
+
+
+# check versions of kallistos and num bootstraps, etc
+check_kal_pack <- function(kal_list) {
+
+  versions <- sapply(kal_list, function(x) attr(x, 'kallisto_version'))
+  u_versions <- unique(versions)
+  if ( length(u_versions) > 1) {
+    warning('More than one version of kallisto was used: ', u_versions)
+  }
+
+  ntargs <- sapply(kal_list, function(x) attr(x, 'num_targets'))
+  u_ntargs <- unique(ntargs)
+  if ( length(u_ntargs) > 1 ) {
+    stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
+  }
+
+  u_versions
 }
 
 #' Normalization factors
@@ -466,12 +488,16 @@ get_col <- function(obj, ...) {
 
 #' @export
 summary.sleuth <- function(obj, covariates = TRUE) {
-  mapped_reads <- sapply(obj$kal, function(k) sum(k$abundance$est_counts))
+  mapped_reads <- sapply(obj$kal, function(k) attr(k, 'num_mapped'))
   n_bs <- sapply(obj$kal, function(k) length(k$bootstrap))
+  n_processed = sapply(obj$kal, function(k) attr(k, 'num_processed'))
 
   res <- adf(sample = obj$sample_to_covariates[['sample']],
-    mapped_reads = mapped_reads,
-    n_bootstraps = n_bs)
+    reads_mapped = mapped_reads,
+    reads_proc = n_processed,
+    frac_mapped = round(mapped_reads / n_processed, 4),
+    bootstraps = n_bs
+    )
   if (covariates) {
     res <- dplyr::left_join(res, obj$sample_to_covariates, by = 'sample')
   }

@@ -230,12 +230,17 @@ sleuth_live <- function(obj, ...) {
         ),
 
       ####
-      tabPanel('experimental data',
+      tabPanel('processed data',
       fluidRow(
         column(12,
-          p(h3('experimental data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
+          p(h3('processed data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
           ),
           offset = 1),
+        fluidRow(
+          column(12,
+            p(strong('kallisto version(s): '), obj$kal_versions)),
+          offset = 1
+          ),
         fluidRow(dataTableOutput('summary_dt'))
         ),
 
