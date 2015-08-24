@@ -165,7 +165,28 @@ sleuth_live <- function(obj, ...) {
       ),
 
     navbarMenu('analyses',
-
+    
+    ####
+    tabPanel('volcano plot',
+        fluidRow(
+            column(12,
+                p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                ),
+                offset = 1),
+        fluidRow(
+            column(2,
+                numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                    min = 0, max = 1, step = 0.01)),
+            column(4,
+                uiOutput('which_beta_vol')
+                ),
+            column(2,
+                numericInput('vol_alpha', label = 'opacity:', value = 0.2,
+                    min = 0, max = 1, step = 0.01))
+                ),
+            fluidRow(plotOutput('vol'))
+        ),
+    
       ####
       tabPanel('MA plot',
       fluidRow(
@@ -483,6 +504,25 @@ sleuth_live <- function(obj, ...) {
       plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
+    })
+    
+    ### Volcano Plot
+    output$which_beta_vol <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+        selectInput('which_beta', 'beta: ', choices = poss_tests)
+    })
+    
+    output$vol <- renderPlot({
+        val <- input$which_beta
+        if ( is.null(val) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+            val <- poss_tests[1]
+        }
+        plot_volcano(obj, val,
+        input$which_model,
+        sig_level = input$max_fdr,
+        point_alpha = input$vol_alpha
+        )
     })
   }
 
