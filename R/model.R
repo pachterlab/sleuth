@@ -140,30 +140,30 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
   if (rename_cols) {
     res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
       target_id,
+      pval,
+      qval,
+      b,
+      se_b,
       mean_obs,
       var_obs,
       tech_var = sigma_q_sq,
       sigma_sq,
       smooth_sigma_sq,
-      final_sigma_sq = smooth_sigma_sq_pmax,
-      b,
-      se_b,
-      pval,
-      qval
+      final_sigma_sq = smooth_sigma_sq_pmax
       )
   } else {
     res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
       target_id,
+      pval,
+      qval,
+      b,
+      se_b,
       mean_obs,
       var_obs,
       sigma_q_sq,
       sigma_sq,
       smooth_sigma_sq,
-      smooth_sigma_sq_pmax,
-      b,
-      se_b,
-      pval,
-      qval
+      smooth_sigma_sq_pmax
       )
   }
 
@@ -185,7 +185,7 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
   }
   res <- as_df(res)
 
-  res
+  dplyr::arrange(res, qval)
 }
 
 # TODO: get betas

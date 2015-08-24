@@ -357,10 +357,10 @@ sleuth_live <- function(obj, ...) {
 
 
       ####
-      tabPanel('tests table',
+      tabPanel('test table',
       fluidRow(
         column(12,
-          p(h3('tests table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+          p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
           ),
           offset = 1),
         fluidRow(
@@ -628,6 +628,7 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
+
       sleuth_results(obj, wb, input$which_model_de)
     })
 
