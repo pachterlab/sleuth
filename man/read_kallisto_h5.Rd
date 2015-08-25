@@ -4,12 +4,15 @@
 \alias{read_kallisto_h5}
 \title{Read a kallisto object from an HDF5 file}
 \usage{
-read_kallisto_h5(fname, read_bootstrap = TRUE)
+read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 }
 \arguments{
 \item{fname}{the file name for the HDF5 file}
 
 \item{read_bootstrap}{if \code{TRUE} load bootstraps, otherwise do not}
+
+\item{max_bootstrap}{an integer denoting the number of bootstraps to read.
+if \code{NULL} read everything available}
 }
 \value{
 a \code{kallisto} object

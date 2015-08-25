@@ -1,3 +1,21 @@
+#
+#    sleuth: inspect your RNA-Seq with a pack of kallistos
+#
+#    Copyright (C) 2015  Harold Pimentel, Nicolas Bray, Pall Melsted, Lior Pachter
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #' Basic row filter
 #'
 #' A basic filter to be used.
@@ -60,6 +78,8 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' might be useful. For example, you might have columns 'target_id',
 #' 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
 #' mappings.
+#' @param max_bootstrap maximum number of bootstrap values to read for each
+#' transcript.
 #' @param ... additional arguments passed to the filter function
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
@@ -72,6 +92,7 @@ sleuth_prep <- function(
   full_model,
   filter_fun = basic_filter,
   target_mapping = NULL,
+  max_bootstrap = NULL,
   ...) {
 
   ##############################
@@ -112,6 +133,9 @@ sleuth_prep <- function(
     }
   }
 
+  if ( !is.null(max_bootstrap) && max_bootstrap <= 0 ) {
+    stop("max_bootstrap must be > 0")
+  }
 
   # TODO: ensure all kallisto have same number of transcripts
   # TODO: ensure transcripts are in same order -- if not, report warning that
@@ -135,7 +159,7 @@ sleuth_prep <- function(
         stop(paste0('Could not find HDF5 file: ', fname))
       }
 
-      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE)})
+      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
 
@@ -143,10 +167,14 @@ sleuth_prep <- function(
     })
   msg('')
 
+  kal_versions <- check_kal_pack(kal_list)
+
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
+  obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
   ret <- list(
       kal = kal_list,
+      kal_versions = kal_versions,
       obs_raw = obs_raw,
       sample_to_covariates = sample_to_covariates,
       bootstrap_summary = NA,
@@ -161,8 +189,6 @@ sleuth_prep <- function(
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
     filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
-    # filter_bool <- filter_df_all_groups(est_counts_spread, filter_fun,
-    #   sample_to_covariates)
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
@@ -177,6 +203,7 @@ sleuth_prep <- function(
 
     obs_norm <- est_counts_norm
     obs_norm$target_id <- as.character(obs_norm$target_id)
+    obs_norm$sample <- as.character(obs_norm$sample)
     rm(est_counts_norm)
 
     # deal w/ TPM
@@ -186,6 +213,15 @@ sleuth_prep <- function(
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
     tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
+    tpm_norm$sample <- as.character(tpm_norm$sample)
+
+    msg('merging in metadata')
+    # put everyone in the same order to avoid a slow join
+    obs_norm <- dplyr::arrange(obs_norm, target_id, sample)
+    tpm_norm <- dplyr::arrange(tpm_norm, target_id, sample)
+
+    stopifnot( all.equal(obs_raw$target_id, obs_norm$target_id) &&
+      all.equal(obs_raw$sample, obs_norm$sample) )
 
     suppressWarnings({
       if ( !all.equal(dplyr::select(obs_norm, target_id, sample),
@@ -196,14 +232,28 @@ sleuth_prep <- function(
       # obs_norm <- dplyr::left_join(obs_norm, data.table::as.data.table(tpm_norm),
       #   by = c('target_id', 'sample'))
       obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
-      obs_norm <- dplyr::left_join(obs_norm,
-        data.table::as.data.table(sample_to_covariates),
-        by = c("sample"))
     })
 
+
+
+    # add in eff_len and len
+    obs_norm <- dplyr::mutate(obs_norm,
+      eff_len = obs_raw$eff_len,
+      len = obs_raw$len)
+
+    # suppressWarnings({
+    #   obs_norm <- dplyr::inner_join(
+    #     data.table::as.data.table(obs_norm),
+    #     data.table::as.data.table(
+    #       dplyr::select(obs_raw, target_id, sample, len, eff_len)
+    #       ),
+    #     by = c('target_id', 'sample')
+    #     )
+    # })
+
     msg("normalizing bootstrap samples")
-    kal_list <- lapply(seq_along(kal_list), function(i) {
-      normalize_bootstrap(kal_list[[i]],
+    ret$kal <- lapply(seq_along(ret$kal), function(i) {
+      normalize_bootstrap(ret$kal[[i]],
         tpm_size_factor = tpm_sf[i],
         est_counts_size_factor = est_counts_sf[i])
       })
@@ -220,6 +270,25 @@ sleuth_prep <- function(
   class(ret) <- 'sleuth'
 
   ret
+}
+
+
+# check versions of kallistos and num bootstraps, etc
+check_kal_pack <- function(kal_list) {
+
+  versions <- sapply(kal_list, function(x) attr(x, 'kallisto_version'))
+  u_versions <- unique(versions)
+  if ( length(u_versions) > 1) {
+    warning('More than one version of kallisto was used: ', u_versions)
+  }
+
+  ntargs <- sapply(kal_list, function(x) attr(x, 'num_targets'))
+  u_ntargs <- unique(ntargs)
+  if ( length(u_ntargs) > 1 ) {
+    stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
+  }
+
+  u_versions
 }
 
 #' Normalization factors
@@ -327,6 +396,48 @@ melt_bootstrap_sleuth <- function(obj) {
     }) %>% rbind_all()
 }
 
+#' Get kallisto abundance table from a sleuth object
+#'
+#' Get back the kallisto abundance table from a sleuth object.
+#'
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, return the filtered data
+#' @param normalized if TRUE, return the normalized data. Otherwise, return
+#' the raw data
+#' @param include_covariates if TRUE, join the covariates
+#' @return a \code{data.frame} with at least columns
+#' @export
+kallisto_table <- function(obj,
+  use_filtered = FALSE,
+  normalized = TRUE,
+  include_covariates = TRUE) {
+
+  res <- NULL
+  if (use_filtered && normalized) {
+    res <- obj$obs_norm_filt
+  } else if (normalized) {
+    res <- obj$obs_norm
+  } else {
+    res <- obj$obs_raw
+  }
+
+  if (use_filtered && !normalized) {
+    res <- dplyr::semi_join(
+      data.table::as.data.table(res),
+      data.table::as.data.table(obj$filter_df),
+      by = 'target_id')
+  }
+
+  if (include_covariates) {
+    res <- dplyr::left_join(
+      data.table::as.data.table(res),
+      data.table::as.data.table(obj$sample_to_covariates),
+      by = 'sample')
+  }
+
+  as_df(res)
+}
+
 # TODO: deprecate?
 # observations to a matrix
 #
@@ -377,12 +488,16 @@ get_col <- function(obj, ...) {
 
 #' @export
 summary.sleuth <- function(obj, covariates = TRUE) {
-  mapped_reads <- sapply(obj$kal, function(k) sum(k$abundance$est_counts))
+  mapped_reads <- sapply(obj$kal, function(k) attr(k, 'num_mapped'))
   n_bs <- sapply(obj$kal, function(k) length(k$bootstrap))
+  n_processed = sapply(obj$kal, function(k) attr(k, 'num_processed'))
 
   res <- adf(sample = obj$sample_to_covariates[['sample']],
-    mapped_reads = mapped_reads,
-    n_bootstraps = n_bs)
+    reads_mapped = mapped_reads,
+    reads_proc = n_processed,
+    frac_mapped = round(mapped_reads / n_processed, 4),
+    bootstraps = n_bs
+    )
   if (covariates) {
     res <- dplyr::left_join(res, obj$sample_to_covariates, by = 'sample')
   }

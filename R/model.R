@@ -1,3 +1,21 @@
+#
+#    sleuth: inspect your RNA-Seq with a pack of kallistos
+#
+#    Copyright (C) 2015  Harold Pimentel, Nicolas Bray, Pall Melsted, Lior Pachter
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #' Print sleuth model
 #'
 #' Print a model that has been fit by sleuth
@@ -47,6 +65,25 @@ models.sleuth_model <- function(obj) {
   print(obj)
 }
 
+
+#' Extract design matrix
+#'
+#' Getter method for extracting a design matrix from a sleuth object
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_model a character string of the model
+#' @return the \code{model.matrix} used to fit \code{which_model}
+#' @export
+design_matrix <- function(obj, which_model = 'full') {
+  stopifnot( is(obj, 'sleuth') )
+
+  if (!model_exists(obj, which_model)) {
+    stop("'", which_model, "' does not exist in ", substitute(obj),
+      ". Please check  models(", substitute(obj), ") for fitted models.")
+  }
+
+  obj[['fits']][[which_model]][['design_matrix']]
+}
 
 #' @export
 tests <- function(obj) {
@@ -103,30 +140,30 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
   if (rename_cols) {
     res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
       target_id,
+      pval,
+      qval,
+      b,
+      se_b,
       mean_obs,
       var_obs,
       tech_var = sigma_q_sq,
       sigma_sq,
       smooth_sigma_sq,
-      final_sigma_sq = smooth_sigma_sq_pmax,
-      b,
-      se_b,
-      pval,
-      qval
+      final_sigma_sq = smooth_sigma_sq_pmax
       )
   } else {
     res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
       target_id,
+      pval,
+      qval,
+      b,
+      se_b,
       mean_obs,
       var_obs,
       sigma_q_sq,
       sigma_sq,
       smooth_sigma_sq,
-      smooth_sigma_sq_pmax,
-      b,
-      se_b,
-      pval,
-      qval
+      smooth_sigma_sq_pmax
       )
   }
 
@@ -148,7 +185,7 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
   }
   res <- as_df(res)
 
-  res
+  dplyr::arrange(res, qval)
 }
 
 # TODO: get betas

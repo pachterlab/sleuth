@@ -1,3 +1,21 @@
+#
+#    sleuth: inspect your RNA-Seq with a pack of kallistos
+#
+#    Copyright (C) 2015  Harold Pimentel, Nicolas Bray, Pall Melsted, Lior Pachter
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #' Interactive sleuth visualization with Shiny
 #'
 #' Interactive sleuth visualization with Shiny. To exit, type \code{ESC} in R.
@@ -25,13 +43,74 @@ sleuth_live <- function(obj, ...) {
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
       style = 'color: black;'),
     windowTitle = 'sleuth',
+    tabPanel('overview',
+      fluidRow(
+       div(h3('sleuth live'), align = 'center')
+       ),
+     fluidRow(
+       column(10, offset = 1,
+          p('This Shiny app is designed for exploratory data analysis of
+          kallisto-sleuth processed RNA-Seq data. There are four menu tabs
+          that can be used to choose plots and tables to view:'),
+          tags$ol(
+            tags$li(
+              strong('Diagnostics: '), 'provides access to various diagnostics for both
+              kallisto and sleuth.',
+              tags$ul(
+                tags$li('The scatter plots allow for a comparison of transcript abundance
+                  estimates among samples. Users can select outliers for analysis;
+                  dragging a box over a set of points highlights them in a companion
+                  plot showing the raw and bootstrap (technical) variances, and
+                  highlighted transcript names are displayed in a table.'
+                  ),
+                tags$li('the QQ plot shows the quantile relationship between the expected
+                  and empirically obtained Wald statistics. This is useful for
+                  validating the model assumptions. The mean variance plot shows the
+                  results of the shrinkage procedure used to estimate biological
+                  variance.'
+                  )
+                ) #ul
+              ),
 
-    tabPanel('diagnostics',
+            tags$li(strong('Summaries: '), 'provides summary statistics for the experiments being
+              analyzed. The experiment table lists the samples processed, the number
+              of reads pseudoaligned in each and the conditions associated to
+              samples .The density plots show the distribution of abundances in
+              different experiments.'),
+
+            tags$li(strong('Maps: '), 'provides low dimensional visualizations of the high
+              dimensional transcript abundance data. The sample heatmap
+              displays the Jensen-Shannon divergence between samples, and the
+              PCA plot offers a visualization of projections of transcript
+              abundances onto the principal components.'),
+
+            tags$li(strong('Analyses: '), 'provides plots and tables for analysis of the
+              data. The MA plot displays the estimated magnitude of effect vs.
+              abundance for transcripts. The transcript table shows the test
+              results and transcript view displays box plots for transcript
+              abundances across samples.')
+
+              ) #ol
+          ))),
+
+    navbarMenu('diagnostics',
+
       ####
+      tabPanel('mean-variance plot',
       fluidRow(
         column(12,
-          p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
+          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
           ),
+          offset = 1),
+        fluidRow(plotOutput('mv_plt'))
+        ),
+
+      tabPanel('scatter plots',
+        ####
+        fluidRow(
+          column(12,
+            p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
+            ),
           offset = 1),
         fluidRow(
           column(4,
@@ -65,18 +144,31 @@ sleuth_live <- function(obj, ...) {
         fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
         fluidRow(plotOutput('scatter_vars')),
         fluidRow(dataTableOutput('scatter_brush_table'))
+        ),
+
+      tabPanel('Q-Q plot',
+        ####
+        fluidRow(
+          column(2,
+            numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
+              min = 0, max = 1, step = 0.01)),
+          column(4,
+            selectInput('which_model_qq', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            ),
+          column(4,
+            uiOutput('which_beta_ctrl_qq')
+            )
+          ),
+        fluidRow(
+          plotOutput('qqplot')
+          )
+        )
+
       ),
 
     navbarMenu('summaries',
-      ####
-      tabPanel('experimental data',
-      fluidRow(
-        column(12,
-          p(h3('experimental data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
-          ),
-          offset = 1),
-        fluidRow(dataTableOutput('summary_dt'))
-        ),
 
       ####
       tabPanel('densities',
@@ -111,20 +203,75 @@ sleuth_live <- function(obj, ...) {
               choices = samp_names,
               selected = samp_names[1]))),
         fluidRow(plotOutput('sample_density'))
+        ),
+
+
+      ###
+      tabPanel('design matrix',
+
+      fluidRow(
+        column(12,
+          p(h3('design matrix'), "View the design matrix used to fit each model.")
+          ),
+          offset = 1),
+
+        fluidRow(
+          column(4,
+            selectInput('which_model_design', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            )
+          ),
+
+        fluidRow(
+          verbatimTextOutput('design_matrix')
+          #tableOutput('design_matrix')
+          )
+        ),
+
+      ####
+      tabPanel('processed data',
+      fluidRow(
+        column(12,
+          p(h3('processed data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
+          ),
+          offset = 1),
+        fluidRow(
+          column(12,
+            p(strong('kallisto version(s): '), obj$kal_versions)),
+          offset = 1
+          ),
+        fluidRow(dataTableOutput('summary_dt'))
+        ),
+
+      ###
+      tabPanel('kallisto table',
+
+        fluidRow(
+        column(12, p(h3('kallisto abundance table'), "All of the abundance
+            estimates pulled in from kallisto results into the sleuth
+            object."))
+          ),
+
+        fluidRow(
+          column(3,
+            checkboxInput('norm_tbl', label = 'normalized ',
+              value = TRUE)),
+          column(3,
+            checkboxInput('filt_tbl', label = 'filter ',
+              value = TRUE)),
+          column(3,
+            checkboxInput('covar_tbl', label = 'covariates ',
+              value = FALSE))
+          ),
+
+        fluidRow(dataTableOutput('kallisto_table'))
         )
+
       ),
 
     navbarMenu('maps',
-      ###
-      tabPanel('sample heatmap',
-      fluidRow(
-        column(12,
-          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
-          ),
-          offset = 1),
-        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
-        fluidRow(plotOutput('samp_heat_plt'))
-        ),
+
       ####
       tabPanel('PCA',
       fluidRow(
@@ -161,7 +308,19 @@ sleuth_live <- function(obj, ...) {
             )
           ),
         fluidRow(plotOutput('pca_plt'))
+        ),
+
+      ###
+      tabPanel('sample heatmap',
+      fluidRow(
+        column(12,
+          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
+          ),
+          offset = 1),
+        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+        fluidRow(plotOutput('samp_heat_plt'))
         )
+
       ),
 
     navbarMenu('analyses',
@@ -200,22 +359,13 @@ sleuth_live <- function(obj, ...) {
         fluidRow(dataTableOutput('ma_brush_out'))
         ),
 
-      ####
-      tabPanel('mean-variance plot',
-      fluidRow(
-        column(12,
-          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
-          ),
-          offset = 1),
-        fluidRow(plotOutput('mv_plt'))
-        ),
 
 
       ####
-      tabPanel('transcript table',
+      tabPanel('test table',
       fluidRow(
         column(12,
-          p(h3('transcript table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+          p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
           ),
           offset = 1),
         fluidRow(
@@ -257,6 +407,21 @@ sleuth_live <- function(obj, ...) {
 
   server_fun <- function(input, output) {
 
+    output$which_beta_ctrl_qq <- renderUI({
+      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
+      selectInput('which_beta_qq', 'beta: ', choices = poss_tests)
+    })
+
+    output$qqplot <- renderPlot({
+      wb <- input$which_beta_qq
+      if ( is.null(wb) ) {
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
+        wb <- poss_tests[1]
+      }
+      plot_qqnorm(obj, wb, which_model = input$which_model_qq,
+        sig_level = input$max_fdr_qq)
+    })
+
     output$summary_dt <- renderDataTable(summary(obj))
 
     output$condition_density <- renderPlot({
@@ -276,6 +441,20 @@ sleuth_live <- function(obj, ...) {
         trans = input$cond_dens_trans,
         offset = input$cond_dens_offset
         )
+    })
+
+    ###
+    output$kallisto_table <- renderDataTable({
+      kallisto_table(obj,
+        use_filtered = input$filt_tbl,
+        normalized = input$norm_tbl,
+        include_covariates = input$covar_tbl
+        )
+    })
+
+    output$design_matrix <- renderPrint({
+    #output$design_matrix <- renderTable({
+      design_matrix(obj, input$which_model_design)
     })
 
     ###
@@ -399,23 +578,6 @@ sleuth_live <- function(obj, ...) {
         )
     })
 
-    # observe({
-    #   if (!is.null(input$ma_trans)) {
-    #     res <- data.frame(target_id = input$ma_trans, stringsAsFactors = FALSE)
-    #     rv_ma$highlight_ma <- res
-    #     rv_ma$highlight_vars <- res
-    #     wb <- input$which_beta
-    #     if ( is.null(wb) ) {
-    #       poss_tests <- tests(models(obj)[[input$which_model]])
-    #       wb <- poss_tests[1]
-    #     }
-    #     sres <- sleuth_results(obj, wb, input$which_model, rename_cols = TRUE, show_all = TRUE)
-    #     output$ma_brush_out <- renderDataTable({
-    #       dplyr::semi_join(sres, res, by = 'target_id' )
-    #     })
-    #   }
-    # })
-
     output$vars <- renderPlot({
       wb <- input$which_beta
       if ( is.null(wb) ) {
@@ -471,6 +633,7 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
+
       sleuth_results(obj, wb, input$which_model_de)
     })
 

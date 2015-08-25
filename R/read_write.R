@@ -1,46 +1,101 @@
+#
+#    sleuth: inspect your RNA-Seq with a pack of kallistos
+#
+#    Copyright (C) 2015  Harold Pimentel, Nicolas Bray, Pall Melsted, Lior Pachter
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #' Read a kallisto object from an HDF5 file
 #'
 #' Read a kallisto object from an HDF5 file.
 #'
 #' @param fname the file name for the HDF5 file
 #' @param read_bootstrap if \code{TRUE} load bootstraps, otherwise do not
+#' @param max_bootstrap an integer denoting the number of bootstraps to read.
+#' if \code{NULL} read everything available
 #' @return a \code{kallisto} object
 #' @export
-read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
+read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL) {
   stopifnot(is(fname, "character"))
 
   fname <- path.expand(fname)
 
   if (!file.exists(fname)) {
-    stop("Can't file file: '", fname, "'")
+    stop("Can't find file: '", fname, "'")
   }
 
   target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  if ( length(target_id) != length(unique(target_id))) {
+    tid_counts <- table(target_id)
+    warning('Some target_ids in your kallisto index are exactly the same. We will make these unique but strongly suggest you change the names of the FASTA and recreate the index.',
+      ' These are the repeats: ',
+      paste(names(tid_counts[which(tid_counts > 1)]), collapse = ', '))
+    rm(tid_counts)
+
+    target_id <- make.unique(target_id, sep = '_')
+  }
+
   abund <- adf(target_id = target_id)
   abund$est_counts <- as.numeric(rhdf5::h5read(fname, "est_counts"))
   abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
   abund$len <- as.numeric(rhdf5::h5read(fname, "aux/lengths"))
 
+  num_processed <- if ( h5check(fname, '/aux', 'num_processed') ) {
+    as.integer(rhdf5::h5read(fname, 'aux/num_processed'))
+  } else {
+    NA_integer_
+  }
+
   bs_samples <- list()
   if (read_bootstrap) {
     num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
     if (num_bootstrap > 0) {
-      msg("Found ", num_bootstrap, " bootstrap samples\n")
+      msg("Found ", num_bootstrap, " bootstrap samples")
+      if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap) {
+        msg("Only reading ", max_bootstrap, " bootstrap samples")
+        num_bootstrap <- max_bootstrap
+      }
       bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
         {
           .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {
-      msg("No bootstrap samples found\n ")
+      msg("No bootstrap samples found")
     }
   }
 
   abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
-  invisible(structure(
-      list(abundance = abund,
-        bootstrap = bs_samples),
-      class = "kallisto"))
+  res <- list(abundance = abund, bootstrap = bs_samples)
+  class(res) <- 'kallisto'
+
+  attr(res, 'index_version') <- rhdf5::h5read(fname, 'aux/index_version')
+  attr(res, 'kallisto_version') <- rhdf5::h5read(fname, 'aux/kallisto_version')
+  attr(res, 'start_time') <- rhdf5::h5read(fname, 'aux/start_time')
+  attr(res, 'num_targets') <- nrow(abund)
+  attr(res, 'num_mapped') <- sum(abund$est_counts)
+  attr(res, 'num_processed') <- num_processed
+
+  invisible(res)
+}
+
+h5check <- function(fname, group, name) {
+  objs <- rhdf5::h5ls(fname)
+  objs <- dplyr::rename(objs, grp = group, nm = name)
+  objs <- dplyr::filter(objs, grp == group, nm == name)
+
+  nrow(objs) == 1
 }
 
 # read a bootstrap from an HDF5 file and return a \code{data.frame}
@@ -52,16 +107,16 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE) {
   bs
 }
 
-#' Read a kallisto data set
-#'
-#' Read a kallisto data set
-#'
-#' @param output_dir the directory of the output data
-#' @param read_bootstrap if TRUE, then searches for bootstrap data, else doesn't read it.
-#' @return a S3 \code{kallisto} object with the following members:
-#' @export
+# Read a kallisto data set
+#
+# Read a kallisto data set
+#
+# @param output_dir the directory of the output data
+# @param read_bootstrap if TRUE, then searches for bootstrap data, else doesn't read it.
+# @return a S3 \code{kallisto} object with the following members:
 read_kallisto <- function(output_dir, read_bootstrap = TRUE)
 {
+  # TODO: function needs to be reworked for plaintext case
     if (!file.exists(output_dir) || !file.info(output_dir)$isdir) {
         stop(paste0("'", output_dir, "' is not a valid path"))
     }

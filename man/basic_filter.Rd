@@ -4,7 +4,7 @@
 \alias{basic_filter}
 \title{Basic row filter}
 \usage{
-basic_filter(row, min_reads = 5, min_prop = 0.8)
+basic_filter(row, min_reads = 5, min_prop = 0.47)
 }
 \arguments{
 \item{row}{this is a vector of numerics that will be passedin}

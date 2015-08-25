@@ -5,7 +5,8 @@
 \title{Constructor for a 'sleuth' object}
 \usage{
 sleuth_prep(kal_dirs, sample_to_covariates, full_model,
-  filter_fun = basic_filter, target_mapping = NULL, ...)
+  filter_fun = basic_filter, target_mapping = NULL, max_bootstrap = NULL,
+  ...)
 }
 \arguments{
 \item{kal_dirs}{a character vector of length greater than one where each
@@ -28,6 +29,9 @@ of the experiment. It must be consistent with the data.frame supplied in
 might be useful. For example, you might have columns 'target_id',
 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
 mappings.}
+
+\item{max_bootstrap}{maximum number of bootstrap values to read for each
+transcript.}
 
 \item{...}{additional arguments passed to the filter function}
 }
