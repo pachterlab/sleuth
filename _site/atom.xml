@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
  
  <title>sleuth</title>
- <link href="http://pimentel.github.io/sleuth/" rel="self"/>
- <link href="http://pimentel.github.io/sleuth"/>
- <updated>2015-08-17T11:57:14-07:00</updated>
- <id>http://pimentel.github.io/sleuth</id>
+ <link href="http://pachterlab.github.io/sleuth/" rel="self"/>
+ <link href="http://pachterlab.github.io/sleuth"/>
+ <updated>2015-08-25T12:30:50-07:00</updated>
+ <id>http://pachterlab.github.io/sleuth</id>
  <author>
    <name>Pachter Lab</name>
    <email>blah@email.test</email>
@@ -14,9 +14,9 @@
  
  <entry>
    <title></title>
-   <link href="http://pimentel.github.io/sleuth/releases/2015/07/06/v0.42.2.1"/>
+   <link href="http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1"/>
    <updated>2015-07-06T00:00:00-07:00</updated>
-   <id>http://pimentel.github.io/sleuth/releases/2015/07/06/v0.42.2.1</id>
+   <id>http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1</id>
    <content type="html">&lt;p&gt;A few bugfixes to v0.42.2 are included here:&lt;/p&gt;
 
 &lt;ul&gt;
@@ -32,9 +32,9 @@
  
  <entry>
    <title></title>
-   <link href="http://pimentel.github.io/sleuth/releases/2015/06/09/v0.42.2"/>
+   <link href="http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2"/>
    <updated>2015-06-09T00:00:00-07:00</updated>
-   <id>http://pimentel.github.io/sleuth/releases/2015/06/09/v0.42.2</id>
+   <id>http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2</id>
    <content type="html">&lt;p&gt;This is version 0.42.2 of Kallisto.&lt;/p&gt;
 
 &lt;p&gt;Updates include&lt;/p&gt;
@@ -63,9 +63,9 @@
  
  <entry>
    <title></title>
-   <link href="http://pimentel.github.io/sleuth/releases/2015/05/12/v0.42.1"/>
+   <link href="http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1"/>
    <updated>2015-05-12T00:00:00-07:00</updated>
-   <id>http://pimentel.github.io/sleuth/releases/2015/05/12/v0.42.1</id>
+   <id>http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1</id>
    <content type="html">&lt;p&gt;This is version 0.42.1 of Kallisto. We recommend that users upgrade to this version.&lt;/p&gt;
 
 &lt;p&gt;Updates include&lt;/p&gt;
@@ -93,9 +93,9 @@
  
  <entry>
    <title></title>
-   <link href="http://pimentel.github.io/sleuth/releases/2015/05/06/v0.42"/>
+   <link href="http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42"/>
    <updated>2015-05-06T00:00:00-07:00</updated>
-   <id>http://pimentel.github.io/sleuth/releases/2015/05/06/v0.42</id>
+   <id>http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42</id>
    <content type="html">&lt;p&gt;This is the initial public release of Kallisto.&lt;/p&gt;
 
 </content>

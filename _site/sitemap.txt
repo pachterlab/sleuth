@@ -1,18 +1,18 @@
 
-http://pimentel.github.io/sleuth/about.html
-http://pimentel.github.io/sleuth/atom.xml
-http://pimentel.github.io/sleuth/download.html
-http://pimentel.github.io/sleuth/faq.html
-http://pimentel.github.io/sleuth/index.html
-http://pimentel.github.io/sleuth/license.html
-http://pimentel.github.io/sleuth/manual.html
-http://pimentel.github.io/sleuth/pseudobam.html
-http://pimentel.github.io/sleuth/rss.xml
-http://pimentel.github.io/sleuth/sitemap.txt
-http://pimentel.github.io/sleuth/source.html
-http://pimentel.github.io/sleuth/starting.html
+http://pachterlab.github.io/sleuth/about.html
+http://pachterlab.github.io/sleuth/atom.xml
+http://pachterlab.github.io/sleuth/download.html
+http://pachterlab.github.io/sleuth/faq.html
+http://pachterlab.github.io/sleuth/index.html
+http://pachterlab.github.io/sleuth/license.html
+http://pachterlab.github.io/sleuth/manual.html
+http://pachterlab.github.io/sleuth/pseudobam.html
+http://pachterlab.github.io/sleuth/rss.xml
+http://pachterlab.github.io/sleuth/sitemap.txt
+http://pachterlab.github.io/sleuth/source.html
+http://pachterlab.github.io/sleuth/starting.html
 
-http://pimentel.github.io/sleuth/releases/2015/07/06/v0.42.2.1
-http://pimentel.github.io/sleuth/releases/2015/06/09/v0.42.2
-http://pimentel.github.io/sleuth/releases/2015/05/12/v0.42.1
-http://pimentel.github.io/sleuth/releases/2015/05/06/v0.42
+http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1
+http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2
+http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1
+http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42
