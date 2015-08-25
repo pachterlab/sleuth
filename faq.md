@@ -10,11 +10,11 @@ group: navigation
   - Yes. If you think you have discovered a bug that needs to be fixed please
     file a report on the GitHub page. If you have a question about installing
     or running the program please ask on the [kallisto-sleuth-users Google user
-    group](https://groups.google.com/forum/#!forum/sleuth-sleuth-users).
+    group](https://groups.google.com/forum/#!forum/kallisto-sleuth-users).
 
 - Where can I get announcements about new releases?
   - You can get announcements via the [kallisto-sleuth-announcements Google
-    group](https://groups.google.com/forum/#!forum/sleuth-sleuth-announcements).
+    group](https://groups.google.com/forum/#!forum/kallisto-sleuth-announcements).
     This is a read-only, low traffic mailing list that only sends an email when
     a major version is released.
 
