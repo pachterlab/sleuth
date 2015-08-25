@@ -178,13 +178,19 @@ sleuth_live <- function(obj, ...) {
                 numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
                     min = 0, max = 1, step = 0.01)),
             column(4,
-                uiOutput('which_beta_vol')
+                selectInput('which_model_vol', label = 'fit: ',
+                    choices = poss_models,
+                    selected = poss_models[1])
+                ),
+            column(4,
+                uiOutput('which_beta_ctrl_vol')
                 ),
             column(2,
                 numericInput('vol_alpha', label = 'opacity:', value = 0.2,
                     min = 0, max = 1, step = 0.01))
                 ),
-            fluidRow(plotOutput('vol'))
+            fluidRow(plotOutput('vol', brush = 'vol_brush')),
+            fluidRow(dataTableOutput('vol_brush_out'))
         ),
     
       ####
@@ -507,23 +513,53 @@ sleuth_live <- function(obj, ...) {
     })
     
     ### Volcano Plot
-    output$which_beta_vol <- renderUI({
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        selectInput('which_beta', 'beta: ', choices = poss_tests)
+    output$which_beta_ctrl_vol <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+        selectInput('which_beta_vol', 'beta: ', choices = poss_tests)
     })
     
     output$vol <- renderPlot({
-        val <- input$which_beta
+        val <- input$which_beta_vol
         if ( is.null(val) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
             val <- poss_tests[1]
         }
         plot_volcano(obj, val,
-        input$which_model,
+        input$which_model_vol,
         sig_level = input$max_fdr,
         point_alpha = input$vol_alpha
         )
     })
+    
+    #vol_observe
+    output$vol_brush_out <- renderDataTable({
+        wb <- input$which_beta_vol
+        if ( is.null(wb) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            wb <- poss_tests[1]
+        }
+        res <- sleuth_results(obj, wb, input$which_model_vol, rename_cols = FALSE,
+        show_all = FALSE)
+        res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
+        if (!is.null(input$vol_brush)) {
+            res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
+            res$Nlog10_qval = NULL
+        }  else {
+            res <- NULL
+        }
+        
+        # TODO: total hack -- fix this correctly eventually
+        if (is(res, 'data.frame')) {
+            res <- dplyr::rename(res,
+            mean = mean_obs,
+            var = var_obs,
+            tech_var = sigma_q_sq,
+            final_sigma_sq = smooth_sigma_sq_pmax)
+        }
+        
+        res
+    })
+    
   }
 
   shinyApp(ui = p_layout, server = server_fun)
