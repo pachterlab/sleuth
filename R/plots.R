@@ -417,8 +417,7 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
     if (nrow(highlight) > 0) {
       p <- p + geom_point(aes(mean_obs, b), data = highlight, colour = highlight_color)
     } else {
-      warning("Couldn't find any transcripts from highlight set in this test.
-        They were probably filtered out.")
+      warning("Couldn't find any transcripts from highlight set in this test. They were probably filtered out.")
     }
   }
 
@@ -489,6 +488,31 @@ plot_sample_heatmap <- function(obj,
   p <- p + ylab('')
 
   p
+}
+
+#' Plot volcano plot
+plot_volcano = function(obj, which_beta, which_model = 'full',
+    sig_level = 0.10,
+    point_alpha = 0.2,
+    sig_color = 'red',
+    highlight = NULL
+    ) {
+    stopifnot( is(obj, 'sleuth') )
+    
+    res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+        show_all = FALSE)
+    res <- dplyr::mutate(res, significant = qval < sig_level)
+    
+    suppressWarnings({
+        p = ggplot(res, aes(b, -log10(qval)))
+        p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+        p <- p + scale_colour_manual(values = c('black', sig_color))
+        p <- p + xlab('beta_value')
+        p <- p + ylab('-log10(qval)')
+        p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
+    })
+    
+    p
 }
 
 #' QQ norm plot
