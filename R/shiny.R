@@ -396,15 +396,20 @@ sleuth_live <- function(obj, ...) {
           ),
           offset = 1),
         fluidRow(
-          column(4,
+          column(3,
             selectInput('which_model_de', label = 'fit: ',
               choices = poss_models,
               selected = poss_models[1])
             ),
-          column(4,
+          column(3,
             uiOutput('which_beta_ctrl_de')
+            ),
+          column(3,
+            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2),
+            selected = 1)
             )
           ),
+        htmlOutput('no_gene_error'),
         dataTableOutput('de_dt')
         ),
 
@@ -649,19 +654,46 @@ sleuth_live <- function(obj, ...) {
     })
 
     ### DE table
+    output$no_gene_error <- renderUI({
+        if(input$pop_genes == 2) {
+            wb <- input$which_beta_de
+            if ( is.null(wb) ) {
+                poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+                wb <- poss_tests[1]
+            }
+            if(!('ens_gene' %in% colnames(sleuth_results(obj, wb, input$which_model_de)))) {
+                HTML('You need to add genes to your sleuth object before you can view a popped gene table.<br> See the <a href="http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a> for how to add genes to a sleuth object.')
+            }
+        }
+    })
+    
     output$which_beta_ctrl_de <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
     })
-
+    
     output$de_dt <- renderDataTable({
       wb <- input$which_beta_de
       if ( is.null(wb) ) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
-
-      sleuth_results(obj, wb, input$which_model_de)
+      res = sleuth_results(obj, wb, input$which_model_de)
+      
+      if(input$pop_genes == 2) {
+          if('ens_gene' %in% colnames(res)) {
+              popped_gene_table = res
+              popped_gene_table = dplyr::arrange(popped_gene_table, qval)
+              popped_gene_table = dplyr::group_by(popped_gene_table, ens_gene)
+              popped_gene_table = dplyr::summarise(popped_gene_table, ext_gene = ext_gene, best_transcript = target_id, pval = min(pval, na.rm  = TRUE), qval = min(qval, na.rm = TRUE), num_transcripts = n())
+              popped_gene_table = popped_gene_table[!is.na(popped_gene_table$ens_gene),]
+              popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+              popped_gene_table
+          }
+      }
+      else {
+          res
+      }
     })
 
     bs_var_text <- eventReactive(input$bs_go, {
