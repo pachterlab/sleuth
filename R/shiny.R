@@ -325,33 +325,6 @@ sleuth_live <- function(obj, ...) {
 
     navbarMenu('analyses',
     
-    ####
-    tabPanel('volcano plot',
-        fluidRow(
-            column(12,
-                p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
-                ),
-                offset = 1),
-        fluidRow(
-            column(2,
-                numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
-                    min = 0, max = 1, step = 0.01)),
-            column(4,
-                selectInput('which_model_vol', label = 'fit: ',
-                    choices = poss_models,
-                    selected = poss_models[1])
-                ),
-            column(4,
-                uiOutput('which_beta_ctrl_vol')
-                ),
-            column(2,
-                numericInput('vol_alpha', label = 'opacity:', value = 0.2,
-                    min = 0, max = 1, step = 0.01))
-                ),
-            fluidRow(plotOutput('vol', brush = 'vol_brush')),
-            fluidRow(dataTableOutput('vol_brush_out'))
-        ),
-    
       ####
       tabPanel('MA plot',
       fluidRow(
@@ -412,7 +385,8 @@ sleuth_live <- function(obj, ...) {
         htmlOutput('no_gene_error'),
         dataTableOutput('de_dt')
         ),
-
+        
+      ####
       tabPanel('transcript view',
       fluidRow(
         column(12,
@@ -433,6 +407,33 @@ sleuth_live <- function(obj, ...) {
           ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
           fluidRow(plotOutput('bs_var_plt'))
+          ),
+          
+          ####
+          tabPanel('volcano plot',
+            fluidRow(
+                column(12,
+                    p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                    ),
+                    offset = 1),
+            fluidRow(
+                column(2,
+                    numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                        min = 0, max = 1, step = 0.01)),
+                column(4,
+                    selectInput('which_model_vol', label = 'fit: ',
+                        choices = poss_models,
+                        selected = poss_models[1])
+                ),
+                column(4,
+                    uiOutput('which_beta_ctrl_vol')
+                    ),
+                column(2,
+                    numericInput('vol_alpha', label = 'opacity:', value = 0.2,
+                        min = 0, max = 1, step = 0.01))
+                ),
+            fluidRow(plotOutput('vol', brush = 'vol_brush')),
+            fluidRow(dataTableOutput('vol_brush_out'))
           )
       )
     ) # navbarPage
@@ -661,7 +662,7 @@ sleuth_live <- function(obj, ...) {
                 poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
                 wb <- poss_tests[1]
             }
-            if(!('ens_gene' %in% colnames(sleuth_results(obj, wb, input$which_model_de)))) {
+            if(is.null(obj$target_mapping)) {
                 HTML('You need to add genes to your sleuth object before you can view a popped gene table.<br> See the <a href="http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a> for how to add genes to a sleuth object.')
             }
         }
@@ -681,14 +682,8 @@ sleuth_live <- function(obj, ...) {
       res = sleuth_results(obj, wb, input$which_model_de)
       
       if(input$pop_genes == 2) {
-          if('ens_gene' %in% colnames(res)) {
-              popped_gene_table = res
-              popped_gene_table = dplyr::arrange(popped_gene_table, qval)
-              popped_gene_table = dplyr::group_by(popped_gene_table, ens_gene)
-              popped_gene_table = dplyr::summarise(popped_gene_table, ext_gene = ext_gene, best_transcript = target_id, pval = min(pval, na.rm  = TRUE), qval = min(qval, na.rm = TRUE), num_transcripts = n())
-              popped_gene_table = popped_gene_table[!is.na(popped_gene_table$ens_gene),]
-              popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
-              popped_gene_table
+          if(!is.null(obj$target_mapping)) {
+              sleuth_gene_table(res)
           }
       }
       else {

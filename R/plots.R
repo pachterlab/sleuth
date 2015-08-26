@@ -503,14 +503,14 @@ plot_volcano = function(obj, which_beta, which_model = 'full',
         show_all = FALSE)
     res <- dplyr::mutate(res, significant = qval < sig_level)
     
-    suppressWarnings({
+   
         p = ggplot(res, aes(b, -log10(qval)))
         p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
         p <- p + scale_colour_manual(values = c('black', sig_color))
         p <- p + xlab('beta_value')
         p <- p + ylab('-log10(qval)')
         p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
-    })
+    
     
     p
 }
