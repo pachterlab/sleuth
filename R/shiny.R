@@ -324,7 +324,34 @@ sleuth_live <- function(obj, ...) {
       ),
 
     navbarMenu('analyses',
-
+    
+    ####
+    tabPanel('volcano plot',
+        fluidRow(
+            column(12,
+                p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                ),
+                offset = 1),
+        fluidRow(
+            column(2,
+                numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                    min = 0, max = 1, step = 0.01)),
+            column(4,
+                selectInput('which_model_vol', label = 'fit: ',
+                    choices = poss_models,
+                    selected = poss_models[1])
+                ),
+            column(4,
+                uiOutput('which_beta_ctrl_vol')
+                ),
+            column(2,
+                numericInput('vol_alpha', label = 'opacity:', value = 0.2,
+                    min = 0, max = 1, step = 0.01))
+                ),
+            fluidRow(plotOutput('vol', brush = 'vol_brush')),
+            fluidRow(dataTableOutput('vol_brush_out'))
+        ),
+    
       ####
       tabPanel('MA plot',
       fluidRow(
@@ -369,15 +396,20 @@ sleuth_live <- function(obj, ...) {
           ),
           offset = 1),
         fluidRow(
-          column(4,
+          column(3,
             selectInput('which_model_de', label = 'fit: ',
               choices = poss_models,
               selected = poss_models[1])
             ),
-          column(4,
+          column(3,
             uiOutput('which_beta_ctrl_de')
+            ),
+          column(3,
+            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2),
+            selected = 1)
             )
           ),
+        htmlOutput('no_gene_error'),
         dataTableOutput('de_dt')
         ),
 
@@ -622,19 +654,46 @@ sleuth_live <- function(obj, ...) {
     })
 
     ### DE table
+    output$no_gene_error <- renderUI({
+        if(input$pop_genes == 2) {
+            wb <- input$which_beta_de
+            if ( is.null(wb) ) {
+                poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+                wb <- poss_tests[1]
+            }
+            if(!('ens_gene' %in% colnames(sleuth_results(obj, wb, input$which_model_de)))) {
+                HTML('You need to add genes to your sleuth object before you can view a popped gene table.<br> See the <a href="http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a> for how to add genes to a sleuth object.')
+            }
+        }
+    })
+    
     output$which_beta_ctrl_de <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
     })
-
+    
     output$de_dt <- renderDataTable({
       wb <- input$which_beta_de
       if ( is.null(wb) ) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
-
-      sleuth_results(obj, wb, input$which_model_de)
+      res = sleuth_results(obj, wb, input$which_model_de)
+      
+      if(input$pop_genes == 2) {
+          if('ens_gene' %in% colnames(res)) {
+              popped_gene_table = res
+              popped_gene_table = dplyr::arrange(popped_gene_table, qval)
+              popped_gene_table = dplyr::group_by(popped_gene_table, ens_gene)
+              popped_gene_table = dplyr::summarise(popped_gene_table, ext_gene = ext_gene, best_transcript = target_id, pval = min(pval, na.rm  = TRUE), qval = min(qval, na.rm = TRUE), num_transcripts = n())
+              popped_gene_table = popped_gene_table[!is.na(popped_gene_table$ens_gene),]
+              popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+              popped_gene_table
+          }
+      }
+      else {
+          res
+      }
     })
 
     bs_var_text <- eventReactive(input$bs_go, {
@@ -647,6 +706,55 @@ sleuth_live <- function(obj, ...) {
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
     })
+    
+    ### Volcano Plot
+    output$which_beta_ctrl_vol <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+        selectInput('which_beta_vol', 'beta: ', choices = poss_tests)
+    })
+    
+    output$vol <- renderPlot({
+        val <- input$which_beta_vol
+        if ( is.null(val) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            val <- poss_tests[1]
+        }
+        plot_volcano(obj, val,
+        input$which_model_vol,
+        sig_level = input$max_fdr,
+        point_alpha = input$vol_alpha
+        )
+    })
+    
+    #vol_observe
+    output$vol_brush_out <- renderDataTable({
+        wb <- input$which_beta_vol
+        if ( is.null(wb) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            wb <- poss_tests[1]
+        }
+        res <- sleuth_results(obj, wb, input$which_model_vol, rename_cols = FALSE,
+        show_all = FALSE)
+        res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
+        if (!is.null(input$vol_brush)) {
+            res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
+            res$Nlog10_qval = NULL
+        }  else {
+            res <- NULL
+        }
+        
+        # TODO: total hack -- fix this correctly eventually
+        if (is(res, 'data.frame')) {
+            res <- dplyr::rename(res,
+            mean = mean_obs,
+            var = var_obs,
+            tech_var = sigma_q_sq,
+            final_sigma_sq = smooth_sigma_sq_pmax)
+        }
+        
+        res
+    })
+    
   }
 
   shinyApp(ui = p_layout, server = server_fun)
