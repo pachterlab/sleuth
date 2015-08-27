@@ -378,11 +378,12 @@ sleuth_live <- function(obj, ...) {
             uiOutput('which_beta_ctrl_de')
             ),
           column(3,
-            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2),
-            selected = 1)
+            uiOutput('table_type')
+            ),
+          column(3,
+            uiOutput('group_by')
             )
           ),
-        htmlOutput('no_gene_error'),
         dataTableOutput('de_dt')
         ),
         
@@ -655,39 +656,40 @@ sleuth_live <- function(obj, ...) {
     })
 
     ### DE table
-    output$no_gene_error <- renderUI({
-        if(input$pop_genes == 2) {
-            wb <- input$which_beta_de
-            if ( is.null(wb) ) {
-                poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
-                wb <- poss_tests[1]
-            }
-            if(is.null(obj$target_mapping)) {
-                HTML('You need to add genes to your sleuth object before you can view a popped gene table.<br> See the <a href="http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a> for how to add genes to a sleuth object.')
-            }
-        }
-    })
     
     output$which_beta_ctrl_de <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
     })
     
+    output$table_type <- renderUI({
+        if(!is.null(obj$target_mapping))
+        {
+            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2), selected = 1)
+        }
+    })
+    
+    output$group_by <- renderUI({
+        if(!is.null(input$pop_genes) && input$pop_genes == 2)
+        {
+            selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        }
+    })
+
     output$de_dt <- renderDataTable({
       wb <- input$which_beta_de
       if ( is.null(wb) ) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
-      res = sleuth_results(obj, wb, input$which_model_de)
       
-      if(input$pop_genes == 2) {
-          if(!is.null(obj$target_mapping)) {
-              sleuth_gene_table(res)
-          }
-      }
+        if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
+            mg <- input$mappingGroup
+            sleuth_gene_table(obj, wb, input$which_model_de, mg)
+        }
+      
       else {
-          res
+          sleuth_results(obj, wb, input$which_model_de)
       }
     })
 

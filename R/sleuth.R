@@ -505,19 +505,25 @@ summary.sleuth <- function(obj, covariates = TRUE) {
   res
 }
 
-#' Take in a sleuth results table, e.g sleuth_results(obj, wb)
+#' Take in a sleuth object
 #' with added genes, and return a data table in which genes
 #' list the most significant transcript mapping to themselves
-sleuth_gene_table <- function(sleuth_table, gene_id_colname = 'gene_id', gene_name_colname = 'gene_name') {
-    popped_gene_table = sleuth_table
-    colnames(popped_gene_table)[12] = gene_id_colname
-    colnames(popped_gene_table)[13] = gene_name_colname
-    popped_gene_table = dplyr::arrange_(popped_gene_table, ~qval)
-    popped_gene_table = dplyr::group_by_(popped_gene_table, gene_id_colname)
-    popped_gene_table = dplyr::summarise_(popped_gene_table, gene_name = gene_name_colname, most_sig_transcript = ~target_id, pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n())
+sleuth_gene_table <- function(so, which_beta, which_model = 'full', mappingGroup = 'ens_gene') {
+  
+    if(is.null(so$target_mapping))
+    {
+        stop("This sleuth object doesn't have added gene names.")
+    }
+    popped_gene_table = sleuth_results(so, which_beta, which_model)
+
     
+    popped_gene_table = dplyr::arrange_(popped_gene_table, mappingGroup, ~qval)
+    popped_gene_table = dplyr::group_by_(popped_gene_table, mappingGroup)
+
+    popped_gene_table = dplyr::summarise_(popped_gene_table, most_sig_transcript = ~target_id[1], pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n(), list_of_transcripts = ~toString(target_id[1:length(target_id)]))
+    
+    popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
     popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
     popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
     popped_gene_table
 }
-
