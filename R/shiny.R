@@ -325,6 +325,35 @@ sleuth_live <- function(obj, ...) {
 
     navbarMenu('analyses',
     
+      tabPanel('gene view',
+        fluidRow(
+            column(12,
+                p(h3('gene view'), "Boxplots of abundances of transcript mapping to a given gene, and their technical variation. This step can take a while, especially with many plots." )
+                ),
+            offset = 1),
+        fluidRow(column(3,
+            textInput('gv_var_input', label = 'gene: ', value = '')
+            ),
+            column(3,
+                selectInput('gv_var_color_by', label = 'color by: ', choices = c(NULL, poss_covars), selected = NULL)),
+            column(3,
+                selectInput('gv_var_units', label = 'units: ', choices = c('est_counts', 'tpm'), selected = 'est_counts')),
+            column(3,
+                uiOutput('gv_gene_column')
+            )
+        ),
+        fluidRow(HTML('&nbsp;&nbsp;&nbsp;'),
+            column(3, actionButton('gv_go', 'view')),
+            column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
+                    min = 1, max = 15, step = 1)),
+            column(3,
+                selectInput('which_model_gv', label = 'fit: ', choices = poss_models, selected = poss_models[1])),
+            column(3,
+                uiOutput('which_beta_ctrl_gv'))
+        ),
+        fluidRow(uiOutput('gv_var_plts'))
+    ),
+    
       ####
       tabPanel('MA plot',
       fluidRow(
@@ -394,10 +423,10 @@ sleuth_live <- function(obj, ...) {
           p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
           ),
           offset = 1),
-        fluidRow(column(4,
+        fluidRow(column(3,
             textInput('bs_var_input', label = 'transcript: ', value = '')
             ),
-          column(4,
+          column(3,
             selectInput('bs_var_color_by', label = 'color by: ',
               choices = c(NULL, poss_covars), selected = NULL)
             ),
@@ -407,7 +436,7 @@ sleuth_live <- function(obj, ...) {
               selected = 'est_counts'))
           ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plotOutput('bs_var_plt'))
+          fluidRow(uiOutput('bs_var_plt'))
           ),
           
           ####
@@ -693,16 +722,71 @@ sleuth_live <- function(obj, ...) {
       }
     })
 
+    ### bootstrap var
+    
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
       })
-
-    ### bootstrap var
+    
     output$bs_var_plt <- renderPlot({
-      plot_bootstrap(obj, bs_var_text(),
+        plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
     })
+    
+    
+    ### Gene Viewer
+    gv_var_text <- eventReactive(input$gv_go, {
+        input$gv_var_input
+    })
+    
+    output$gv_gene_column <- renderUI({
+        if(!is.null(obj$target_mapping))
+        {
+            selectInput('gv_gene_colname', label = 'genes from: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        }
+    })
+    
+    output$which_beta_ctrl_gv <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+        selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
+    })
+    
+    
+    gv_var_list <- reactive({
+        wb <- input$which_beta_gv
+        if ( is.null(wb) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            wb <- poss_tests[1]
+        }
+        sleuth_transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
+    })
+    
+    
+        
+    output$gv_var_plts <- renderUI({
+        gv_plot_list <- lapply(1:input$gv_maxplots, function(i) {
+                gv_plotname <- paste("plot", i, sep="")
+                plotOutput(gv_plotname)
+            })
+        
+            do.call(tagList, gv_plot_list)
+        })
+    
+        for (i in 1:15) {
+            
+            local({
+                my_i <- i
+                gv_plotname <- paste("plot", my_i, sep="")
+
+                    output[[gv_plotname]] <- renderPlot({
+                       if(!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i]))
+                        {
+                           plot_bootstrap(obj, gv_var_list()[my_i], units = input$gv_var_units, color_by = input$gv_var_color_by)
+                        }
+                   })
+           })
+        }
     
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({

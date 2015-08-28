@@ -447,7 +447,7 @@ plot_bootstrap <- function(obj,
   p <- ggplot(df, aes_string('sample', units))
   p <- p + geom_boxplot(aes_string(fill = color_by))
   p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
-
+  p <- p + ggtitle(transcript)
   p
 }
 
