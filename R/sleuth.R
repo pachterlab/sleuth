@@ -533,5 +533,9 @@ sleuth_transcripts_from_gene <- function(obj, wb, wm, gene_colname, gene_name)
     table = sleuth_results(obj, wb, wm)
     table = dplyr::select_(table, ~target_id, gene_colname, ~qval)
     table = dplyr::arrange_(table, gene_colname, ~qval)
+    if(!(gene_name %in% table[,2]))
+    {
+        stop("Couldn't find gene ", gene_name)
+    }
     table$target_id[table[,2] == gene_name]
 }

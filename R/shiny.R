@@ -342,7 +342,7 @@ sleuth_live <- function(obj, ...) {
                 uiOutput('gv_gene_column')
             )
         ),
-        fluidRow(HTML('&nbsp;&nbsp;&nbsp;'),
+        fluidRow(
             column(3, actionButton('gv_go', 'view')),
             column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
                     min = 1, max = 15, step = 1)),
@@ -351,6 +351,7 @@ sleuth_live <- function(obj, ...) {
             column(3,
                 uiOutput('which_beta_ctrl_gv'))
         ),
+        fluidRow(uiOutput('no_genes_message')),
         fluidRow(uiOutput('gv_var_plts'))
     ),
     
@@ -416,29 +417,29 @@ sleuth_live <- function(obj, ...) {
         dataTableOutput('de_dt')
         ),
         
-      ####
-      tabPanel('transcript view',
-      fluidRow(
-        column(12,
-          p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
-          ),
-          offset = 1),
-        fluidRow(column(3,
-            textInput('bs_var_input', label = 'transcript: ', value = '')
+            ####
+            tabPanel('transcript view',
+                fluidRow(
+                    column(12,
+                        p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
+                        ),
+                        offset = 1),
+                fluidRow(
+                    column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
+                    ),
+                    column(4,
+                        selectInput('bs_var_color_by', label = 'color by: ',
+                        choices = c(NULL, poss_covars), selected = NULL)
+                    ),
+                    column(3,
+                        selectInput('bs_var_units', label = 'units: ',
+                        choices = c('est_counts', 'tpm'),
+                        selected = 'est_counts'))
+                    ),
+                fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+                fluidRow(plotOutput('bs_var_plt'))
             ),
-          column(3,
-            selectInput('bs_var_color_by', label = 'color by: ',
-              choices = c(NULL, poss_covars), selected = NULL)
-            ),
-          column(3,
-            selectInput('bs_var_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts'))
-          ),
-          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(uiOutput('bs_var_plt'))
-          ),
-          
+      
           ####
           tabPanel('volcano plot',
             fluidRow(
@@ -726,7 +727,8 @@ sleuth_live <- function(obj, ...) {
     
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
-      })
+    })
+    
     
     output$bs_var_plt <- renderPlot({
         plot_bootstrap(obj, bs_var_text(),
@@ -737,7 +739,10 @@ sleuth_live <- function(obj, ...) {
     
     ### Gene Viewer
     gv_var_text <- eventReactive(input$gv_go, {
-        input$gv_var_input
+        if(!is.null(obj$target_mapping))
+        {
+            input$gv_var_input
+        }
     })
     
     output$gv_gene_column <- renderUI({
@@ -787,6 +792,13 @@ sleuth_live <- function(obj, ...) {
                    })
            })
         }
+        
+    output$no_genes_message <- renderUI({
+        if(is.null(obj$target_mapping))
+        {
+            HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
+        }
+    })
     
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({
