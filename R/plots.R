@@ -582,3 +582,36 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
 
   p
 }
+
+#' Plot clustered heatmap
+#' The heatmap.2 function is taken from the gplots package
+
+
+plot_cluster_hmap <- function(transcripts, obj, units = 'tpm')
+{
+    if(!all(transcripts %in% obj$obs_norm$target_id))
+    {
+        stop("Couldn't find the following transcripts: ", paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "))
+    }
+    
+    tabd_df = obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
+    
+    if(units == 'tpm')
+    {
+        tabd_df = dplyr::select(tabd_df, target_id, sample, tpm)
+        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
+    }
+    else
+    {
+        tabd_df = dplyr::select(tabd_df, target_id, sample, est_counts)
+        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
+    }
+    rownames(tabd_df) = tabd_df$target_id
+    tabd_df$target_id = NULL
+    
+    
+    #Change the following to not rely on gplots:
+    gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30))
+    #Also, figure out some way to make sure that the table expands downward as opposed
+    #to shrinking when adding new transcripts
+}

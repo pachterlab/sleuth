@@ -356,6 +356,30 @@ sleuth_live <- function(obj, ...) {
     ),
     
       ####
+      tabPanel('heat map',
+        fluidRow(
+            column(12,
+                p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
+                ),
+            offset = 1
+        ),
+        fluidRow(
+            column(3,
+                selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
+                ),
+            column(3,
+                textInput('hm_transcripts', label = 'enter target ids: ', value = '')
+                ),
+            column(1,
+                actionButton('hm_go', 'view')
+            )
+        ),
+        tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
+        fluidRow(plotOutput('hm_plot'))
+    ),
+        
+    
+      ####
       tabPanel('MA plot',
       fluidRow(
         column(12,
@@ -799,6 +823,17 @@ sleuth_live <- function(obj, ...) {
             HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
         }
     })
+    
+    
+    ### Heat Map
+    hm_transcripts <- eventReactive(input$hm_go, {
+            unlist(strsplit(input$hm_transcripts, " +"))
+    })
+    
+    output$hm_plot <- renderPlot ({
+        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units)
+    })
+    
     
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({
