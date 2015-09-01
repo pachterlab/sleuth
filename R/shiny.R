@@ -830,9 +830,22 @@ sleuth_live <- function(obj, ...) {
             unlist(strsplit(input$hm_transcripts, " +"))
     })
     
+    hm_plot_height <- function()
+    {
+        if(length(hm_transcripts()) > 5)
+        {
+            length(hm_transcripts()) * 60
+        }
+        else
+        {
+            400
+        }
+    }
+    
+    
     output$hm_plot <- renderPlot ({
-        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units)
-    })
+        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units, { 30 / (length(hm_transcripts()) * 2.2 + 10) } )
+    }, height = hm_plot_height)
     
     
     ### Volcano Plot

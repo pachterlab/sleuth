@@ -587,7 +587,7 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
 #' The heatmap.2 function is taken from the gplots package
 
 
-plot_cluster_hmap <- function(transcripts, obj, units = 'tpm')
+plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', hm_keysize)
 {
     if(!all(transcripts %in% obj$obs_norm$target_id))
     {
@@ -611,7 +611,7 @@ plot_cluster_hmap <- function(transcripts, obj, units = 'tpm')
     
     
     #Change the following to not rely on gplots:
-    gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30))
+    gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4))
     #Also, figure out some way to make sure that the table expands downward as opposed
     #to shrinking when adding new transcripts
 }
