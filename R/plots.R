@@ -587,12 +587,13 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
 #' The heatmap.2 function is taken from the gplots package
 
 
-plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', hm_keysize)
+plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', hm_keysize, trans = 'log')
 {
     if(!all(transcripts %in% obj$obs_norm$target_id))
     {
         stop("Couldn't find the following transcripts: ", paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "))
     }
+    
     
     tabd_df = obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
     
@@ -608,10 +609,14 @@ plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', hm_keysize)
     }
     rownames(tabd_df) = tabd_df$target_id
     tabd_df$target_id = NULL
-    
-    
-    #Change the following to not rely on gplots:
-    gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4))
-    #Also, figure out some way to make sure that the table expands downward as opposed
-    #to shrinking when adding new transcripts
+        
+    if(trans != '' && !is.null(trans)) {
+        tFunc = eval(parse(text = trans))
+        gplots::heatmap.2(as.matrix(tFunc(tabd_df)), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
+    }
+    else {
+        #Change the following to not rely on gplots:
+        gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
+    }
+
 }

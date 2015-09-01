@@ -370,6 +370,9 @@ sleuth_live <- function(obj, ...) {
             column(3,
                 textInput('hm_transcripts', label = 'enter target ids: ', value = '')
                 ),
+            column(3,
+                textInput('hm_trans', label = 'tranform: ', value = 'log')
+                ),
             column(1,
                 actionButton('hm_go', 'view')
             )
@@ -842,9 +845,12 @@ sleuth_live <- function(obj, ...) {
         }
     }
     
+    hm_func <- eventReactive(input$hm_go, {
+        input$hm_trans
+    })
     
     output$hm_plot <- renderPlot ({
-        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units, { 30 / (length(hm_transcripts()) * 2.2 + 10) } )
+        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units, { 30 / (length(hm_transcripts()) * 2.2 + 10) }, hm_func())
     }, height = hm_plot_height)
     
     
