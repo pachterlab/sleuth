@@ -587,7 +587,7 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
 #' The heatmap.2 function is taken from the gplots package
 
 
-plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', hm_keysize, trans = 'log')
+plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', trans = 'log')
 {
     if(!all(transcripts %in% obj$obs_norm$target_id))
     {
@@ -612,11 +612,86 @@ plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', hm_keysize, trans
         
     if(trans != '' && !is.null(trans)) {
         tFunc = eval(parse(text = trans))
-        gplots::heatmap.2(as.matrix(tFunc(tabd_df)), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
+        
+        ggPlotExpression(as.matrix(tFunc(tabd_df)), clustRows = FALSE)
+        #gplots::heatmap.2(as.matrix(tFunc(tabd_df)), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
     }
     else {
+        
+        ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
         #Change the following to not rely on gplots:
-        gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
+        #gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
     }
 
+}
+
+
+#' Heatmap of expression
+#'
+#' Plot all of the points in an expression matrix
+#'
+#' @param exMat the expression matrix
+#' @param clustRows if TRUE, cluster the rows by hierarchical clustering.
+#' @param clustCols if TRUE, cluster the columns by hierarchical clustering.
+#' @param rowNames if TRUE, print the row names on the plot
+#' @param colNames if TRUE, print the column names on the plot
+#' @return a ggplot object
+#' @export
+ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
+                             rowNames = TRUE, colNames = TRUE)
+{
+    if (is(exMat, 'matrix')) {
+        exMat <- as.matrix(exMat)
+        stopifnot(class(exMat) == 'matrix')
+    }
+    exMat = t(exMat)
+    rowOrder <- 1:nrow(exMat)
+    colOrder <- 1:ncol(exMat)
+    if (clustRows)
+        rowOrder <- orderByDendrogram(exMat)
+    if (clustCols)
+        colOrder <- orderByDendrogram(t(exMat))
+    exMat <- exMat[rowOrder, colOrder]
+    meltMat <- reshape2::melt(exMat, varnames = c("x", "y"))
+    breaksM <- round(seq(min(meltMat$value, na.rm = T), max(meltMat$value, na.rm = T), 
+                         length.out = 10), 3)
+                         #print(rownames(exMat))
+    if (is.null(colnames(exMat)))
+        colnames(exMat) <- 1:ncol(exMat)
+    meltMat$y <- factor(meltMat$y, levels = colnames(exMat))
+    meltMat$x <- factor(meltMat$x, levels = rownames(exMat))
+    p <- ggplot(meltMat, aes(x, y, fill = value))
+    p <- p + geom_tile() + scale_fill_gradientn(colours = heat.colors(20),
+                                                guide = guide_legend(title = "Expression: ",
+                                                                     reverse = T, size = 14)) 
+    p <- p + theme_bw() + theme(legend.text = element_text(size = 14),
+                                                                   legend.title = element_text(size = 14),
+                                                           legend.direction = 'vertical',
+                                                           legend.position = 'top',
+                                                           legend.background = element_rect(fill = "gray95", colour = "black", size = 0.5, linetype = 1),
+                                                           axis.title=element_blank())
+    if (rowNames)
+        p <- p + theme(axis.text.x=element_text(angle = 90, size=14))
+    else
+        p <- p + theme(axis.text.x=element_text(size=0))
+
+    if (colNames)
+        p <- p + theme(axis.text.y=element_text(size=14))
+    else
+        p <- p + theme(axis.text.y=element_text(size=0))
+
+    p
+    #list(plot = p, rowOrder = rowOrder, colOrder = colOrder)
+}
+
+#' Order by dendrogram
+#'
+#' @param mat a matrix where the rows are observations and the columns are different dimensions on the matrix
+#' @return a vector of label orderings
+#' @export
+orderByDendrogram <- function(mat)
+{
+    hc <- hclust(dist(mat))
+    dc <- as.dendrogram(hc)
+    order.dendrogram(dc)
 }

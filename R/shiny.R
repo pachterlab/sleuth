@@ -850,7 +850,7 @@ sleuth_live <- function(obj, ...) {
     })
     
     output$hm_plot <- renderPlot ({
-        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units, { 30 / (length(hm_transcripts()) * 2.2 + 10) }, hm_func())
+        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units, hm_func())
     }, height = hm_plot_height)
     
     
