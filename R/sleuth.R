@@ -505,3 +505,63 @@ summary.sleuth <- function(obj, covariates = TRUE) {
   res
 }
 
+#' Create a gene table from a sleuth object
+#'
+#' Take in a sleuth object with added genes, and return a data table in which genes
+#' list the most significant transcript mapping to themselves
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_beta a character string denoting which beta to use
+#' @param which_model a character string denoting which model to use
+#' @param which_group a character string denoting which gene group to use
+#' @return a \code{data.frame} containing gene names, transcript names, and significance
+#' @export
+
+
+sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group = 'ens_gene') {
+  
+    if(is.null(obj$target_mapping))
+    {
+        stop("This sleuth object doesn't have added gene names.")
+    }
+    popped_gene_table = sleuth_results(obj, which_beta, which_model)
+
+    
+    popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
+    popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
+
+    popped_gene_table = dplyr::summarise_(popped_gene_table, most_sig_transcript = ~target_id[1], pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n(), list_of_transcripts = ~toString(target_id[1:length(target_id)]))
+    
+    popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
+    popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
+    popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+    popped_gene_table
+}
+
+
+#' Get the names of the transcripts associated to a gene
+#'
+#' Get the names of the transcripts associated to a gene, assuming genes are added to the input \code{sleuth} object.
+#'
+#' @param obj a \code{sleuth} object
+#' @param which_beta a character string denoting which beta to use
+#' @param which_model a character string denoting which model to use
+#' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
+#' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
+#' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
+#' @param gene_name a string containing the name of the gene you are interested in
+#' @return a vector of strings containing the names of the transcripts that map to a gene
+#' @export
+
+
+sleuth_transcripts_from_gene <- function(obj, which_beta, which_model, gene_colname, gene_name)
+{
+    table = sleuth_results(obj, which_beta, which_model)
+    table = dplyr::select_(table, ~target_id, gene_colname, ~qval)
+    table = dplyr::arrange_(table, gene_colname, ~qval)
+    if(!(gene_name %in% table[,2]))
+    {
+        stop("Couldn't find gene ", gene_name)
+    }
+    table$target_id[table[,2] == gene_name]
+}

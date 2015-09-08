@@ -324,7 +324,64 @@ sleuth_live <- function(obj, ...) {
       ),
 
     navbarMenu('analyses',
-
+    
+      tabPanel('gene view',
+        fluidRow(
+            column(12,
+                p(h3('gene view'), "Boxplots of abundances of transcript mapping to a given gene, and their technical variation. This step can take a while, especially with many plots." )
+                ),
+            offset = 1),
+        fluidRow(column(3,
+            textInput('gv_var_input', label = 'gene: ', value = '')
+            ),
+            column(3,
+                selectInput('gv_var_color_by', label = 'color by: ', choices = c(NULL, poss_covars), selected = NULL)),
+            column(3,
+                selectInput('gv_var_units', label = 'units: ', choices = c('est_counts', 'tpm'), selected = 'est_counts')),
+            column(3,
+                uiOutput('gv_gene_column')
+            )
+        ),
+        fluidRow(
+            column(3, actionButton('gv_go', 'view')),
+            column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
+                    min = 1, max = 15, step = 1)),
+            column(3,
+                selectInput('which_model_gv', label = 'fit: ', choices = poss_models, selected = poss_models[1])),
+            column(3,
+                uiOutput('which_beta_ctrl_gv'))
+        ),
+        fluidRow(uiOutput('no_genes_message')),
+        fluidRow(uiOutput('gv_var_plts'))
+    ),
+    
+      ####
+      tabPanel('heat map',
+        fluidRow(
+            column(12,
+                p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
+                ),
+            offset = 1
+        ),
+        fluidRow(
+            column(3,
+                selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
+                ),
+            column(3,
+                textInput('hm_transcripts', label = 'enter target ids: ', value = '')
+                ),
+            column(3,
+                textInput('hm_trans', label = 'tranform: ', value = 'log')
+                ),
+            column(1,
+                actionButton('hm_go', 'view')
+            )
+        ),
+        tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
+        fluidRow(plotOutput('hm_plot'))
+    ),
+        
+    
       ####
       tabPanel('MA plot',
       fluidRow(
@@ -369,38 +426,72 @@ sleuth_live <- function(obj, ...) {
           ),
           offset = 1),
         fluidRow(
-          column(4,
+          column(3,
             selectInput('which_model_de', label = 'fit: ',
               choices = poss_models,
               selected = poss_models[1])
             ),
-          column(4,
+          column(3,
             uiOutput('which_beta_ctrl_de')
+            ),
+          column(3,
+            uiOutput('table_type')
+            ),
+          column(3,
+            uiOutput('group_by')
             )
           ),
         dataTableOutput('de_dt')
         ),
-
-      tabPanel('transcript view',
-      fluidRow(
-        column(12,
-          p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
-          ),
-          offset = 1),
-        fluidRow(column(4,
-            textInput('bs_var_input', label = 'transcript: ', value = '')
+        
+            ####
+            tabPanel('transcript view',
+                fluidRow(
+                    column(12,
+                        p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
+                        ),
+                        offset = 1),
+                fluidRow(
+                    column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
+                    ),
+                    column(4,
+                        selectInput('bs_var_color_by', label = 'color by: ',
+                        choices = c(NULL, poss_covars), selected = NULL)
+                    ),
+                    column(3,
+                        selectInput('bs_var_units', label = 'units: ',
+                        choices = c('est_counts', 'tpm'),
+                        selected = 'est_counts'))
+                    ),
+                fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+                fluidRow(plotOutput('bs_var_plt'))
             ),
-          column(4,
-            selectInput('bs_var_color_by', label = 'color by: ',
-              choices = c(NULL, poss_covars), selected = NULL)
-            ),
-          column(3,
-            selectInput('bs_var_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts'))
-          ),
-          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plotOutput('bs_var_plt'))
+      
+          ####
+          tabPanel('volcano plot',
+            fluidRow(
+                column(12,
+                    p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                    ),
+                    offset = 1),
+            fluidRow(
+                column(2,
+                    numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                        min = 0, max = 1, step = 0.01)),
+                column(4,
+                    selectInput('which_model_vol', label = 'fit: ',
+                        choices = poss_models,
+                        selected = poss_models[1])
+                ),
+                column(4,
+                    uiOutput('which_beta_ctrl_vol')
+                    ),
+                column(2,
+                    numericInput('vol_alpha', label = 'opacity:', value = 0.2,
+                        min = 0, max = 1, step = 0.01))
+                ),
+            fluidRow(plotOutput('vol', brush = 'vol_brush')),
+            fluidRow(dataTableOutput('vol_brush_out'))
           )
       )
     ) # navbarPage
@@ -622,9 +713,24 @@ sleuth_live <- function(obj, ...) {
     })
 
     ### DE table
+    
     output$which_beta_ctrl_de <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
+    })
+    
+    output$table_type <- renderUI({
+        if(!is.null(obj$target_mapping))
+        {
+            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2), selected = 1)
+        }
+    })
+    
+    output$group_by <- renderUI({
+        if(!is.null(input$pop_genes) && input$pop_genes == 2)
+        {
+            selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        }
     })
 
     output$de_dt <- renderDataTable({
@@ -633,20 +739,169 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
-
-      sleuth_results(obj, wb, input$which_model_de)
+      
+        if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
+            mg <- input$mappingGroup
+            sleuth_gene_table(obj, wb, input$which_model_de, mg)
+        }
+      
+      else {
+          sleuth_results(obj, wb, input$which_model_de)
+      }
     })
 
+    ### bootstrap var
+    
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
-      })
-
-    ### bootstrap var
+    })
+    
+    
     output$bs_var_plt <- renderPlot({
-      plot_bootstrap(obj, bs_var_text(),
+        plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
     })
+    
+    
+    ### Gene Viewer
+    gv_var_text <- eventReactive(input$gv_go, {
+        if(!is.null(obj$target_mapping))
+        {
+            input$gv_var_input
+        }
+    })
+    
+    output$gv_gene_column <- renderUI({
+        if(!is.null(obj$target_mapping))
+        {
+            selectInput('gv_gene_colname', label = 'genes from: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        }
+    })
+    
+    output$which_beta_ctrl_gv <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+        selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
+    })
+    
+    
+    gv_var_list <- reactive({
+        wb <- input$which_beta_gv
+        if ( is.null(wb) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            wb <- poss_tests[1]
+        }
+        sleuth_transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
+    })
+    
+    
+        
+    output$gv_var_plts <- renderUI({
+        gv_plot_list <- lapply(1:input$gv_maxplots, function(i) {
+                gv_plotname <- paste("plot", i, sep="")
+                plotOutput(gv_plotname)
+            })
+        
+            do.call(tagList, gv_plot_list)
+        })
+    
+        for (i in 1:15) {
+            
+            local({
+                my_i <- i
+                gv_plotname <- paste("plot", my_i, sep="")
+
+                    output[[gv_plotname]] <- renderPlot({
+                       if(!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i]))
+                        {
+                           plot_bootstrap(obj, gv_var_list()[my_i], units = input$gv_var_units, color_by = input$gv_var_color_by)
+                        }
+                   })
+           })
+        }
+        
+    output$no_genes_message <- renderUI({
+        if(is.null(obj$target_mapping))
+        {
+            HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
+        }
+    })
+    
+    
+    ### Heat Map
+    hm_transcripts <- eventReactive(input$hm_go, {
+            unlist(strsplit(input$hm_transcripts, " +"))
+    })
+    
+    hm_plot_height <- function()
+    {
+        if(length(hm_transcripts()) > 5)
+        {
+            length(hm_transcripts()) * 60
+        }
+        else
+        {
+            400
+        }
+    }
+    
+    hm_func <- eventReactive(input$hm_go, {
+        input$hm_trans
+    })
+    
+    output$hm_plot <- renderPlot ({
+        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units, hm_func())
+    }, height = hm_plot_height)
+    
+    
+    ### Volcano Plot
+    output$which_beta_ctrl_vol <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+        selectInput('which_beta_vol', 'beta: ', choices = poss_tests)
+    })
+    
+    output$vol <- renderPlot({
+        val <- input$which_beta_vol
+        if ( is.null(val) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            val <- poss_tests[1]
+        }
+        plot_volcano(obj, val,
+        input$which_model_vol,
+        sig_level = input$max_fdr,
+        point_alpha = input$vol_alpha
+        )
+    })
+    
+    #vol_observe
+    output$vol_brush_out <- renderDataTable({
+        wb <- input$which_beta_vol
+        if ( is.null(wb) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            wb <- poss_tests[1]
+        }
+        res <- sleuth_results(obj, wb, input$which_model_vol, rename_cols = FALSE,
+        show_all = FALSE)
+        res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
+        if (!is.null(input$vol_brush)) {
+            res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
+            res$Nlog10_qval = NULL
+        }  else {
+            res <- NULL
+        }
+        
+        # TODO: total hack -- fix this correctly eventually
+        if (is(res, 'data.frame')) {
+            res <- dplyr::rename(res,
+            mean = mean_obs,
+            var = var_obs,
+            tech_var = sigma_q_sq,
+            final_sigma_sq = smooth_sigma_sq_pmax)
+        }
+        
+        res
+    })
+    
   }
 
   shinyApp(ui = p_layout, server = server_fun)

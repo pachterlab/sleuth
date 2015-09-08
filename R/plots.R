@@ -417,8 +417,7 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
     if (nrow(highlight) > 0) {
       p <- p + geom_point(aes(mean_obs, b), data = highlight, colour = highlight_color)
     } else {
-      warning("Couldn't find any transcripts from highlight set in this test.
-        They were probably filtered out.")
+      warning("Couldn't find any transcripts from highlight set in this test. They were probably filtered out.")
     }
   }
 
@@ -448,7 +447,7 @@ plot_bootstrap <- function(obj,
   p <- ggplot(df, aes_string('sample', units))
   p <- p + geom_boxplot(aes_string(fill = color_by))
   p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
-
+  p <- p + ggtitle(transcript)
   p
 }
 
@@ -489,6 +488,49 @@ plot_sample_heatmap <- function(obj,
   p <- p + ylab('')
 
   p
+}
+
+#' Plot volcano plot
+#'
+#' Plot a volcano plot. A volcano plot is a plot of beta value (regression coefficient)
+#' vs. log(significance). Ideally, it looks like a volcano; more significance typically
+#' results in higher beta
+#' @param obj a  \code{sleuth} object
+#' @param which_beta a character string denoting which beta to use for
+#' highlighting the transcript
+#' @param which_model a character string denoting which model to use for the
+#' test
+#' @param sig_level the significance level for Fdr
+#' @param point_alpha the alpha for the points
+#' @param sig_color what color to make the 'significant' transcripts
+#' @param highlight a \code{data.frame} with one column, \code{target_id}.
+#' These points will be displayed below in a table.
+#' @return a \code{ggplot} object
+#' @export
+
+
+plot_volcano = function(obj, which_beta, which_model = 'full',
+    sig_level = 0.10,
+    point_alpha = 0.2,
+    sig_color = 'red',
+    highlight = NULL
+    ) {
+    stopifnot( is(obj, 'sleuth') )
+    
+    res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+        show_all = FALSE)
+    res <- dplyr::mutate(res, significant = qval < sig_level)
+    
+   
+        p = ggplot(res, aes(b, -log10(qval)))
+        p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+        p <- p + scale_colour_manual(values = c('black', sig_color))
+        p <- p + xlab('beta_value')
+        p <- p + ylab('-log10(qval)')
+        p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
+    
+    
+    p
 }
 
 #' QQ norm plot
@@ -557,4 +599,129 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
   }
 
   p
+}
+
+#' Plot clustered heatmap
+#'
+#' Plot a clustered heatmap. The clustering is done by the hclust function.
+#'
+#' @param transcripts a vector of strings containing a list of transcripts to be plotted in a heatmap
+#' @param obj a \code{sleuth} object
+#' @param units a string specifying which units to use, either tpm or est_counts
+#' @param trans a string specifying a function to transform the data by
+#' @return a \code{ggplot} object
+#' @export
+
+
+plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', trans = 'log')
+{
+    if(!all(transcripts %in% obj$obs_norm$target_id))
+    {
+        stop("Couldn't find the following transcripts: ", paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "))
+    }
+    
+    
+    tabd_df = obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
+    
+    if(units == 'tpm')
+    {
+        tabd_df = dplyr::select(tabd_df, target_id, sample, tpm)
+        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
+    }
+    else if (units == 'est_counts')
+    {
+        tabd_df = dplyr::select(tabd_df, target_id, sample, est_counts)
+        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
+    }
+    else
+    {
+        stop("Didn't recognize the following unit: ", units)
+    }
+    
+    rownames(tabd_df) = tabd_df$target_id
+    tabd_df$target_id = NULL
+        
+    if(nchar(trans) > 0 && !is.null(trans)) {
+        tFunc = eval(parse(text = trans))
+        
+        ggPlotExpression(as.matrix(tFunc(tabd_df)), clustRows = FALSE)
+        #gplots::heatmap.2(as.matrix(tFunc(tabd_df)), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
+    }
+    else {
+        
+        ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
+        #Change the following to not rely on gplots:
+        #gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
+    }
+
+}
+
+
+#' Heatmap of expression
+#'
+#' Plot all of the points in an expression matrix
+#'
+#' @param exMat the expression matrix
+#' @param clustRows if TRUE, cluster the rows by hierarchical clustering.
+#' @param clustCols if TRUE, cluster the columns by hierarchical clustering.
+#' @param rowNames if TRUE, print the row names on the plot
+#' @param colNames if TRUE, print the column names on the plot
+#' @return a ggplot object
+ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
+                             rowNames = TRUE, colNames = TRUE)
+{
+    if (is(exMat, 'matrix')) {
+        exMat <- as.matrix(exMat)
+        stopifnot(class(exMat) == 'matrix')
+    }
+    exMat = t(exMat)
+    rowOrder <- 1:nrow(exMat)
+    colOrder <- 1:ncol(exMat)
+    if (clustRows)
+        rowOrder <- orderByDendrogram(exMat)
+    if (clustCols)
+        colOrder <- orderByDendrogram(t(exMat))
+    exMat <- exMat[rowOrder, colOrder]
+    meltMat <- reshape2::melt(exMat, varnames = c("x", "y"))
+    breaksM <- round(seq(min(meltMat$value, na.rm = T), max(meltMat$value, na.rm = T), 
+                         length.out = 10), 3)
+                         #print(rownames(exMat))
+    if (is.null(colnames(exMat)))
+        colnames(exMat) <- 1:ncol(exMat)
+    meltMat$y <- factor(meltMat$y, levels = colnames(exMat))
+    meltMat$x <- factor(meltMat$x, levels = rownames(exMat))
+    p <- ggplot(meltMat, aes(x, y, fill = value))
+    p <- p + geom_tile() + scale_fill_gradientn(colours = heat.colors(20),
+                                                guide = guide_legend(title = "Expression: ",
+                                                                     reverse = T, size = 14)) 
+    p <- p + theme_bw() + theme(legend.text = element_text(size = 14),
+                                                                   legend.title = element_text(size = 14),
+                                                           legend.direction = 'vertical',
+                                                           legend.position = 'top',
+                                                           legend.background = element_rect(fill = "gray95", colour = "black", size = 0.5, linetype = 1),
+                                                           axis.title=element_blank())
+    if (rowNames)
+        p <- p + theme(axis.text.x=element_text(angle = 90, size=14))
+    else
+        p <- p + theme(axis.text.x=element_text(size=0))
+
+    if (colNames)
+        p <- p + theme(axis.text.y=element_text(size=14))
+    else
+        p <- p + theme(axis.text.y=element_text(size=0))
+
+    p
+    #list(plot = p, rowOrder = rowOrder, colOrder = colOrder)
+}
+
+#' Order by dendrogram
+#'
+#' @param mat a matrix where the rows are observations and the columns are different dimensions on the matrix
+#' @return a vector of label orderings
+
+orderByDendrogram <- function(mat)
+{
+    hc <- hclust(dist(mat))
+    dc <- as.dendrogram(hc)
+    order.dendrogram(dc)
 }
