@@ -93,237 +93,7 @@ sleuth_live <- function(obj, ...) {
               ) #ol
           ))),
 
-    navbarMenu('diagnostics',
-
-      ####
-      tabPanel('mean-variance plot',
-      fluidRow(
-        column(12,
-          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
-          ),
-          offset = 1),
-        fluidRow(plotOutput('mv_plt'))
-        ),
-
-      tabPanel('scatter plots',
-        ####
-        fluidRow(
-          column(12,
-            p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
-            ),
-          offset = 1),
-        fluidRow(
-          column(4,
-            selectInput('sample_x', label = 'x-axis: ',
-              choices = samp_names,
-              selected = samp_names[1])
-            ),
-          column(4,
-            selectInput('sample_y', label = 'y-axis: ',
-              choices = samp_names,
-              selected = samp_names[2])
-            ),
-          column(2,
-            textInput('trans', label = 'transform: ',
-              value = 'log')),
-          column(2,
-            numericInput('scatter_offset', label = 'offset: ', value = 1))
-          ),
-        fluidRow(
-          column(2,
-            selectInput('scatter_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
-          column(2,
-            checkboxInput('scatter_filt', label = 'filter',
-              value = TRUE)),
-          column(2,
-            numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
-              min = 0, max = 1, step = 0.01))
-          ),
-        fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
-        fluidRow(plotOutput('scatter_vars')),
-        fluidRow(dataTableOutput('scatter_brush_table'))
-        ),
-
-      tabPanel('Q-Q plot',
-        ####
-        fluidRow(
-          column(2,
-            numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
-              min = 0, max = 1, step = 0.01)),
-          column(4,
-            selectInput('which_model_qq', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
-            ),
-          column(4,
-            uiOutput('which_beta_ctrl_qq')
-            )
-          ),
-        fluidRow(
-          plotOutput('qqplot')
-          )
-        )
-
-      ),
-
-    navbarMenu('summaries',
-
-      ####
-      tabPanel('densities',
-      fluidRow(
-        column(12,
-          p(h3('distribution of abundances'), "Distributions of abundances of individual samples or groupings by covariates.")
-          ),
-          offset = 1),
-        fluidRow(
-          column(4,
-            selectInput('cond_dens_grp', 'grouping: ',
-              choices = poss_covars,
-              selected = poss_covars[1])
-            ),
-          column(2,
-            selectInput('cond_dens_units', label = 'units: ',
-              choices = c('tpm', 'est_counts'),
-              selected = 'tpm')),
-          column(2,
-            checkboxInput('cond_dens_filt', label = 'filter',
-              value = TRUE)),
-          column(2,
-            textInput('cond_dens_trans', label = 'transform: ',
-              value = 'log')),
-          column(2,
-            numericInput('cond_dens_offset', label = 'offset: ', value = 1))
-          ),
-        fluidRow(plotOutput('condition_density')),
-        fluidRow(
-          column(4,
-            selectInput('samp_dens', 'sample: ',
-              choices = samp_names,
-              selected = samp_names[1]))),
-        fluidRow(plotOutput('sample_density'))
-        ),
-
-
-      ###
-      tabPanel('design matrix',
-
-      fluidRow(
-        column(12,
-          p(h3('design matrix'), "View the design matrix used to fit each model.")
-          ),
-          offset = 1),
-
-        fluidRow(
-          column(4,
-            selectInput('which_model_design', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
-            )
-          ),
-
-        fluidRow(
-          verbatimTextOutput('design_matrix')
-          #tableOutput('design_matrix')
-          )
-        ),
-
-      ####
-      tabPanel('processed data',
-      fluidRow(
-        column(12,
-          p(h3('processed data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
-          ),
-          offset = 1),
-        fluidRow(
-          column(12,
-            p(strong('kallisto version(s): '), obj$kal_versions)),
-          offset = 1
-          ),
-        fluidRow(dataTableOutput('summary_dt'))
-        ),
-
-      ###
-      tabPanel('kallisto table',
-
-        fluidRow(
-        column(12, p(h3('kallisto abundance table'), "All of the abundance
-            estimates pulled in from kallisto results into the sleuth
-            object."))
-          ),
-
-        fluidRow(
-          column(3,
-            checkboxInput('norm_tbl', label = 'normalized ',
-              value = TRUE)),
-          column(3,
-            checkboxInput('filt_tbl', label = 'filter ',
-              value = TRUE)),
-          column(3,
-            checkboxInput('covar_tbl', label = 'covariates ',
-              value = FALSE))
-          ),
-
-        fluidRow(dataTableOutput('kallisto_table'))
-        )
-
-      ),
-
-    navbarMenu('maps',
-
-      ####
-      tabPanel('PCA',
-      fluidRow(
-        column(12,
-          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components.")
-          ),
-          offset = 1),
-        fluidRow(
-          column(3,
-            selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
-              selected = 1)
-            ),
-          column(3,
-            selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
-              selected = 2)
-            ),
-          column(4,
-            selectInput('color_by', label = 'color by: ',
-              choices = c(NULL, poss_covars), selected = NULL)
-            ),
-          column(2,
-            numericInput('pca_point_size', label = 'size: ', value = 3))
-          ),
-        fluidRow(
-          column(2,
-            selectInput('pca_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
-          column(3,
-            checkboxInput('pca_filt', label = 'filter',
-              value = TRUE),
-            checkboxInput('text_labels', label = 'text labels',
-              value = TRUE)
-            )
-          ),
-        fluidRow(plotOutput('pca_plt'))
-        ),
-
-      ###
-      tabPanel('sample heatmap',
-      fluidRow(
-        column(12,
-          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
-          ),
-          offset = 1),
-        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
-        fluidRow(plotOutput('samp_heat_plt'))
-        )
-
-      ),
-
-    navbarMenu('analyses',
+                             navbarMenu('analyses',
     
       tabPanel('gene view',
         fluidRow(
@@ -493,6 +263,236 @@ sleuth_live <- function(obj, ...) {
             fluidRow(plotOutput('vol', brush = 'vol_brush')),
             fluidRow(dataTableOutput('vol_brush_out'))
           )
+      ),
+
+    navbarMenu('maps',
+
+      ####
+      tabPanel('PCA',
+      fluidRow(
+        column(12,
+          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components.")
+          ),
+          offset = 1),
+        fluidRow(
+          column(3,
+            selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
+              selected = 1)
+            ),
+          column(3,
+            selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
+              selected = 2)
+            ),
+          column(4,
+            selectInput('color_by', label = 'color by: ',
+              choices = c(NULL, poss_covars), selected = NULL)
+            ),
+          column(2,
+            numericInput('pca_point_size', label = 'size: ', value = 3))
+          ),
+        fluidRow(
+          column(2,
+            selectInput('pca_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(3,
+            checkboxInput('pca_filt', label = 'filter',
+              value = TRUE),
+            checkboxInput('text_labels', label = 'text labels',
+              value = TRUE)
+            )
+          ),
+        fluidRow(plotOutput('pca_plt'))
+        ),
+
+      ###
+      tabPanel('sample heatmap',
+      fluidRow(
+        column(12,
+          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
+          ),
+          offset = 1),
+        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+        fluidRow(plotOutput('samp_heat_plt'))
+        )
+
+      ),
+
+    navbarMenu('summaries',
+
+      ####
+      tabPanel('densities',
+      fluidRow(
+        column(12,
+          p(h3('distribution of abundances'), "Distributions of abundances of individual samples or groupings by covariates.")
+          ),
+          offset = 1),
+        fluidRow(
+          column(4,
+            selectInput('cond_dens_grp', 'grouping: ',
+              choices = poss_covars,
+              selected = poss_covars[1])
+            ),
+          column(2,
+            selectInput('cond_dens_units', label = 'units: ',
+              choices = c('tpm', 'est_counts'),
+              selected = 'tpm')),
+          column(2,
+            checkboxInput('cond_dens_filt', label = 'filter',
+              value = TRUE)),
+          column(2,
+            textInput('cond_dens_trans', label = 'transform: ',
+              value = 'log')),
+          column(2,
+            numericInput('cond_dens_offset', label = 'offset: ', value = 1))
+          ),
+        fluidRow(plotOutput('condition_density')),
+        fluidRow(
+          column(4,
+            selectInput('samp_dens', 'sample: ',
+              choices = samp_names,
+              selected = samp_names[1]))),
+        fluidRow(plotOutput('sample_density'))
+        ),
+
+
+      ###
+      tabPanel('design matrix',
+
+      fluidRow(
+        column(12,
+          p(h3('design matrix'), "View the design matrix used to fit each model.")
+          ),
+          offset = 1),
+
+        fluidRow(
+          column(4,
+            selectInput('which_model_design', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            )
+          ),
+
+        fluidRow(
+          verbatimTextOutput('design_matrix')
+          #tableOutput('design_matrix')
+          )
+        ),
+
+      ####
+      tabPanel('processed data',
+      fluidRow(
+        column(12,
+          p(h3('processed data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
+          ),
+          offset = 1),
+        fluidRow(
+          column(12,
+            p(strong('kallisto version(s): '), obj$kal_versions)),
+          offset = 1
+          ),
+        fluidRow(dataTableOutput('summary_dt'))
+        ),
+
+      ###
+      tabPanel('kallisto table',
+
+        fluidRow(
+        column(12, p(h3('kallisto abundance table'), "All of the abundance
+            estimates pulled in from kallisto results into the sleuth
+            object."))
+          ),
+
+        fluidRow(
+          column(3,
+            checkboxInput('norm_tbl', label = 'normalized ',
+              value = TRUE)),
+          column(3,
+            checkboxInput('filt_tbl', label = 'filter ',
+              value = TRUE)),
+          column(3,
+            checkboxInput('covar_tbl', label = 'covariates ',
+              value = FALSE))
+          ),
+
+        fluidRow(dataTableOutput('kallisto_table'))
+        )
+
+      ),
+                         
+      navbarMenu('diagnostics',
+
+      ####
+      tabPanel('mean-variance plot',
+      fluidRow(
+        column(12,
+          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
+          ),
+          offset = 1),
+        fluidRow(plotOutput('mv_plt'))
+        ),
+
+      tabPanel('scatter plots',
+        ####
+        fluidRow(
+          column(12,
+            p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
+            ),
+          offset = 1),
+        fluidRow(
+          column(4,
+            selectInput('sample_x', label = 'x-axis: ',
+              choices = samp_names,
+              selected = samp_names[1])
+            ),
+          column(4,
+            selectInput('sample_y', label = 'y-axis: ',
+              choices = samp_names,
+              selected = samp_names[2])
+            ),
+          column(2,
+            textInput('trans', label = 'transform: ',
+              value = 'log')),
+          column(2,
+            numericInput('scatter_offset', label = 'offset: ', value = 1))
+          ),
+        fluidRow(
+          column(2,
+            selectInput('scatter_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(2,
+            checkboxInput('scatter_filt', label = 'filter',
+              value = TRUE)),
+          column(2,
+            numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
+              min = 0, max = 1, step = 0.01))
+          ),
+        fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
+        fluidRow(plotOutput('scatter_vars')),
+        fluidRow(dataTableOutput('scatter_brush_table'))
+        ),
+
+      tabPanel('Q-Q plot',
+        ####
+        fluidRow(
+          column(2,
+            numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
+              min = 0, max = 1, step = 0.01)),
+          column(4,
+            selectInput('which_model_qq', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            ),
+          column(4,
+            uiOutput('which_beta_ctrl_qq')
+            )
+          ),
+        fluidRow(
+          plotOutput('qqplot')
+          )
+        )
+
       )
     ) # navbarPage
 
