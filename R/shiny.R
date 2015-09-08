@@ -51,46 +51,15 @@ sleuth_live <- function(obj, ...) {
        column(10, offset = 1,
           p('This Shiny app is designed for exploratory data analysis of
           kallisto-sleuth processed RNA-Seq data. There are four menu tabs
-          that can be used to choose plots and tables to view:'),
-          tags$ol(
-            tags$li(
-              strong('Diagnostics: '), 'provides access to various diagnostics for both
-              kallisto and sleuth.',
-              tags$ul(
-                tags$li('The scatter plots allow for a comparison of transcript abundance
-                  estimates among samples. Users can select outliers for analysis;
-                  dragging a box over a set of points highlights them in a companion
-                  plot showing the raw and bootstrap (technical) variances, and
-                  highlighted transcript names are displayed in a table.'
-                  ),
-                tags$li('the QQ plot shows the quantile relationship between the expected
-                  and empirically obtained Wald statistics. This is useful for
-                  validating the model assumptions. The mean variance plot shows the
-                  results of the shrinkage procedure used to estimate biological
-                  variance.'
-                  )
-                ) #ul
-              ),
+          that can be used to choose plots and tables to view.'),
 
-            tags$li(strong('Summaries: '), 'provides summary statistics for the experiments being
-              analyzed. The experiment table lists the samples processed, the number
-              of reads pseudoaligned in each and the conditions associated to
-              samples .The density plots show the distribution of abundances in
-              different experiments.'),
-
-            tags$li(strong('Maps: '), 'provides low dimensional visualizations of the high
-              dimensional transcript abundance data. The sample heatmap
-              displays the Jensen-Shannon divergence between samples, and the
-              PCA plot offers a visualization of projections of transcript
-              abundances onto the principal components.'),
-
-            tags$li(strong('Analyses: '), 'provides plots and tables for analysis of the
-              data. The MA plot displays the estimated magnitude of effect vs.
-              abundance for transcripts. The transcript table shows the test
-              results and transcript view displays box plots for transcript
-              abundances across samples.')
-
-              ) #ol
+          p(strong('sleuth live features:')),
+             tags$ul(
+                     tags$li(strong('v0.27.3'),': gene table, gene viewer, transcript heatmap, and volcano plot by Pascal Sturmfels.'),
+                     tags$li(strong('v0.27.2'),': design matrix, kallisto table, transcript view, and QQplot by Harold Pimentel.'),
+                     tags$li(strong('v0.27.1'),': densities, MA plot, mean-variance plot, PCA,  processed data, sample heatmap, scatter plots, and test table by Harold Pimentel.')
+                     
+                     )
           ))),
 
                              navbarMenu('analyses',
