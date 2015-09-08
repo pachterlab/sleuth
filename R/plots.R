@@ -613,7 +613,7 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
 #' @export
 
 
-plot_cluster_hmap <- function(transcripts, obj, units = 'tpm', trans = 'log')
+plot_transcript_heatmap <- function(transcripts, obj, units = 'tpm', trans = 'log')
 {
     if(!all(transcripts %in% obj$obs_norm$target_id))
     {

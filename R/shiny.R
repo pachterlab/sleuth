@@ -791,7 +791,7 @@ sleuth_live <- function(obj, ...) {
             poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
             wb <- poss_tests[1]
         }
-        sleuth_transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
+        transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
     })
     
     

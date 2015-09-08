@@ -554,7 +554,7 @@ sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group
 #' @export
 
 
-sleuth_transcripts_from_gene <- function(obj, which_beta, which_model, gene_colname, gene_name)
+transcripts_from_gene <- function(obj, which_beta, which_model, gene_colname, gene_name)
 {
     table = sleuth_results(obj, which_beta, which_model)
     table = dplyr::select_(table, ~target_id, gene_colname, ~qval)
