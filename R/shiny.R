@@ -51,119 +51,238 @@ sleuth_live <- function(obj, ...) {
        column(10, offset = 1,
           p('This Shiny app is designed for exploratory data analysis of
           kallisto-sleuth processed RNA-Seq data. There are four menu tabs
-          that can be used to choose plots and tables to view:'),
-          tags$ol(
-            tags$li(
-              strong('Diagnostics: '), 'provides access to various diagnostics for both
-              kallisto and sleuth.',
-              tags$ul(
-                tags$li('The scatter plots allow for a comparison of transcript abundance
-                  estimates among samples. Users can select outliers for analysis;
-                  dragging a box over a set of points highlights them in a companion
-                  plot showing the raw and bootstrap (technical) variances, and
-                  highlighted transcript names are displayed in a table.'
-                  ),
-                tags$li('the QQ plot shows the quantile relationship between the expected
-                  and empirically obtained Wald statistics. This is useful for
-                  validating the model assumptions. The mean variance plot shows the
-                  results of the shrinkage procedure used to estimate biological
-                  variance.'
-                  )
-                ) #ul
-              ),
+          that can be used to choose plots and tables to view.'),
 
-            tags$li(strong('Summaries: '), 'provides summary statistics for the experiments being
-              analyzed. The experiment table lists the samples processed, the number
-              of reads pseudoaligned in each and the conditions associated to
-              samples .The density plots show the distribution of abundances in
-              different experiments.'),
-
-            tags$li(strong('Maps: '), 'provides low dimensional visualizations of the high
-              dimensional transcript abundance data. The sample heatmap
-              displays the Jensen-Shannon divergence between samples, and the
-              PCA plot offers a visualization of projections of transcript
-              abundances onto the principal components.'),
-
-            tags$li(strong('Analyses: '), 'provides plots and tables for analysis of the
-              data. The MA plot displays the estimated magnitude of effect vs.
-              abundance for transcripts. The transcript table shows the test
-              results and transcript view displays box plots for transcript
-              abundances across samples.')
-
-              ) #ol
+          p(strong('sleuth live features:')),
+             tags$ul(
+                     tags$li(strong('v0.27.3'),': gene table, gene viewer, transcript heatmap, and volcano plot by Pascal Sturmfels.'),
+                     tags$li(strong('v0.27.2'),': design matrix, kallisto table, transcript view, and QQplot by Harold Pimentel.'),
+                     tags$li(strong('v0.27.1'),': densities, MA plot, mean-variance plot, PCA,  processed data, sample heatmap, scatter plots, and test table by Harold Pimentel.')
+                     
+                     )
           ))),
 
-    navbarMenu('diagnostics',
-
+                             navbarMenu('analyses',
+    
+      tabPanel('gene view',
+        fluidRow(
+            column(12,
+                p(h3('gene view'), "Boxplots of abundances of transcript mapping to a given gene, and their technical variation. This step can take a while, especially with many plots." )
+                ),
+            offset = 1),
+        fluidRow(column(3,
+            textInput('gv_var_input', label = 'gene: ', value = '')
+            ),
+            column(3,
+                selectInput('gv_var_color_by', label = 'color by: ', choices = c(NULL, poss_covars), selected = NULL)),
+            column(3,
+                selectInput('gv_var_units', label = 'units: ', choices = c('est_counts', 'tpm'), selected = 'est_counts')),
+            column(3,
+                uiOutput('gv_gene_column')
+            )
+        ),
+        fluidRow(
+            column(3, actionButton('gv_go', 'view')),
+            column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
+                    min = 1, max = 15, step = 1)),
+            column(3,
+                selectInput('which_model_gv', label = 'fit: ', choices = poss_models, selected = poss_models[1])),
+            column(3,
+                uiOutput('which_beta_ctrl_gv'))
+        ),
+        fluidRow(uiOutput('no_genes_message')),
+        fluidRow(uiOutput('gv_var_plts'))
+    ),
+    
       ####
-      tabPanel('mean-variance plot',
+      tabPanel('heat map',
+        fluidRow(
+            column(12,
+                p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
+                ),
+            offset = 1
+        ),
+        fluidRow(
+            column(3,
+                selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
+                ),
+            column(3,
+                textInput('hm_transcripts', label = 'enter target ids: ', value = '')
+                ),
+            column(3,
+                textInput('hm_trans', label = 'tranform: ', value = 'log')
+                ),
+            column(1,
+                actionButton('hm_go', 'view')
+            )
+        ),
+        tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
+        fluidRow(plotOutput('hm_plot'))
+    ),
+        
+    
+      ####
+      tabPanel('MA plot',
       fluidRow(
         column(12,
-          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
+          p(h3('MA plot'), "Plot of abundance versus fixed effect (e.g. fold change). Select a set of transcripts to explore their variance across samples. ")
           ),
           offset = 1),
-        fluidRow(plotOutput('mv_plt'))
-        ),
-
-      tabPanel('scatter plots',
-        ####
-        fluidRow(
-          column(12,
-            p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
-            ),
-          offset = 1),
-        fluidRow(
-          column(4,
-            selectInput('sample_x', label = 'x-axis: ',
-              choices = samp_names,
-              selected = samp_names[1])
-            ),
-          column(4,
-            selectInput('sample_y', label = 'y-axis: ',
-              choices = samp_names,
-              selected = samp_names[2])
-            ),
-          column(2,
-            textInput('trans', label = 'transform: ',
-              value = 'log')),
-          column(2,
-            numericInput('scatter_offset', label = 'offset: ', value = 1))
-          ),
         fluidRow(
           column(2,
-            selectInput('scatter_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
-          column(2,
-            checkboxInput('scatter_filt', label = 'filter',
-              value = TRUE)),
-          column(2,
-            numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
-              min = 0, max = 1, step = 0.01))
-          ),
-        fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
-        fluidRow(plotOutput('scatter_vars')),
-        fluidRow(dataTableOutput('scatter_brush_table'))
-        ),
-
-      tabPanel('Q-Q plot',
-        ####
-        fluidRow(
-          column(2,
-            numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
+            numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
               min = 0, max = 1, step = 0.01)),
           column(4,
-            selectInput('which_model_qq', label = 'fit: ',
+            selectInput('which_model', label = 'fit: ',
               choices = poss_models,
               selected = poss_models[1])
             ),
           column(4,
-            uiOutput('which_beta_ctrl_qq')
+            uiOutput('which_beta_ctrl')
+            ),
+          column(2,
+            numericInput('ma_alpha', label = 'opacity:', value = 0.2,
+              min = 0, max = 1, step = 0.01))
+          ),
+        # fluidRow(column(8,
+        #     selectizeInput('ma_trans', 'highlight transcripts: ',
+        #       choices = obj$filter_df[['target_id']],
+        #       multiple = TRUE, width = '100%'))
+        #   ),
+        fluidRow(plotOutput('ma', brush = 'ma_brush')),
+        #fluidRow(plotOutput('vars', brush = 'vars_brush')),
+        fluidRow(plotOutput('vars')),
+        fluidRow(dataTableOutput('ma_brush_out'))
+        ),
+
+
+
+      ####
+      tabPanel('test table',
+      fluidRow(
+        column(12,
+          p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+          ),
+          offset = 1),
+        fluidRow(
+          column(3,
+            selectInput('which_model_de', label = 'fit: ',
+              choices = poss_models,
+              selected = poss_models[1])
+            ),
+          column(3,
+            uiOutput('which_beta_ctrl_de')
+            ),
+          column(3,
+            uiOutput('table_type')
+            ),
+          column(3,
+            uiOutput('group_by')
             )
           ),
-        fluidRow(
-          plotOutput('qqplot')
+        dataTableOutput('de_dt')
+        ),
+        
+            ####
+            tabPanel('transcript view',
+                fluidRow(
+                    column(12,
+                        p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
+                        ),
+                        offset = 1),
+                fluidRow(
+                    column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
+                    ),
+                    column(4,
+                        selectInput('bs_var_color_by', label = 'color by: ',
+                        choices = c(NULL, poss_covars), selected = NULL)
+                    ),
+                    column(3,
+                        selectInput('bs_var_units', label = 'units: ',
+                        choices = c('est_counts', 'tpm'),
+                        selected = 'est_counts'))
+                    ),
+                fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+                fluidRow(plotOutput('bs_var_plt'))
+            ),
+      
+          ####
+          tabPanel('volcano plot',
+            fluidRow(
+                column(12,
+                    p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                    ),
+                    offset = 1),
+            fluidRow(
+                column(2,
+                    numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                        min = 0, max = 1, step = 0.01)),
+                column(4,
+                    selectInput('which_model_vol', label = 'fit: ',
+                        choices = poss_models,
+                        selected = poss_models[1])
+                ),
+                column(4,
+                    uiOutput('which_beta_ctrl_vol')
+                    ),
+                column(2,
+                    numericInput('vol_alpha', label = 'opacity:', value = 0.2,
+                        min = 0, max = 1, step = 0.01))
+                ),
+            fluidRow(plotOutput('vol', brush = 'vol_brush')),
+            fluidRow(dataTableOutput('vol_brush_out'))
           )
+      ),
+
+    navbarMenu('maps',
+
+      ####
+      tabPanel('PCA',
+      fluidRow(
+        column(12,
+          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components.")
+          ),
+          offset = 1),
+        fluidRow(
+          column(3,
+            selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
+              selected = 1)
+            ),
+          column(3,
+            selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
+              selected = 2)
+            ),
+          column(4,
+            selectInput('color_by', label = 'color by: ',
+              choices = c(NULL, poss_covars), selected = NULL)
+            ),
+          column(2,
+            numericInput('pca_point_size', label = 'size: ', value = 3))
+          ),
+        fluidRow(
+          column(2,
+            selectInput('pca_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(3,
+            checkboxInput('pca_filt', label = 'filter',
+              value = TRUE),
+            checkboxInput('text_labels', label = 'text labels',
+              value = TRUE)
+            )
+          ),
+        fluidRow(plotOutput('pca_plt'))
+        ),
+
+      ###
+      tabPanel('sample heatmap',
+      fluidRow(
+        column(12,
+          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
+          ),
+          offset = 1),
+        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+        fluidRow(plotOutput('samp_heat_plt'))
         )
 
       ),
@@ -269,139 +388,80 @@ sleuth_live <- function(obj, ...) {
         )
 
       ),
-
-    navbarMenu('maps',
+                         
+      navbarMenu('diagnostics',
 
       ####
-      tabPanel('PCA',
+      tabPanel('mean-variance plot',
       fluidRow(
         column(12,
-          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components.")
+          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
           ),
           offset = 1),
+        fluidRow(plotOutput('mv_plt'))
+        ),
+
+      tabPanel('scatter plots',
+        ####
         fluidRow(
-          column(3,
-            selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
-              selected = 1)
+          column(12,
+            p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
             ),
-          column(3,
-            selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
-              selected = 2)
+          offset = 1),
+        fluidRow(
+          column(4,
+            selectInput('sample_x', label = 'x-axis: ',
+              choices = samp_names,
+              selected = samp_names[1])
             ),
           column(4,
-            selectInput('color_by', label = 'color by: ',
-              choices = c(NULL, poss_covars), selected = NULL)
+            selectInput('sample_y', label = 'y-axis: ',
+              choices = samp_names,
+              selected = samp_names[2])
             ),
           column(2,
-            numericInput('pca_point_size', label = 'size: ', value = 3))
+            textInput('trans', label = 'transform: ',
+              value = 'log')),
+          column(2,
+            numericInput('scatter_offset', label = 'offset: ', value = 1))
           ),
         fluidRow(
           column(2,
-            selectInput('pca_units', label = 'units: ',
+            selectInput('scatter_units', label = 'units: ',
               choices = c('est_counts', 'tpm'),
               selected = 'est_counts')),
-          column(3,
-            checkboxInput('pca_filt', label = 'filter',
-              value = TRUE),
-            checkboxInput('text_labels', label = 'text labels',
-              value = TRUE)
-            )
-          ),
-        fluidRow(plotOutput('pca_plt'))
-        ),
-
-      ###
-      tabPanel('sample heatmap',
-      fluidRow(
-        column(12,
-          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
-          ),
-          offset = 1),
-        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
-        fluidRow(plotOutput('samp_heat_plt'))
-        )
-
-      ),
-
-    navbarMenu('analyses',
-
-      ####
-      tabPanel('MA plot',
-      fluidRow(
-        column(12,
-          p(h3('MA plot'), "Plot of abundance versus fixed effect (e.g. fold change). Select a set of transcripts to explore their variance across samples. ")
-          ),
-          offset = 1),
-        fluidRow(
           column(2,
-            numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
-              min = 0, max = 1, step = 0.01)),
-          column(4,
-            selectInput('which_model', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
-            ),
-          column(4,
-            uiOutput('which_beta_ctrl')
-            ),
+            checkboxInput('scatter_filt', label = 'filter',
+              value = TRUE)),
           column(2,
-            numericInput('ma_alpha', label = 'opacity:', value = 0.2,
+            numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
               min = 0, max = 1, step = 0.01))
           ),
-        # fluidRow(column(8,
-        #     selectizeInput('ma_trans', 'highlight transcripts: ',
-        #       choices = obj$filter_df[['target_id']],
-        #       multiple = TRUE, width = '100%'))
-        #   ),
-        fluidRow(plotOutput('ma', brush = 'ma_brush')),
-        #fluidRow(plotOutput('vars', brush = 'vars_brush')),
-        fluidRow(plotOutput('vars')),
-        fluidRow(dataTableOutput('ma_brush_out'))
+        fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
+        fluidRow(plotOutput('scatter_vars')),
+        fluidRow(dataTableOutput('scatter_brush_table'))
         ),
 
-
-
-      ####
-      tabPanel('test table',
-      fluidRow(
-        column(12,
-          p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
-          ),
-          offset = 1),
+      tabPanel('Q-Q plot',
+        ####
         fluidRow(
+          column(2,
+            numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
+              min = 0, max = 1, step = 0.01)),
           column(4,
-            selectInput('which_model_de', label = 'fit: ',
+            selectInput('which_model_qq', label = 'fit: ',
               choices = poss_models,
               selected = poss_models[1])
             ),
           column(4,
-            uiOutput('which_beta_ctrl_de')
+            uiOutput('which_beta_ctrl_qq')
             )
           ),
-        dataTableOutput('de_dt')
-        ),
-
-      tabPanel('transcript view',
-      fluidRow(
-        column(12,
-          p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
-          ),
-          offset = 1),
-        fluidRow(column(4,
-            textInput('bs_var_input', label = 'transcript: ', value = '')
-            ),
-          column(4,
-            selectInput('bs_var_color_by', label = 'color by: ',
-              choices = c(NULL, poss_covars), selected = NULL)
-            ),
-          column(3,
-            selectInput('bs_var_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts'))
-          ),
-          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plotOutput('bs_var_plt'))
+        fluidRow(
+          plotOutput('qqplot')
           )
+        )
+
       )
     ) # navbarPage
 
@@ -622,9 +682,24 @@ sleuth_live <- function(obj, ...) {
     })
 
     ### DE table
+    
     output$which_beta_ctrl_de <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
+    })
+    
+    output$table_type <- renderUI({
+        if(!is.null(obj$target_mapping))
+        {
+            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2), selected = 1)
+        }
+    })
+    
+    output$group_by <- renderUI({
+        if(!is.null(input$pop_genes) && input$pop_genes == 2)
+        {
+            selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        }
     })
 
     output$de_dt <- renderDataTable({
@@ -633,20 +708,169 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
-
-      sleuth_results(obj, wb, input$which_model_de)
+      
+        if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
+            mg <- input$mappingGroup
+            sleuth_gene_table(obj, wb, input$which_model_de, mg)
+        }
+      
+      else {
+          sleuth_results(obj, wb, input$which_model_de)
+      }
     })
 
+    ### bootstrap var
+    
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
-      })
-
-    ### bootstrap var
+    })
+    
+    
     output$bs_var_plt <- renderPlot({
-      plot_bootstrap(obj, bs_var_text(),
+        plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
     })
+    
+    
+    ### Gene Viewer
+    gv_var_text <- eventReactive(input$gv_go, {
+        if(!is.null(obj$target_mapping))
+        {
+            input$gv_var_input
+        }
+    })
+    
+    output$gv_gene_column <- renderUI({
+        if(!is.null(obj$target_mapping))
+        {
+            selectInput('gv_gene_colname', label = 'genes from: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        }
+    })
+    
+    output$which_beta_ctrl_gv <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+        selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
+    })
+    
+    
+    gv_var_list <- reactive({
+        wb <- input$which_beta_gv
+        if ( is.null(wb) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            wb <- poss_tests[1]
+        }
+        transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
+    })
+    
+    
+        
+    output$gv_var_plts <- renderUI({
+        gv_plot_list <- lapply(1:input$gv_maxplots, function(i) {
+                gv_plotname <- paste("plot", i, sep="")
+                plotOutput(gv_plotname)
+            })
+        
+            do.call(tagList, gv_plot_list)
+        })
+    
+        for (i in 1:15) {
+            
+            local({
+                my_i <- i
+                gv_plotname <- paste("plot", my_i, sep="")
+
+                    output[[gv_plotname]] <- renderPlot({
+                       if(!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i]))
+                        {
+                           plot_bootstrap(obj, gv_var_list()[my_i], units = input$gv_var_units, color_by = input$gv_var_color_by)
+                        }
+                   })
+           })
+        }
+        
+    output$no_genes_message <- renderUI({
+        if(is.null(obj$target_mapping))
+        {
+            HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
+        }
+    })
+    
+    
+    ### Heat Map
+    hm_transcripts <- eventReactive(input$hm_go, {
+            unlist(strsplit(input$hm_transcripts, " +"))
+    })
+    
+    hm_plot_height <- function()
+    {
+        if(length(hm_transcripts()) > 5)
+        {
+            length(hm_transcripts()) * 60
+        }
+        else
+        {
+            400
+        }
+    }
+    
+    hm_func <- eventReactive(input$hm_go, {
+        input$hm_trans
+    })
+    
+    output$hm_plot <- renderPlot ({
+        plot_cluster_hmap(hm_transcripts(), obj, input$hm_units, hm_func())
+    }, height = hm_plot_height)
+    
+    
+    ### Volcano Plot
+    output$which_beta_ctrl_vol <- renderUI({
+        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+        selectInput('which_beta_vol', 'beta: ', choices = poss_tests)
+    })
+    
+    output$vol <- renderPlot({
+        val <- input$which_beta_vol
+        if ( is.null(val) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            val <- poss_tests[1]
+        }
+        plot_volcano(obj, val,
+        input$which_model_vol,
+        sig_level = input$max_fdr,
+        point_alpha = input$vol_alpha
+        )
+    })
+    
+    #vol_observe
+    output$vol_brush_out <- renderDataTable({
+        wb <- input$which_beta_vol
+        if ( is.null(wb) ) {
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            wb <- poss_tests[1]
+        }
+        res <- sleuth_results(obj, wb, input$which_model_vol, rename_cols = FALSE,
+        show_all = FALSE)
+        res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
+        if (!is.null(input$vol_brush)) {
+            res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
+            res$Nlog10_qval = NULL
+        }  else {
+            res <- NULL
+        }
+        
+        # TODO: total hack -- fix this correctly eventually
+        if (is(res, 'data.frame')) {
+            res <- dplyr::rename(res,
+            mean = mean_obs,
+            var = var_obs,
+            tech_var = sigma_q_sq,
+            final_sigma_sq = smooth_sigma_sq_pmax)
+        }
+        
+        res
+    })
+    
   }
 
   shinyApp(ui = p_layout, server = server_fun)
