@@ -125,6 +125,68 @@ plot_pca <- function(obj,
   p
 }
 
+#' Plot Loadings and Interpretations 
+#' Their sums of squares within each component are the eigenvalues (components' variances).
+#' Loadings are coefficients in linear combination predicting a variable by the (standardized) components.
+#'
+#' @param obj a \code{sleuth} object
+#'    
+
+plot_loadings <- function(obj, 
+  use_filtered = TRUE,
+  ...) {
+  stopifnot( is(obj, 'sleuth') )
+
+
+  mat <- NULL
+  if (use_filtered) {
+    mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  } else {
+    mat <- spread_abundance_by(obj$obs_norm, units)
+  }
+
+}
+
+
+#' Plot PCA variances by percentage
+#' Their sums of squares within each component are the eigenvalues (components' variances).
+#' Loadings are coefficients in linear combination predicting a variable by the (standardized) components.
+#'
+#' @param obj a \code{sleuth} object
+#'    
+
+plot_pc_variance <- function(obj, 
+  use_filtered = TRUE,
+  ...) {
+  stopifnot( is(obj, 'sleuth') )
+
+  mat <- NULL
+  if (use_filtered) {
+    mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  } else {
+    mat <- spread_abundance_by(obj$obs_norm, units)
+  }
+
+  pca_calc <- prcomp(mat, scale = TRUE) #PCA calculations 
+
+  #computation
+  eigenvalues <- (pca_calc$sdev)^2  
+  variance <- eigenvalues*100/sum(eigenvalues)
+  cum_var <- cumsum(variance)
+
+  pc_asdf <- as_df(eigenvalues = eigenvalues, variance = variance, 
+                      cumulative_variance = cum_var) #put PCA loadings into a data frame 
+
+  p <- barplot(pc_asdf[,2], names.arg = 1:nrow(pc_asdf), #set the x,y graph coordinate names
+                  main = "Variances",
+                  xlab = "Principal Components",
+                  ylab = "% of Variances",
+                  col = "cyan3")
+  p
+}
+
+
+
 #' Plot density
 #'
 #' Plot the density of a some grouping
