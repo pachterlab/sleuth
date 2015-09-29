@@ -133,9 +133,13 @@ plot_pca <- function(obj,
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param gene which gene to view principal components, ????????otehrwise what
 #' @param pca_number user input on how many PC to display, otherwise default is 5
+#' @param pc_x integer denoting the principle component to use for the x-axis
+#' @param pc_y integer denoting the principle component to use for the y-axis
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
+  pc_x = 1L,
+  pc_y = 2L,
   use_filtered = TRUE,
   gene = NULL,
   pca_number = NULL,
@@ -152,7 +156,8 @@ plot_loadings <- function(obj,
   #use selection and find the gene and then get the principle components, 
   #how many to get? ask harold
   pca_calc <- prcomp(mat, scale = TRUE)
-
+  loadings <- pca_calc$rotation
+  pc_asdf <- as_df()
 
 
 
