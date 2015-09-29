@@ -151,6 +151,11 @@ plot_loadings <- function(obj,
   }
   #use selection and find the gene and then get the principle components, 
   #how many to get? ask harold
+  pca_calc <- prcomp(mat, scale = TRUE)
+
+
+
+
 }
 
 
@@ -185,13 +190,13 @@ plot_pc_variance <- function(obj,
                       cumulative_variance = cum_var) #put PCA loadings into a data frame 
 
   if (!isNull(pca_number)) {
-    p <- barplot(pc_asdf[,2], names.arg = 1:10, #set the x,y graph coordinate names
+    p <- barplot(pc_asdf[,2], names.arg = 1:pca_number, #set the x,y graph coordinate names
                     main = "Variances",
                     xlab = "Principal Components",
                     ylab = "% of Variances",
                     col = "cyan3")
   } else {
-    p <- barplot(pc_asdf[,2], names.arg = 1:nrow(pc_asdf), #set the x,y graph coordinate names
+    p <- barplot(pc_asdf[,2], names.arg = 1:10, #set the x,y graph coordinate names
                     main = "Variances",
                     xlab = "Principal Components",
                     ylab = "% of Variances",
