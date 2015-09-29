@@ -130,10 +130,14 @@ plot_pca <- function(obj,
 #' Loadings are coefficients in linear combination predicting a variable by the (standardized) components.
 #'
 #' @param obj a \code{sleuth} object
-#'    
-
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param gene which gene to view principal components
+#' @return a ggplot object
+#' @export
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
+  gene = '',
+
   ...) {
   stopifnot( is(obj, 'sleuth') )
 
@@ -144,17 +148,17 @@ plot_loadings <- function(obj,
   } else {
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
-
+  #use selection and find the gene and then get the principle components, 
+  #how many to get? ask harold
 }
 
 
 #' Plot PCA variances by percentage
-#' Their sums of squares within each component are the eigenvalues (components' variances).
-#' Loadings are coefficients in linear combination predicting a variable by the (standardized) components.
 #'
 #' @param obj a \code{sleuth} object
-#'    
-
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @return a ggplot object
+#' @export
 plot_pc_variance <- function(obj, 
   use_filtered = TRUE,
   ...) {
