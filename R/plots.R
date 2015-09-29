@@ -131,13 +131,14 @@ plot_pca <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param gene which gene to view principal components
+#' @param gene which gene to view principal components, ????????otehrwise what
+#' @param pca_number user input on how many PC to display, otherwise default is 5
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
-  gene = '',
-
+  gene = NULL,
+  pca_number = NULL,
   ...) {
   stopifnot( is(obj, 'sleuth') )
 
@@ -157,10 +158,12 @@ plot_loadings <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param pca_number user input on how many PC to display, otherwise default is 10
 #' @return a ggplot object
 #' @export
 plot_pc_variance <- function(obj, 
   use_filtered = TRUE,
+  pca_number = NULL,
   ...) {
   stopifnot( is(obj, 'sleuth') )
 
@@ -181,11 +184,20 @@ plot_pc_variance <- function(obj,
   pc_asdf <- as_df(eigenvalues = eigenvalues, variance = variance, 
                       cumulative_variance = cum_var) #put PCA loadings into a data frame 
 
-  p <- barplot(pc_asdf[,2], names.arg = 1:nrow(pc_asdf), #set the x,y graph coordinate names
-                  main = "Variances",
-                  xlab = "Principal Components",
-                  ylab = "% of Variances",
-                  col = "cyan3")
+  if (!isNull(pca_number)) {
+    p <- barplot(pc_asdf[,2], names.arg = 1:10, #set the x,y graph coordinate names
+                    main = "Variances",
+                    xlab = "Principal Components",
+                    ylab = "% of Variances",
+                    col = "cyan3")
+  } else {
+    p <- barplot(pc_asdf[,2], names.arg = 1:nrow(pc_asdf), #set the x,y graph coordinate names
+                    main = "Variances",
+                    xlab = "Principal Components",
+                    ylab = "% of Variances",
+                    col = "cyan3")
+  }
+
   p
 }
 
