@@ -201,7 +201,7 @@ plot_pc_variance <- function(obj,
                     ylab = "% of Variances",
                     col = "cyan3")
   } else {
-    p <- barplot(pc_asdf[,2], names.arg = 1:10, #set the x,y graph coordinate names
+    p <- barplot(pc_asdf[,2], names.arg = 1:5, #set the x,y graph coordinate names
                     main = "Variances",
                     xlab = "Principal Components",
                     ylab = "% of Variances",
