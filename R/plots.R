@@ -189,7 +189,7 @@ plot_pc_variance <- function(obj,
   use_filtered = TRUE,
   pca_number = NULL,
   ...) {
-  stopifnot( is(obj, 'sleuth') )
+  stopifnot( is(obj, 'sleuth') ) 
 
   mat <- NULL
   if (use_filtered) {
