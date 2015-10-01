@@ -136,8 +136,6 @@ plot_pca <- function(obj,
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
-  pc_x = 1L,
-  pc_y = 2L,
   use_filtered = TRUE,
   gene = NULL,
   pca_number = NULL,
@@ -151,16 +149,17 @@ plot_loadings <- function(obj,
   } else {
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
+  pca_calc <- prcomp(mat, scale = TRUE)
   #assume no sample has redundant names
-  if (!isNull(gene)) {
-    pca_calc <- prcomp(mat, scale = TRUE)
-    sample_names <- pca_calc$rotation[,1] #I think this gets the names of the genes as a column vector
+  if (!is.null(gene)) {
+    #accessor function for row names 
+    sample_names <- pca_calc$ #I think this gets the names of the samples as a column vector
     index_gene <- which(sample_names == gene)
   } else {
     index_gene <- 1 #first gene sample
-  }
+  }    
 
-  if (!isNull(pca_number)) {
+  if (!is.null(pca_number)) {
     loadings <- pca_calc$rotation[index_gene,1:pca_number]
     pc_count <- pca_number
   } else {
@@ -169,7 +168,9 @@ plot_loadings <- function(obj,
   }
 
   dat <- as_df(pc_count = pc_count, loadings = loadings)
-  p <- ggplot(dat, x = "Principal Component", y = "Value" + geom_point(shape = 1))
+  #change aes_string
+  p <- ggplot(dat, x = "Principal Component", y = "Value")
+  p <- p + geom_point(shape = 1)
 
   p <- p + ggtitle(gene)
 
@@ -205,10 +206,14 @@ plot_pc_variance <- function(obj,
   variance <- eigenvalues*100/sum(eigenvalues)
   cum_var <- cumsum(variance)
 
+  #add PC columns to take ranges
+
   pc_asdf <- as_df(eigenvalues = eigenvalues, variance = variance, 
                       cumulative_variance = cum_var) #put PCA loadings into a data frame 
 
-  if (!isNull(pca_number)) {
+
+  #change to ggplot
+  if (!is.null(pca_number)) {
     p <- barplot(pc_asdf[,2], names.arg = 1:pca_number, #set the x,y graph coordinate names
                     main = "Variances",
                     xlab = "Principal Components",
