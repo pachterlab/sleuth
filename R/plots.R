@@ -131,10 +131,8 @@ plot_pca <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param gene which gene to view principal components, ????????otehrwise what
+#' @param gene is the string name of which gene to view principal components, otherwise, first sample is selected
 #' @param pca_number user input on how many PC to display, otherwise default is 5
-#' @param pc_x integer denoting the principle component to use for the x-axis
-#' @param pc_y integer denoting the principle component to use for the y-axis
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
@@ -153,13 +151,29 @@ plot_loadings <- function(obj,
   } else {
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
-  #use selection and find the gene and then get the principle components, 
-  #how many to get? ask harold
-  pca_calc <- prcomp(mat, scale = TRUE)
-  loadings <- pca_calc$rotation
-  pc_asdf <- as_df()
+  #assume no sample has redundant names
+  if (!isNull(gene)) {
+    pca_calc <- prcomp(mat, scale = TRUE)
+    sample_names <- pca_calc$rotation[,1] #I think this gets the names of the genes as a column vector
+    index_gene <- which(sample_names == gene)
+  } else {
+    index_gene <- 1 #first gene sample
+  }
 
+  if (!isNull(pca_number)) {
+    loadings <- pca_calc$rotation[index_gene,1:pca_number]
+    pc_count <- pca_number
+  } else {
+    loadings <- pca_calc$rotation[index_gene,1:5]
+    pc_count <- 5 #default is 5
+  }
 
+  dat <- as_df(pc_count = pc_count, loadings = loadings)
+  p <- ggplot(dat, x = "Principal Component", y = "Value" + geom_point(shape = 1))
+
+  p <- p + ggtitle(gene)
+
+  p
 
 }
 
@@ -199,13 +213,13 @@ plot_pc_variance <- function(obj,
                     main = "Variances",
                     xlab = "Principal Components",
                     ylab = "% of Variances",
-                    col = "cyan3")
+                    col = "dodgerblue")
   } else {
     p <- barplot(pc_asdf[,2], names.arg = 1:5, #set the x,y graph coordinate names
                     main = "Variances",
                     xlab = "Principal Components",
                     ylab = "% of Variances",
-                    col = "cyan3")
+                    col = "dodgerblue")
   }
 
   p
