@@ -62,12 +62,12 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' accounting for covariates, sequencing depth, technical and biological
 #' variance.
 #'
-#' @param kal_dirs a character vector of length greater than one where each
-#' string points to a kallisto output directory
 #' @param sample_to_covariates is a \code{data.frame} which contains a mapping
 #' from \code{sample} (a column) to some set of experimental conditions or
-#' covariates. The column \code{sample} should be in the same order as the
-#' corresponding entry in \code{kal_dirs}
+#' covariates. The column \code{dirs} is also required, which is a character
+#' vector where each element points to the corresponding kallisto output directory. The column
+#' \code{sample} should be in the same order as the corresponding entry in
+#' \code{dirs}.
 #' @param full_model is a \code{formula} which explains the full model (design)
 #' of the experiment. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}
@@ -84,10 +84,9 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-#' test whether a coeffient is zero
+#' test whether a coeffient in the model is zero
 #' @export
 sleuth_prep <- function(
-  kal_dirs,
   sample_to_covariates,
   full_model,
   filter_fun = basic_filter,
@@ -99,28 +98,23 @@ sleuth_prep <- function(
   # check inputs
 
   # data types
-  if( !is(kal_dirs, 'character') ) {
-    stop(paste0('"', substitute(kal_dirs),
-        '" (kal_dirs) is must be a character vector.'))
-  }
 
   if ( !is(sample_to_covariates, "data.frame") ) {
-    stop(paste0("'", substitute(sample_to_covariates), "' must be a data.frame"))
+    stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
   if (!is(full_model, "formula")) {
     stop(paste0("'",substitute(full_model), "' (full_model) must be a formula"))
   }
 
-  if (length(kal_dirs) != nrow(sample_to_covariates)) {
-    stop(paste0("'", substitute(kal_dirs),
-        "' must have the same length as the number of rows in '",
-        substitute(sample_to_covariates), "'"))
-  }
-
   if (!("sample" %in% colnames(sample_to_covariates))) {
     stop(paste0("'", substitute(sample_to_covariates),
         "' (sample_to_covariates) must contain a column named 'sample'"))
+  }
+
+  if (!("dirs" %in% colnames(sample_to_covariates))) {
+    stop(paste0("'", substitute(sample_to_covariates)),
+      "' (sample_to_covariates) must contain a column named 'dirs'")
   }
 
   if ( !is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
@@ -139,7 +133,7 @@ sleuth_prep <- function(
 
   # TODO: ensure all kallisto have same number of transcripts
   # TODO: ensure transcripts are in same order -- if not, report warning that
-  # kallisto index might be correct
+  # kallisto index might be incorrect
 
   # done
   ##############################
@@ -147,6 +141,8 @@ sleuth_prep <- function(
   msg('reading in kallisto results')
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
+  kal_dirs <- sample_to_covariates$dirs
+  sample_to_covariates$dirs <- NULL
   nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
@@ -519,19 +515,19 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 
 
 sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group = 'ens_gene') {
-  
+
     if(is.null(obj$target_mapping))
     {
         stop("This sleuth object doesn't have added gene names.")
     }
     popped_gene_table = sleuth_results(obj, which_beta, which_model)
 
-    
+
     popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
     popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
 
     popped_gene_table = dplyr::summarise_(popped_gene_table, most_sig_transcript = ~target_id[1], pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n(), list_of_transcripts = ~toString(target_id[1:length(target_id)]))
-    
+
     popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
     popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
     popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
