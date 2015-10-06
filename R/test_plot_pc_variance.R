@@ -1,43 +1,33 @@
 plot_pc_variance <- function(obj, 
   use_filtered = TRUE,
   pca_number = NULL,
+  bool = FALSE,
   ...) {
-  stopifnot( is(obj, 'sleuth') ) 
 
-  mat <- NULL
-  if (use_filtered) {
-    mat <- spread_abundance_by(obj$obs_norm_filt, units)
-  } else {
-    mat <- spread_abundance_by(obj$obs_norm, units)
-  }
-
-  pca_calc <- prcomp(mat, scale = TRUE) #PCA calculations 
+  mat <- obj
+  pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
 
   #computation
   eigenvalues <- (pca_calc$sdev)^2  
   variance <- eigenvalues*100/sum(eigenvalues)
   cum_var <- cumsum(variance)
 
-  #add PC columns to take ranges
-
-  pc_asdf <- as_df(eigenvalues = eigenvalues, variance = variance, 
-                      cumulative_variance = cum_var) #put PCA loadings into a data frame 
-
-
-  #change to ggplot
+  #did not throw error messages
   if (!is.null(pca_number)) {
-    p <- barplot(pc_asdf[,2], names.arg = 1:pca_number, #set the x,y graph coordinate names
-                    main = "Variances",
-                    xlab = "Principal Components",
-                    ylab = "% of Variances",
-                    col = "dodgerblue")
+    colsize <- pca_number
+    cum_var <- cum_var[1:pca_number]
   } else {
-    p <- barplot(pc_asdf[,2], names.arg = 1:5, #set the x,y graph coordinate names
-                    main = "Variances",
-                    xlab = "Principal Components",
-                    ylab = "% of Variances",
-                    col = "dodgerblue")
+    colsize <- 5
+    cum_var <- cum_var[1:5]
   }
 
+  pc_asdf <- data.frame(PC_count = 1:colsize, cum_var = cum_var)
+
+  #change to ggplot
+  p <- ggplot(pc_asdf, aes(x = PC_count, y = cum_var)) + geom_bar(stat = "identity")
+  p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
+  p <- p + ylab("% of Variance") + xlab("Principal Components")
+
   p
+
 }

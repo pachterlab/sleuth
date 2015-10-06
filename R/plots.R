@@ -139,6 +139,7 @@ plot_loadings <- function(obj,
   use_filtered = TRUE,
   gene = NULL,
   pca_number = NULL,
+  bool = FALSE,
   ...) {
   stopifnot( is(obj, 'sleuth') )
 
@@ -149,26 +150,33 @@ plot_loadings <- function(obj,
   } else {
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
-  pca_calc <- prcomp(mat, scale = TRUE)
+
+  pca_calc <- prcomp(mat, scale = bool)
   #assume no sample has redundant names
   if (!is.null(gene)){
     #accessor function for row names 
     if (!is.null(pca_number)) {
       loadings <- pca_calc$rotation[gene,1:pca_number]
+      colsize <- pca_number
+    } else {
+      loadings <- pca_calc$rotation[gene, 1:5]
+      colsize <- 5
     }
-    loadings <- pca_calc$rotation[gene, 1:5]
-  } 
-  if (!is.null(pca_number)) {
-    loadings <- pca_calc$rotation[1,1:pca_number]
+  } else {
+    if (!is.null(pca_number)) {
+      loadings <- pca_calc$rotation[1,1:pca_number]
+      colsize <- pca_number
+    } else {
+      loadings <- pca_calc$rotation[1,1:5]
+      colsize <- 5
+    }
   }
-  loadings <- pca_calc$rotation[1,1:5]
+  dat <- data.frame(PC_count = 1:colsize, loadings = loadings)
 
-  dat <- as.data.frame(loadings)
-  #change aes_string
-  p <- ggplot(dat, aes(x = rownames(dat), y = loadings)) + geom_point(shape = 1)
+  p <- ggplot(dat, aes(x = PC_count, y = loadings)) 
   p <- p + geom_point(shape = 1)
   p <- p + xlab("Principal Components") + ylab("Loadings")
-  
+
   if (!is.null(gene)) {
     p <- p + ggtitle(gene)
   }
@@ -176,7 +184,6 @@ plot_loadings <- function(obj,
   p
 
 }
-
 
 #' Plot PCA variances by percentage
 #'
@@ -188,8 +195,8 @@ plot_loadings <- function(obj,
 plot_pc_variance <- function(obj, 
   use_filtered = TRUE,
   pca_number = NULL,
+  bool = FALSE,
   ...) {
-  stopifnot( is(obj, 'sleuth') ) 
 
   mat <- NULL
   if (use_filtered) {
@@ -198,35 +205,31 @@ plot_pc_variance <- function(obj,
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
 
-  pca_calc <- prcomp(mat, scale = TRUE) #PCA calculations 
+  pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
 
   #computation
   eigenvalues <- (pca_calc$sdev)^2  
   variance <- eigenvalues*100/sum(eigenvalues)
   cum_var <- cumsum(variance)
 
-  #add PC columns to take ranges
-
-  pc_asdf <- as_df(eigenvalues = eigenvalues, variance = variance, 
-                      cumulative_variance = cum_var) #put PCA loadings into a data frame 
-
-
-  #change to ggplot
+  #did not throw error messages
   if (!is.null(pca_number)) {
-    p <- barplot(pc_asdf[,2], names.arg = 1:pca_number, #set the x,y graph coordinate names
-                    main = "Variances",
-                    xlab = "Principal Components",
-                    ylab = "% of Variances",
-                    col = "dodgerblue")
+    colsize <- pca_number
+    cum_var <- cum_var[1:pca_number]
   } else {
-    p <- barplot(pc_asdf[,2], names.arg = 1:5, #set the x,y graph coordinate names
-                    main = "Variances",
-                    xlab = "Principal Components",
-                    ylab = "% of Variances",
-                    col = "dodgerblue")
+    colsize <- 5
+    cum_var <- cum_var[1:5]
   }
 
+  pc_asdf <- data.frame(PC_count = 1:colsize, cum_var = cum_var)
+
+  #change to ggplot
+  p <- ggplot(pc_asdf, aes(x = PC_count, y = cum_var)) + geom_bar(stat = "identity")
+  p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
+  p <- p + ylab("% of Variance") + xlab("Principal Components")
+
   p
+
 }
 
 
