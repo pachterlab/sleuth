@@ -162,7 +162,7 @@ plot_loadings <- function(obj,
   if (!is.null(pca_number)) {
     loadings <- pca_calc$rotation[index_gene,1:pca_number]
     pc_count <- pca_number
-  } else {
+  } else { 
     loadings <- pca_calc$rotation[index_gene,1:5]
     pc_count <- 5 #default is 5
   }
