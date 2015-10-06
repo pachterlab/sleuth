@@ -161,7 +161,7 @@ plot_loadings <- function(obj,
     } else {
       loadings <- pca_calc$rotation[gene, 1:5]
       colsize <- 5
-    }
+    } 
   } else {
     if (!is.null(pca_number)) {
       loadings <- pca_calc$rotation[1,1:pca_number]
