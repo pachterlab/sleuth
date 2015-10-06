@@ -128,7 +128,7 @@ plot_pca <- function(obj,
 #' Plot Loadings and Interpretations 
 #' Their sums of squares within each component are the eigenvalues (components' variances).
 #' Loadings are coefficients in linear combination predicting a variable by the (standardized) components.
-#'
+#' (working, tested for mtcars)
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param gene is the string name of which gene to view principal components, otherwise, first sample is selected
@@ -151,28 +151,27 @@ plot_loadings <- function(obj,
   }
   pca_calc <- prcomp(mat, scale = TRUE)
   #assume no sample has redundant names
-  if (!is.null(gene)) {
+  if (!is.null(gene)){
     #accessor function for row names 
-    sample_names <- pca_calc$ #I think this gets the names of the samples as a column vector
-    index_gene <- which(sample_names == gene)
-  } else {
-    index_gene <- 1 #first gene sample
-  }    
-
+    if (!is.null(pca_number)) {
+      loadings <- pca_calc$rotation[gene,1:pca_number]
+    }
+    loadings <- pca_calc$rotation[gene, 1:5]
+  } 
   if (!is.null(pca_number)) {
-    loadings <- pca_calc$rotation[index_gene,1:pca_number]
-    pc_count <- pca_number
-  } else { 
-    loadings <- pca_calc$rotation[index_gene,1:5]
-    pc_count <- 5 #default is 5
+    loadings <- pca_calc$rotation[1,1:pca_number]
   }
+  loadings <- pca_calc$rotation[1,1:5]
 
-  dat <- as_df(pc_count = pc_count, loadings = loadings)
+  dat <- as.data.frame(loadings)
   #change aes_string
-  p <- ggplot(dat, x = "Principal Component", y = "Value")
+  p <- ggplot(dat, aes(x = rownames(dat), y = loadings)) + geom_point(shape = 1)
   p <- p + geom_point(shape = 1)
-
-  p <- p + ggtitle(gene)
+  p <- p + xlab("Principal Components") + ylab("Loadings")
+  
+  if (!is.null(gene)) {
+    p <- p + ggtitle(gene)
+  }
 
   p
 
