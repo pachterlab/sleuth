@@ -50,6 +50,9 @@ test_that("generalized read", {
 
   expect_equal(kal_dir, kal_h5)
 
+  kal_h5_manual <- read_kallisto_h5(h5_file_name, read_bootstrap = TRUE)
+  expect_equal(kal_h5, kal_h5_manual)
+
   kal_h5 <- read_kallisto(dir_name, read_bootstrap = TRUE, max_bootstrap = 10)
   expect_equal(length(kal_h5$bootstrap), 10L)
 
