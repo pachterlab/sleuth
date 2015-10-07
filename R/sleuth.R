@@ -64,10 +64,10 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #'
 #' @param sample_to_covariates is a \code{data.frame} which contains a mapping
 #' from \code{sample} (a column) to some set of experimental conditions or
-#' covariates. The column \code{dirs} is also required, which is a character
+#' covariates. The column \code{path} is also required, which is a character
 #' vector where each element points to the corresponding kallisto output directory. The column
 #' \code{sample} should be in the same order as the corresponding entry in
-#' \code{dirs}.
+#' \code{path}.
 #' @param full_model is a \code{formula} which explains the full model (design)
 #' of the experiment. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}
@@ -112,9 +112,9 @@ sleuth_prep <- function(
         "' (sample_to_covariates) must contain a column named 'sample'"))
   }
 
-  if (!("dirs" %in% colnames(sample_to_covariates))) {
+  if (!("path" %in% colnames(sample_to_covariates))) {
     stop(paste0("'", substitute(sample_to_covariates)),
-      "' (sample_to_covariates) must contain a column named 'dirs'")
+      "' (sample_to_covariates) must contain a column named 'path'")
   }
 
   if ( !is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
@@ -141,21 +141,15 @@ sleuth_prep <- function(
   msg('reading in kallisto results')
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
-  kal_dirs <- sample_to_covariates$dirs
-  sample_to_covariates$dirs <- NULL
+  kal_dirs <- sample_to_covariates$path
+  sample_to_covariates$path <- NULL
   nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
     function(i) {
-      fname <- file.path(kal_dirs[i], 'abundance.h5')
-
       nsamp <- dot(nsamp)
-
-      if ( !file.exists(fname) ) {
-        stop(paste0('Could not find HDF5 file: ', fname))
-      }
-
-      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
+      path <- kal_dirs[i]
+      suppressMessages({kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
 

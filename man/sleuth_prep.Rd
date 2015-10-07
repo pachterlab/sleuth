@@ -10,10 +10,10 @@ sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
 \arguments{
 \item{sample_to_covariates}{is a \code{data.frame} which contains a mapping
 from \code{sample} (a column) to some set of experimental conditions or
-covariates. The column \code{dirs} is also required, which is a character
+covariates. The column \code{path} is also required, which is a character
 vector where each element points to the corresponding kallisto output directory. The column
 \code{sample} should be in the same order as the corresponding entry in
-\code{dirs}.}
+\code{path}.}
 
 \item{full_model}{is a \code{formula} which explains the full model (design)
 of the experiment. It must be consistent with the data.frame supplied in
