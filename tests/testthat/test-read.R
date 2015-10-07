@@ -40,3 +40,25 @@ test_that("both read types", {
   expect_equal(kal_h5$abundance$target_id, kal_tsv$abundance$target_id)
   expect_equal(ncol(kal_h5$abundance), ncol(kal_tsv$abundance))
 })
+
+test_that("generalized read", {
+  dir_name <- "small_test_data"
+
+  kal_dir <- read_kallisto(dir_name, read_bootstrap = TRUE)
+  h5_file_name <- file.path(dir_name, "abundance.h5")
+  kal_h5 <- read_kallisto(h5_file_name, read_bootstrap = TRUE)
+
+  expect_equal(kal_dir, kal_h5)
+
+  kal_h5 <- read_kallisto(dir_name, read_bootstrap = TRUE, max_bootstrap = 10)
+  expect_equal(length(kal_h5$bootstrap), 10L)
+
+  expect_error(read_kallisto(dir_name,
+    read_bootstrap = TRUE,
+    max_bootstrap = "junk"))
+
+  tsv_file_name <- file.path(dir_name, "abundance.tsv")
+  expect_warning(kal_tsv <- read_kallisto(tsv_file_name, read_bootstrap = TRUE))
+
+
+})

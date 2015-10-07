@@ -16,8 +16,34 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#' Read kallisto output
+#'
+#' This is a general driver function to read kallisto output. It can read either
+#' H5 or tsv.
+#' @path either the kallisto directory name or the file name of a h5 or tsv output from kallisto
+#' @param read_bootstrap if \code{TRUE}, bootstraps will be read (h5 only)
+#' @param max_bootstrap an integer denoting the number of bootstraps to read.
+#' if \code{NULL} read everything available (h5 only)
+#' @return a \code{kallisto} object
+#' @export
 read_kallisto <- function(path, read_bootstrap = TRUE, max_bootstrap = NULL) {
   stopifnot(is(path, "character"))
+
+  kal_path <- get_kallisto_path(path)
+
+  if ( kal_path$ext == "tsv" && read_bootstrap ) {
+    warning("You specified to read bootstraps, but we won't do so for plaintext")
+  }
+
+  result <- NULL
+  if ( kal_path$ext == "h5" ) {
+    result <- read_kallisto_h5(kal_path$path, read_bootstrap = read_bootstrap,
+      max_bootstrap = max_bootstrap)
+  } else {
+    result <- read_kallisto_tsv(kal_path$path)
+  }
+
+  result
 }
 
 #' Read a kallisto object from an HDF5 file
@@ -32,6 +58,9 @@ read_kallisto <- function(path, read_bootstrap = TRUE, max_bootstrap = NULL) {
 #' @export
 read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL) {
   stopifnot(is(fname, "character"))
+  stopifnot( is.null(max_bootstrap) ||
+    is(max_bootstrap, "numeric") ||
+    is(max_bootstrap, "integer") )
 
   fname <- path.expand(fname)
 
