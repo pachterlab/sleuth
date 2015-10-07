@@ -53,7 +53,7 @@ any other function in R:
 
 Please visit the [sleuth website](https://pachterlab.github.io/sleuth) for
 ways to get help. In particular, you might find the [kallisto-sleuth
-users](https://groups.google.com/forum/#!forum/sleuth-sleuth-users) Google
+users](https://groups.google.com/forum/#!forum/kallisto-sleuth-users) Google
 group helpful.
 
 # Copyright
