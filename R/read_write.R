@@ -20,7 +20,7 @@
 #'
 #' This is a general driver function to read kallisto output. It can read either
 #' H5 or tsv.
-#' @path either the kallisto directory name or the file name of a h5 or tsv output from kallisto
+#' @param either the kallisto directory name or the file name of a h5 or tsv output from kallisto
 #' @param read_bootstrap if \code{TRUE}, bootstraps will be read (h5 only)
 #' @param max_bootstrap an integer denoting the number of bootstraps to read.
 #' if \code{NULL} read everything available (h5 only)

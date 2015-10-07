@@ -45,6 +45,6 @@ variance.
 }
 \seealso{
 \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-test whether a coeffient is zero
+test whether a coeffient in the model is zero
 }
 
