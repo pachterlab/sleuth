@@ -26,3 +26,17 @@ test_that("get kallisto path", {
   expect_error(get_kallisto_path("missing_directory"))
 
 })
+
+test_that("both read types", {
+  dir_name <- "small_test_data"
+
+  h5_file_name <- file.path(dir_name, "abundance.h5")
+  kal_h5 <- read_kallisto_h5(h5_file_name, read_bootstrap = FALSE)
+  kal_h5$abundance <- dplyr::arrange(kal_h5$abundance, target_id)
+
+  tsv_file_name <- file.path(dir_name, "abundance.tsv")
+  kal_tsv <- read_kallisto_tsv(tsv_file_name)
+
+  expect_equal(kal_h5$abundance$target_id, kal_tsv$abundance$target_id)
+  expect_equal(ncol(kal_h5$abundance), ncol(kal_tsv$abundance))
+})

@@ -16,6 +16,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+read_kallisto <- function(path, read_bootstrap = TRUE, max_bootstrap = NULL) {
+  stopifnot(is(path, "character"))
+}
+
 #' Read a kallisto object from an HDF5 file
 #'
 #' Read a kallisto object from an HDF5 file.
@@ -107,6 +111,37 @@ h5check <- function(fname, group, name) {
   bs
 }
 
+#' Read kallisto plaintext output
+#'
+#' This function reads kallisto plaintext output. Note, it cannot be used with
+#' sleuth. It also does not read bootstraps since reading plaintext bootstraps
+#' is quite slow.
+#' @param fname the filename for the tsv file
+#' @return a \code{kallisto} object (currently missing attributes and
+#' bootstraps)
+#' @export
+read_kallisto_tsv <- function(fname) {
+  stopifnot(is(fname, "character"))
+
+  fname <- path.expand(fname)
+
+  if (!file.exists(fname)) {
+    stop("Can't find file: '", fname, "'")
+  }
+
+  abundance <- suppressWarnings(data.table::fread(fname, data.table = FALSE))
+  abundance <- dplyr::rename(abundance,
+    len = length,
+    eff_len = eff_length)
+  abundance <- dplyr::arrange(abundance, target_id)
+
+  result <- list(abundance = abundance, bootstrap = NULL)
+  class(result) <- 'kallisto'
+
+  invisible(result)
+}
+
+# this function takes a path and tries to infer whether it is a h5, tsv, or neither
 get_kallisto_path <- function(path) {
   output <- list()
 
@@ -141,55 +176,6 @@ get_kallisto_path <- function(path) {
   }
 
   output
-}
-
-# Read a kallisto data set
-#
-# Read a kallisto data set
-#
-# @param output_dir the directory of the output data
-# @param read_bootstrap if TRUE, then searches for bootstrap data, else doesn't read it.
-# @return a S3 \code{kallisto} object with the following members:
-read_kallisto <- function(output_dir, read_bootstrap = TRUE)
-{
-  # TODO: function needs to be reworked for plaintext case
-    if (!file.exists(output_dir) || !file.info(output_dir)$isdir) {
-        stop(paste0("'", output_dir, "' is not a valid path"))
-    }
-
-    cat("Reading main abundance estimates\n")
-    exp_fname <- file.path(output_dir, "expression.txt")
-    if (!file.exists( exp_fname )) {
-        stop("'", exp_fname, "' does not exists. Are you sure you have the right kallisto output directory?")
-    }
-
-    trans_abund <- suppressWarnings(fread(exp_fname, data.table = FALSE)) %>%
-        arrange(target_id)
-
-    bs_samples <- list()
-
-    if (read_bootstrap) {
-        bs_fnames <- Sys.glob(file.path(output_dir, "bs_expression_*"))
-        if (length(bs_fnames) > 0) {
-            cat("Found",length(bs_fnames), "bootstrap files. Reading them in.\n")
-            bs_samples <- lapply(seq_along(bs_fnames), function(b)
-                {
-                    cat(".")
-                    if (b %% 50 == 0 && b > 0) {
-                        cat("\n")
-                    }
-                    fname <- bs_fnames[b]
-                    suppressWarnings(data.table::fread(fname, data.table = FALSE)) %>%
-                        arrange(target_id)
-                })
-        } else {
-            warning("No bootstrap samples found!")
-        }
-    }
-    # XXX: should we check that all targets are identical?
-
-    invisible(structure(list(abundance = trans_abund, bootstrap = bs_samples),
-        class = "kallisto"))
 }
 
 #' @export
