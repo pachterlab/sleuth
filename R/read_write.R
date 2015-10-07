@@ -107,6 +107,42 @@ h5check <- function(fname, group, name) {
   bs
 }
 
+get_kallisto_path <- function(path) {
+  output <- list()
+
+  if ( dir.exists(path) ) {
+    if (file.exists(file.path(path, "abundance.h5"))) {
+      # standard case where the user has not changed the filename
+      output$ext <- "h5"
+      output$path <- file.path(path, "abundance.h5")
+    } else if ( file.exists(file.path(path, 'abundance.tsv')) ){
+      # HDF5 doesn't exist, but we have plaintext
+      output$ext <- "tsv"
+      output$path <- file.path(path, "abundance.tsv")
+    } else {
+      stop(path, 'exists, but does not contain kallisto output (abundance.h5)')
+    }
+  } else if ( file.exists(path) ){
+    # make an assumption that the user has kept the correct extension
+    base <- basename(path)
+    s <- strsplit(base, '\\.')
+    ext <- s[[1]][length(s[[1]])]
+
+    if (ext == 'h5') {
+      output$ext <- 'h5'
+    } else if (ext == 'tsv') {
+      output$ext <- 'tsv'
+    } else {
+      stop("'", path, "' exists, is not a recognized extension")
+    }
+    output$path <- path
+  } else {
+    stop("'", path, "' does not exist.")
+  }
+
+  output
+}
+
 # Read a kallisto data set
 #
 # Read a kallisto data set
