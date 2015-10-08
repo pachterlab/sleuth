@@ -130,12 +130,19 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   obj
 }
 
-model_exists <- function(obj, which_model) {
+# if 'fail' is set to TRUE, and fail if the model is not found and give an
+# error message
+model_exists <- function(obj, which_model, fail = TRUE) {
   stopifnot( is(obj, 'sleuth') )
   stopifnot( is(which_model, 'character') )
   stopifnot( length(which_model) == 1 )
 
-  which_model %in% names(obj$fits)
+  result <- which_model %in% names(obj$fits)
+  if (fail && !result) {
+    stop("model '", which_model, "' not found")
+  }
+
+  result
 }
 
 #' Wald test for a sleuth model
