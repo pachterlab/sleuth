@@ -1,5 +1,6 @@
-# this is an internal function, you know it carries the prefix "sleuth"
-sleuth_likelihood <- function(obj, which_model) {
+# compute the likelihood of which_model, then return the original object with
+# new element: obj$fits[[which_model]]$likelihood
+compute_likelihood <- function(obj, which_model) {
   stopifnot(is(obj, "sleuth"))
   model_exists(obj, which_model)
 
@@ -35,9 +36,52 @@ sleuth_likelihood <- function(obj, which_model) {
 
   names(all_likelihood) <- names(obj$fits[[which_model]]$models)
 
-  all_likelihood
+  obj$fits[[which_model]]$likelihood <- all_likelihood
+
+  obj
 }
 
-sleuth_lrt <- function() {
+get_likelihood <- function(obj, which_model) {
+  stopifnot( is(obj, "sleuth") )
 
+   obj$fits[[which_model]]$likelihood
+}
+
+likelihood_exists <- function(obj, which_model) {
+  !is.null( get_likelihood(obj, which_model) )
+}
+
+#'  sleuth likelihood ratio test
+#'
+#' compute the likelihood ratio test for 2 models. this requires that the null
+#' model be nested in the alternate model
+#'
+#' @param obj a sleuth object
+#' @param null_model the null (or "reduced") model
+#' @param alt_model the alternate (or "full") model
+#' @return a data frame with the test statistic, p-value, and target_id
+#' @export
+sleuth_lrt <- function(obj, null_model, alt_model) {
+  stopifnot( is(obj, "sleuth") )
+  model_exists(obj, null_model)
+  model_exists(obj, alt_model)
+
+  if ( !likelihood_exists(obj, null_model) ) {
+    obj <- compute_likelihood(obj, null_model)
+  }
+  if ( !likelihood_exists(obj, alt_model) ) {
+    obj <- compute_likelihood(obj, alt_model)
+  }
+
+  n_ll <- get_likelihood(obj, null_model)
+  a_ll <- get_likelihood(obj, alt_model)
+
+  test_statistic <- 2 * (a_ll - n_ll)
+
+  # P(chisq > test_statistic)
+  p_value <- pchisq(test_statistic, 3, lower.tail = FALSE)
+  result <- adf(target_id = names(obj$fits[[alt_model]]$likelihood),
+    test_stat = test_statistic, p_value = p_value)
+
+  result
 }
