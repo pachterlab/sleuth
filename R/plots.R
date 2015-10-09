@@ -125,10 +125,8 @@ plot_pca <- function(obj,
   p
 }
 
+##################too lazy to fix comments right now######################
 #' Plot Loadings and Interpretations 
-#' Their sums of squares within each component are the eigenvalues (components' variances).
-#' Loadings are coefficients in linear combination predicting a variable by the (standardized) components.
-#' (working, tested for mtcars)
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param gene is the string name of which gene to view principal components, otherwise, first sample is selected
@@ -167,10 +165,10 @@ plot_loadings <- function(obj,
 
   dat <- data.frame(samples = names, loadings = loadings)
   dat$samples <- factor(dat$samples, levels = unique(dat$samples))
-  print(dat$samples)
 
-  print(dat)
-
+  #debugging
+  #print(dat$samples)
+  #print(dat)
 
   p <- ggplot(dat, aes(x = samples, y = loadings)) 
   p <- p + geom_point(shape = 1)
