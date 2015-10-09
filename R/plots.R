@@ -137,12 +137,10 @@ plot_pca <- function(obj,
 #' @export
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
-  gene = NULL,
-  pca_number = NULL,
+  PC = NULL,
+  gene_count = NULL,
   bool = FALSE,
   ...) {
-  stopifnot( is(obj, 'sleuth') )
-
 
   mat <- NULL
   if (use_filtered) {
@@ -150,35 +148,38 @@ plot_loadings <- function(obj,
   } else {
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
-
+  
   pca_calc <- prcomp(mat, scale = bool)
   #assume no sample has redundant names
-  if (!is.null(gene)){
-    #accessor function for row names 
-    if (!is.null(pca_number)) {
-      loadings <- pca_calc$rotation[gene,1:pca_number]
-      colsize <- pca_number
-    } else {
-      loadings <- pca_calc$rotation[gene, 1:5]
-      colsize <- 5
-    } 
+  if (!is.null(PC)) {
+    loadings <- pca_calc$rotation[, PC]
   } else {
-    if (!is.null(pca_number)) {
-      loadings <- pca_calc$rotation[1,1:pca_number]
-      colsize <- pca_number
-    } else {
-      loadings <- pca_calc$rotation[1,1:5]
-      colsize <- 5
-    }
+    loadings <- pca_calc$rotation[, 1]
   }
-  dat <- data.frame(PC_count = 1:colsize, loadings = loadings)
 
-  p <- ggplot(dat, aes(x = PC_count, y = loadings)) 
+  if (!is.null(gene_count)) {
+    loadings <- loadings [1:gene_count]
+  }
+
+  #sort loadings vector to obtain highest contribution
+  loadings <- sort(loadings, decreasing = TRUE)
+  names <- names(loadings)
+
+  dat <- data.frame(samples = names, loadings = loadings)
+  dat$samples <- factor(dat$samples, levels = unique(dat$samples))
+  print(dat$samples)
+
+  print(dat)
+
+
+  p <- ggplot(dat, aes(x = samples, y = loadings)) 
   p <- p + geom_point(shape = 1)
-  p <- p + xlab("Principal Components") + ylab("Loadings")
+  p <- p + xlab("Samples") + ylab("Contribution")
 
-  if (!is.null(gene)) {
-    p <- p + ggtitle(gene)
+  if (!is.null(PC)) {
+    p <- p + ggtitle(PC)
+  } else {
+    p <- p + ggtitle()
   }
 
   p
