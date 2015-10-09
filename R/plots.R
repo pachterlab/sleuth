@@ -125,17 +125,17 @@ plot_pca <- function(obj,
   p
 }
 
-##################too lazy to fix comments right now######################
+
 #' Plot Loadings and Interpretations 
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param gene is the string name of which gene to view principal components, otherwise, first sample is selected
-#' @param pca_number user input on how many PC to display, otherwise default is 5
+#' @param PC is the (string) name of which principal component to view genes contribution to that PC
+#' @param gene_count user input on how many genes to display, otherwise default is 5
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
-  PC = NULL,
+  PC = NULL, #this is a string of the PC actual name
   gene_count = NULL,
   bool = FALSE,
   ...) {
@@ -156,7 +156,9 @@ plot_loadings <- function(obj,
   }
 
   if (!is.null(gene_count)) {
-    loadings <- loadings [1:gene_count]
+    loadings <- loadings[1:gene_count]
+  } else {
+    loadings <- loadings[1:5]
   }
 
   #sort loadings vector to obtain highest contribution
@@ -177,24 +179,28 @@ plot_loadings <- function(obj,
   if (!is.null(PC)) {
     p <- p + ggtitle(PC)
   } else {
-    p <- p + ggtitle()
+    p <- p + ggtitle("PC1")
   }
 
   p
 
 }
 
-#' Plot PCA variances by percentage
+#' Plot PC variances retained by percentage with option to compare specified PC
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param pca_number user input on how many PC to display, otherwise default is 10
+#' @param pca_number user input on how many PC to display, otherwise default is 5
+#' @param bool determines scaling
+#' @param (integer) PC_relative gives the option to compare subsequent principal
+#' components with respect to current one
 #' @return a ggplot object
 #' @export
 plot_pc_variance <- function(obj, 
   use_filtered = TRUE,
   pca_number = NULL,
   bool = FALSE,
+  PC_relative = NULL, #this is an integer
   ...) {
 
   mat <- NULL
@@ -204,31 +210,46 @@ plot_pc_variance <- function(obj,
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
 
-  pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
+   pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
 
   #computation
   eigenvalues <- (pca_calc$sdev)^2  
-  variance <- eigenvalues*100/sum(eigenvalues)
-  cum_var <- cumsum(variance)
-
-  #did not throw error messages
+  var <- eigenvalues*100/sum(eigenvalues)
+  var2 <- eigenvalues*100/sum(eigenvalues) #because i suck at coding
+  
+  #from here to ....
   if (!is.null(pca_number)) {
     colsize <- pca_number
-    cum_var <- cum_var[1:pca_number]
+    var <- var[1:pca_number]
   } else {
-    colsize <- 5
-    cum_var <- cum_var[1:5]
+    colsize <- 5 #default 5
+    var <- var[1:5] #default 5
   }
+  pc_asdf <- data.frame(PC_count = 1:colsize, var = var) #order here matters
+  #...here is for non relative comparison (ie variance of everything in comparison to 100%)
 
-  pc_asdf <- data.frame(PC_count = 1:colsize, cum_var = cum_var)
 
-  #change to ggplot
-  p <- ggplot(pc_asdf, aes(x = PC_count, y = cum_var)) + geom_bar(stat = "identity")
+  #here is comparison per given principal component
+  if(!is.null(PC_relative)) {
+    pc_asdf <- data.frame(PC_count = 1:length(eigenvalues), var = var2) #because i suck at coding (var2 stupid shit)
+    pc_asdf$var <- pc_asdf$var/pc_asdf$var[PC_relative] #scaling in comparison to given PC
+    pc_asdf <- pc_asdf[PC_relative:nrow(pc_asdf),] #new data frame
+
+    #if user wants to give some PCA count to graph (default is 5 or until the end)
+    if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) { #check if it does not overflow data frame
+      pca_number <- pca_number + 1 #some wierd issue with indexing
+      pc_asdf <- pc_asdf[1:pca_number,] #new data frame if user wants to give a pca count number
+    } else if (PC_relative + 5 <= length(eigenvalues)) {
+      pc_asdf <- pc_asdf[1:6,]
+    }
+  } 
+
+  p <- ggplot(pc_asdf, aes(x = PC_count, y = var)) + geom_bar(stat = "identity")
   p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
   p <- p + ylab("% of Variance") + xlab("Principal Components")
 
   p
-
+  
 }
 
 
