@@ -148,15 +148,18 @@ plot_loadings <- function(obj,
   }
   
   pca_calc <- prcomp(mat, scale = bool)
-  #assume no sample has redundant names
-  if (!is.null(PC)) {
-    loadings <- pca_calc$rotation[, PC]
+  #transpose
+  loadings <- t(pca_calc$rotation)
+
+  if (!is.null(gene)) {
+    loadings <- loadings[, gene]
   } else {
-    loadings <- pca_calc$rotation[, 1]
+    title <- colnames(loadings)[1]
+    loadings <- loadings[, 1]
   }
 
-  if (!is.null(gene_count)) {
-    loadings <- loadings[1:gene_count]
+  if (!is.null(pc_count)) {
+    loadings <- loadings[1:pc_count]
   } else {
     loadings <- loadings[1:5]
   }
@@ -165,21 +168,17 @@ plot_loadings <- function(obj,
   loadings <- sort(loadings, decreasing = TRUE)
   names <- names(loadings)
 
-  dat <- data.frame(samples = names, loadings = loadings)
-  dat$samples <- factor(dat$samples, levels = unique(dat$samples))
+  dat <- data.frame(pc = names, loadings = loadings)
+  dat$pc <- factor(dat$pc, levels = unique(dat$pc))
 
-  #debugging
-  #print(dat$samples)
-  #print(dat)
+  p <- ggplot(dat, aes(x = pc, y = loadings)) 
+  p <- p + geom_bar(stat = "identity")
+  p <- p + xlab("Principal Components") + ylab("Contribution")
 
-  p <- ggplot(dat, aes(x = samples, y = loadings)) 
-  p <- p + geom_point(shape = 1)
-  p <- p + xlab("Samples") + ylab("Contribution")
-
-  if (!is.null(PC)) {
-    p <- p + ggtitle(PC)
+  if (!is.null(gene)) {
+    p <- p + ggtitle(gene)
   } else {
-    p <- p + ggtitle("PC1")
+    p <- p + ggtitle(title)
   }
 
   p
@@ -210,7 +209,7 @@ plot_pc_variance <- function(obj,
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
 
-   pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
+  pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
 
   #computation
   eigenvalues <- (pca_calc$sdev)^2  
@@ -226,21 +225,18 @@ plot_pc_variance <- function(obj,
     var <- var[1:5] #default 5
   }
   pc_asdf <- data.frame(PC_count = 1:colsize, var = var) #order here matters
-  #...here is for non relative comparison (ie variance of everything in comparison to 100%)
-
+  #...here is for comparison of variance for subsequent PC's
 
   #here is comparison per given principal component
   if(!is.null(PC_relative)) {
     pc_asdf <- data.frame(PC_count = 1:length(eigenvalues), var = var2) #because i suck at coding (var2 stupid shit)
-    pc_asdf$var <- pc_asdf$var/pc_asdf$var[PC_relative] #scaling in comparison to given PC
     pc_asdf <- pc_asdf[PC_relative:nrow(pc_asdf),] #new data frame
 
     #if user wants to give some PCA count to graph (default is 5 or until the end)
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) { #check if it does not overflow data frame
-      pca_number <- pca_number + 1 #some wierd issue with indexing
       pc_asdf <- pc_asdf[1:pca_number,] #new data frame if user wants to give a pca count number
-    } else if (PC_relative + 5 <= length(eigenvalues)) {
-      pc_asdf <- pc_asdf[1:6,]
+    } else if (PC_relative + 5 >= length(eigenvalues)) {
+      pc_asdf <- pc_asdf[1:nrow(pc_asdf),] 
     }
   } 
 
@@ -251,7 +247,6 @@ plot_pc_variance <- function(obj,
   p
   
 }
-
 
 
 #' Plot density
