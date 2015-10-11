@@ -1,22 +1,26 @@
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
-  PC = NULL,
-  gene_count = NULL,
+  gene = NULL,
+  pc_count = NULL,
   bool = FALSE,
+  absolute = TRUE, #edit this
   ...) {
 
   mat <- obj
   
   pca_calc <- prcomp(mat, scale = bool)
-  #assume no sample has redundant names
-  if (!is.null(PC)) {
-    loadings <- pca_calc$rotation[, PC]
+  #transpose
+  loadings <- t(pca_calc$rotation)
+
+  if (!is.null(gene)) {
+    loadings <- loadings[, gene]
   } else {
-    loadings <- pca_calc$rotation[, 1]
+    title <- colnames(loadings)[1]
+    loadings <- loadings[, 1]
   }
 
-  if (!is.null(gene_count)) {
-    loadings <- loadings[1:gene_count]
+  if (!is.null(pc_count)) {
+    loadings <- loadings[1:pc_count]
   } else {
     loadings <- loadings[1:5]
   }
@@ -25,21 +29,17 @@ plot_loadings <- function(obj,
   loadings <- sort(loadings, decreasing = TRUE)
   names <- names(loadings)
 
-  dat <- data.frame(samples = names, loadings = loadings)
-  dat$samples <- factor(dat$samples, levels = unique(dat$samples))
+  dat <- data.frame(pc = names, loadings = loadings)
+  dat$pc <- factor(dat$pc, levels = unique(dat$pc))
 
-  #debugging
-  #print(dat$samples)
-  #print(dat)
+  p <- ggplot(dat, aes(x = pc, y = loadings)) 
+  p <- p + geom_bar(stat = "identity")
+  p <- p + xlab("Principal Components") + ylab("Contribution")
 
-  p <- ggplot(dat, aes(x = samples, y = loadings)) 
-  p <- p + geom_point(shape = 1)
-  p <- p + xlab("Samples") + ylab("Contribution")
-
-  if (!is.null(PC)) {
-    p <- p + ggtitle(PC)
+  if (!is.null(gene)) {
+    p <- p + ggtitle(gene)
   } else {
-    p <- p + ggtitle("PC1")
+    p <- p + ggtitle(title)
   }
 
   p
