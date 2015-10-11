@@ -78,10 +78,14 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
 
   test_statistic <- 2 * (a_ll - n_ll)
 
+  degrees_free <- obj$fits[[null_model]]$models[[1]]$ols_fit$df.residual -
+    obj$fits[[alt_model]]$models[[1]]$ols_fit$df.residual
+
   # P(chisq > test_statistic)
-  p_value <- pchisq(test_statistic, 3, lower.tail = FALSE)
+  p_value <- pchisq(test_statistic, degrees_free, lower.tail = FALSE)
   result <- adf(target_id = names(obj$fits[[alt_model]]$likelihood),
     test_stat = test_statistic, p_value = p_value)
+  result <- dplyr::mutate(result, q_value = p.adjust(p_value, method = "BH"))
 
   result
 }

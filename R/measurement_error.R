@@ -77,7 +77,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   msg('fitting measurement error models')
 
-  mes <- me_model_by_row(obj, obj$design_matrix, bs_summary)
+  mes <- me_model_by_row(obj, X, bs_summary)
   tid <- names(mes)
 
   mes_df <- dplyr::bind_rows(lapply(mes,
@@ -91,6 +91,9 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
 
+  # FIXME: sometimes when sigma is negative the shrinkage estimation becomes NA
+  # this is for the few set of transcripts, but should be able to just do some
+  # simple fix
   msg('shrinkage estimation')
   swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
     ignore_zeroes = TRUE, ...)
