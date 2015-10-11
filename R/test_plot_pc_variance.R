@@ -37,7 +37,7 @@ plot_pc_variance <- function(obj,
       pca_number <- pca_number + 1 #some wierd issue with indexing
       pc_asdf <- pc_asdf[1:pca_number,] #new data frame if user wants to give a pca count number
     } else if (PC_relative + 5 <= length(eigenvalues)) {
-      pc_asdf <- pc_asdf[1:6,] 
+      pc_asdf <- pc_asdf[1:6,]
     }
   } 
 
