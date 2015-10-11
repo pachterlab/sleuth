@@ -209,12 +209,12 @@ plot_pc_variance <- function(obj,
     mat <- spread_abundance_by(obj$obs_norm, units)
   }
 
-   pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
+  pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
 
   #computation
   eigenvalues <- (pca_calc$sdev)^2  
   var <- eigenvalues*100/sum(eigenvalues)
-  var2 <- var
+  var2 <- eigenvalues*100/sum(eigenvalues) #because i suck at coding
   
   #from here to ....
   if (!is.null(pca_number)) {
@@ -225,20 +225,18 @@ plot_pc_variance <- function(obj,
     var <- var[1:5] #default 5
   }
   pc_asdf <- data.frame(PC_count = 1:colsize, var = var) #order here matters
-  #...here is for non relative comparison (ie variance of everything in comparison to 100%)
-
+  #...here is for comparison of variance for subsequent PC's
 
   #here is comparison per given principal component
   if(!is.null(PC_relative)) {
     pc_asdf <- data.frame(PC_count = 1:length(eigenvalues), var = var2) #because i suck at coding (var2 stupid shit)
-    pc_asdf$var <- pc_asdf$var/pc_asdf$var[PC_relative] #scaling in comparison to given PC
     pc_asdf <- pc_asdf[PC_relative:nrow(pc_asdf),] #new data frame
 
     #if user wants to give some PCA count to graph (default is 5 or until the end)
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) { #check if it does not overflow data frame
-      pca_number <- pca_number + 1 #some wierd issue with indexing
-    } else if (PC_relative + 5 <= length(eigenvalues)) {
-      pc_asdf <- pc_asdf[1:6,]
+      pc_asdf <- pc_asdf[1:pca_number,] #new data frame if user wants to give a pca count number
+    } else if (PC_relative + 5 >= length(eigenvalues)) {
+      pc_asdf <- pc_asdf[1:nrow(pc_asdf),] 
     }
   } 
 
@@ -249,7 +247,6 @@ plot_pc_variance <- function(obj,
   p
   
 }
-
 
 
 #' Plot density
