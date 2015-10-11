@@ -33,8 +33,13 @@ plot_pc_variance <- function(obj,
     #if user wants to give some PCA count to graph (default is 5 or until the end)
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) { #check if it does not overflow data frame
       pc_asdf <- pc_asdf[1:pca_number,] #new data frame if user wants to give a pca count number
+<<<<<<< HEAD
     } else if (PC_relative + 5 >= length(eigenvalues)) {
       pc_asdf <- pc_asdf[1:nrow(pc_asdf),] 
+=======
+    } else if (PC_relative + 5 <= length(eigenvalues)) {
+      pc_asdf <- pc_asdf[1:6,]
+>>>>>>> ca58bf478cb7d202e7c9df9bac4c5256075c6808
     }
   } 
 

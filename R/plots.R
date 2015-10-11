@@ -192,7 +192,7 @@ plot_loadings <- function(obj,
 #' @param pca_number user input on how many PC to display, otherwise default is 5
 #' @param bool determines scaling
 #' @param (integer) PC_relative gives the option to compare subsequent principal
-#' components with respect to current one
+#' components and their contributions
 #' @return a ggplot object
 #' @export
 plot_pc_variance <- function(obj, 
