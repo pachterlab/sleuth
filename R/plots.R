@@ -214,7 +214,7 @@ plot_pc_variance <- function(obj,
   #computation
   eigenvalues <- (pca_calc$sdev)^2  
   var <- eigenvalues*100/sum(eigenvalues)
-  var2 <- eigenvalues*100/sum(eigenvalues) #because i suck at coding
+  var2 <- var
   
   #from here to ....
   if (!is.null(pca_number)) {
@@ -237,7 +237,6 @@ plot_pc_variance <- function(obj,
     #if user wants to give some PCA count to graph (default is 5 or until the end)
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) { #check if it does not overflow data frame
       pca_number <- pca_number + 1 #some wierd issue with indexing
-      pc_asdf <- pc_asdf[1:pca_number,] #new data frame if user wants to give a pca count number
     } else if (PC_relative + 5 <= length(eigenvalues)) {
       pc_asdf <- pc_asdf[1:6,]
     }

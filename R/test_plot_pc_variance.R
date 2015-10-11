@@ -24,17 +24,15 @@ plot_pc_variance <- function(obj,
   }
   pc_asdf <- data.frame(PC_count = 1:colsize, var = var) #order here matters
   #...here is for non relative comparison (ie variance of everything in comparison to 100%)
-
+  print(pc_asdf)
 
   #here is comparison per given principal component
   if(!is.null(PC_relative)) {
     pc_asdf <- data.frame(PC_count = 1:length(eigenvalues), var = var2) #because i suck at coding (var2 stupid shit)
-    pc_asdf$var <- pc_asdf$var/pc_asdf$var[PC_relative] #scaling in comparison to given PC
     pc_asdf <- pc_asdf[PC_relative:nrow(pc_asdf),] #new data frame
 
     #if user wants to give some PCA count to graph (default is 5 or until the end)
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) { #check if it does not overflow data frame
-      pca_number <- pca_number + 1 #some wierd issue with indexing
       pc_asdf <- pc_asdf[1:pca_number,] #new data frame if user wants to give a pca count number
     } else if (PC_relative + 5 <= length(eigenvalues)) {
       pc_asdf <- pc_asdf[1:6,] 
