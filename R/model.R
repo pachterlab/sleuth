@@ -85,6 +85,25 @@ design_matrix <- function(obj, which_model = 'full') {
   obj[['fits']][[which_model]][['design_matrix']]
 }
 
+get_test <- function(obj, label, type) {
+  # TODO: ensure that label and type are valid
+  obj$tests[[type]][[label]]
+}
+
+# #' @param type valid types are 'lrt' and 'wald'
+add_test <- function(obj, test_table, label, type) {
+  stopifnot( type %in% c('lrt', 'wald') )
+
+  # store all tests in obj$tests
+  if ( is.null(obj$tests) ) {
+    obj$tests <- list()
+  }
+
+  obj$tests[[type]][[label]] <- test_table
+
+  obj
+}
+
 #' @export
 tests <- function(obj) {
   UseMethod('tests')

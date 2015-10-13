@@ -76,6 +76,9 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
   n_ll <- get_likelihood(obj, null_model)
   a_ll <- get_likelihood(obj, alt_model)
 
+  obj$fits[[null_model]]$likelihood <- n_ll
+  obj$fits[[alt_model]]$likelihood <- a_ll
+
   test_statistic <- 2 * (a_ll - n_ll)
 
   degrees_free <- obj$fits[[null_model]]$models[[1]]$ols_fit$df.residual -
@@ -87,5 +90,8 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
     test_stat = test_statistic, p_value = p_value)
   result <- dplyr::mutate(result, q_value = p.adjust(p_value, method = "BH"))
 
-  result
+  test_name <- paste0(null_model, ':', alt_model)
+  obj <- add_test(obj, result, test_name, 'lrt')
+
+  obj
 }
