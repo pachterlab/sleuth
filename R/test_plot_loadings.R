@@ -21,7 +21,7 @@ plot_loadings <- function(obj,
 
   if (!is.null(pc_count)) {
     loadings <- loadings[1:pc_count]
-  } else {
+  } else {  
     loadings <- loadings[1:5]
   }
 
