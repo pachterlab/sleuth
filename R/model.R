@@ -85,13 +85,37 @@ design_matrix <- function(obj, which_model = 'full') {
   obj[['fits']][[which_model]][['design_matrix']]
 }
 
+# Extract a test from a sleuth object
+#
+# Get the data frame from a sleuth object that corresponds to a specific test.
+# Note: this function is not meant for users. The user facing version of this is \code{sleuth_results}
+#
+# @param obj a sleuth object
+# @param label a string which is a label for the test you are trying to extract
+# @param type the type of test (either: 'lrt', 'wald')
+# @return a data frame with the relevant test information
 get_test <- function(obj, label, type) {
-  # TODO: ensure that label and type are valid
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( type %in% c('lrt', 'wald') )
+
+  tests_performed <- names(obj$tests)
+  if ( !( label %in% tests_performed ) ) {
+    stop("'", label, "' is not a valid label for a test. Please see valid models and tests using the function 'models'")
+  }
+
   obj$tests[[type]][[label]]
 }
 
-# #' @param type valid types are 'lrt' and 'wald'
+# Add a test to a sleuth object
+#
+# Add a test to a sleuth object. Note this function is not meant for users.
+# @param obj a sleuth object
+# @param test_table the data frame/data table you're interested inserting as the actual test
+# @param label the label (name) you want to assign to this test
+# @param type the type of test it is ('lrt' or 'wald')
+# @return a sleuth object with the test added
 add_test <- function(obj, test_table, label, type) {
+  stopifnot( is(obj, 'sleuth') )
   stopifnot( type %in% c('lrt', 'wald') )
 
   # store all tests in obj$tests
