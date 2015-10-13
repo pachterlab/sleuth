@@ -163,7 +163,10 @@ plot_loadings <- function(obj,
   } else {
     loadings <- loadings[1:5]
   }
-
+  #absolute value
+  if (absolute) {
+    loadings <- abs(loadings)
+  }
   #sort loadings vector to obtain highest contribution
   loadings <- sort(loadings, decreasing = TRUE)
   names <- names(loadings)
