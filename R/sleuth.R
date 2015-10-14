@@ -62,12 +62,12 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' accounting for covariates, sequencing depth, technical and biological
 #' variance.
 #'
-#' @param kal_dirs a character vector of length greater than one where each
-#' string points to a kallisto output directory
 #' @param sample_to_covariates is a \code{data.frame} which contains a mapping
 #' from \code{sample} (a column) to some set of experimental conditions or
-#' covariates. The column \code{sample} should be in the same order as the
-#' corresponding entry in \code{kal_dirs}
+#' covariates. The column \code{path} is also required, which is a character
+#' vector where each element points to the corresponding kallisto output directory. The column
+#' \code{sample} should be in the same order as the corresponding entry in
+#' \code{path}.
 #' @param full_model is a \code{formula} which explains the full model (design)
 #' of the experiment. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}
@@ -84,10 +84,9 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-#' test whether a coeffient is zero
+#' test whether a coeffient in the model is zero
 #' @export
 sleuth_prep <- function(
-  kal_dirs,
   sample_to_covariates,
   full_model,
   filter_fun = basic_filter,
@@ -99,28 +98,23 @@ sleuth_prep <- function(
   # check inputs
 
   # data types
-  if( !is(kal_dirs, 'character') ) {
-    stop(paste0('"', substitute(kal_dirs),
-        '" (kal_dirs) is must be a character vector.'))
-  }
 
   if ( !is(sample_to_covariates, "data.frame") ) {
-    stop(paste0("'", substitute(sample_to_covariates), "' must be a data.frame"))
+    stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
   if (!is(full_model, "formula")) {
     stop(paste0("'",substitute(full_model), "' (full_model) must be a formula"))
   }
 
-  if (length(kal_dirs) != nrow(sample_to_covariates)) {
-    stop(paste0("'", substitute(kal_dirs),
-        "' must have the same length as the number of rows in '",
-        substitute(sample_to_covariates), "'"))
-  }
-
   if (!("sample" %in% colnames(sample_to_covariates))) {
     stop(paste0("'", substitute(sample_to_covariates),
         "' (sample_to_covariates) must contain a column named 'sample'"))
+  }
+
+  if (!("path" %in% colnames(sample_to_covariates))) {
+    stop(paste0("'", substitute(sample_to_covariates)),
+      "' (sample_to_covariates) must contain a column named 'path'")
   }
 
   if ( !is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
@@ -143,7 +137,7 @@ sleuth_prep <- function(
 
   # TODO: ensure all kallisto have same number of transcripts
   # TODO: ensure transcripts are in same order -- if not, report warning that
-  # kallisto index might be correct
+  # kallisto index might be incorrect
 
   # done
   ##############################
@@ -151,19 +145,15 @@ sleuth_prep <- function(
   msg('reading in kallisto results')
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
+  kal_dirs <- sample_to_covariates$path
+  sample_to_covariates$path <- NULL
   nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
     function(i) {
-      fname <- file.path(kal_dirs[i], 'abundance.h5')
-
       nsamp <- dot(nsamp)
-
-      if ( !file.exists(fname) ) {
-        stop(paste0('Could not find HDF5 file: ', fname))
-      }
-
-      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
+      path <- kal_dirs[i]
+      suppressMessages({kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
 
@@ -171,7 +161,13 @@ sleuth_prep <- function(
     })
   msg('')
 
-  kal_versions <- check_kal_pack(kal_list)
+  check_result <- check_kal_pack(kal_list)
+  if ( length(check_result$no_bootstrap) > 0 ) {
+    stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
+      paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
+  }
+
+  kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
@@ -292,7 +288,9 @@ check_kal_pack <- function(kal_list) {
     stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
   }
 
-  u_versions
+  no_bootstrap <- which(sapply(kal_list, function(x) length(x$bootstrap) == 0))
+
+  list(versions = u_versions, no_bootstrap = no_bootstrap)
 }
 
 #' Normalization factors
