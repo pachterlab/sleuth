@@ -10,7 +10,7 @@
 
 <meta name="author" content="Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter" />
 
-<meta name="date" content="2015-08-17" />
+<meta name="date" content="2015-10-14" />
 
 <title>Introduction to sleuth</title>
 
@@ -72,7 +72,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="header">
 <h1 class="title">Introduction to sleuth</h1>
 <h4 class="author"><em>Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter</em></h4>
-<h4 class="date"><em>2015-08-17</em></h4>
+<h4 class="date"><em>2015-10-14</em></h4>
 </div>
 
 
@@ -151,14 +151,33 @@ s2c</code></pre></div>
 ## 4 SRR493369   HOXA1KD
 ## 5 SRR493370   HOXA1KD
 ## 6 SRR493371   HOXA1KD</code></pre>
+<p>Now, we must enter the directories into a column in the table describing the experiment. This column must be labeled <code>path</code>, otherwise sleuth will throw an error. This is to ensure that the user can check which samples correspond to which kallisto runs.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">s2c &lt;-<span class="st"> </span>dplyr::<span class="kw">mutate</span>(s2c, <span class="dt">path =</span> kal_dirs)</code></pre></div>
+<p>The user should check whether or not the order is correct. In this case, the kallisto output is correctly matched with the sample identifiers.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(s2c)</code></pre></div>
+<pre><code>##      sample condition
+## 1 SRR493366  scramble
+## 2 SRR493367  scramble
+## 3 SRR493368  scramble
+## 4 SRR493369   HOXA1KD
+## 5 SRR493370   HOXA1KD
+## 6 SRR493371   HOXA1KD
+##                                                                     path
+## 1 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493366/kallisto
+## 2 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493367/kallisto
+## 3 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493368/kallisto
+## 4 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493369/kallisto
+## 5 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493370/kallisto
+## 6 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493371/kallisto</code></pre>
 <p>Now the “sleuth object” can be constructed. This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the <strong>sleuth</strong> response error measurement model and (3) perform differential analyis (testing). On a laptop the three steps should take about 2 minutes altogether.</p>
 <p>First type</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(kal_dirs, s2c, ~<span class="st"> </span>condition)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(s2c, ~<span class="st"> </span>condition)</code></pre></div>
 <pre><code>## reading in kallisto results
 ## ......
 ## normalizing est_counts
-## 42193 targets passed the filter
+## 50844 targets passed the filter
 ## normalizing tpm
+## merging in metadata
 ## normalizing bootstrap samples</code></pre>
 <p>then</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_fit</span>(so)</code></pre></div>
@@ -197,7 +216,7 @@ so &lt;- sleuth_test(so, which_beta = 'conditionscramble')</code></pre>
 <p>The best way to view the results is to generate the Shiny webpage that allows for exploratory data analysis:</p>
 <pre><code>sleuth_live(so)</code></pre>
 <p>To generate a table of results for analysis within R type</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">results_table &lt;-<span class="st"> </span><span class="kw">sleuth_results</span>(so, <span class="st">'conditionscramble'</span>) </code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">results_table &lt;-<span class="st"> </span><span class="kw">sleuth_results</span>(so, <span class="st">'conditionscramble'</span>)</code></pre></div>
 </div>
 
 
