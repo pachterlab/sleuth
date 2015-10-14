@@ -90,7 +90,7 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
     test_stat = test_statistic, p_value = p_value)
   result <- dplyr::mutate(result, q_value = p.adjust(p_value, method = "BH"))
 
-  test_name <- paste0(null_model, ':', alt_model)
+  test_name <- paste0(null_model, '<>', alt_model)
   obj <- add_test(obj, result, test_name, 'lrt')
 
   obj

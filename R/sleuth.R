@@ -137,6 +137,10 @@ sleuth_prep <- function(
     stop("max_bootstrap must be > 0")
   }
 
+  if ( any(is.na(sample_to_covariates)) ) {
+    warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
+  }
+
   # TODO: ensure all kallisto have same number of transcripts
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be correct
@@ -516,22 +520,20 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' @param which_group a character string denoting which gene group to use
 #' @return a \code{data.frame} containing gene names, transcript names, and significance
 #' @export
-
-
 sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group = 'ens_gene') {
-  
+
     if(is.null(obj$target_mapping))
     {
         stop("This sleuth object doesn't have added gene names.")
     }
     popped_gene_table = sleuth_results(obj, which_beta, which_model)
 
-    
+
     popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
     popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
 
     popped_gene_table = dplyr::summarise_(popped_gene_table, most_sig_transcript = ~target_id[1], pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n(), list_of_transcripts = ~toString(target_id[1:length(target_id)]))
-    
+
     popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
     popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
     popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
