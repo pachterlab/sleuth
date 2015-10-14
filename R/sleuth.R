@@ -157,7 +157,13 @@ sleuth_prep <- function(
     })
   msg('')
 
-  kal_versions <- check_kal_pack(kal_list)
+  check_result <- check_kal_pack(kal_list)
+  if ( length(check_result$no_bootstrap) > 0 ) {
+    stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
+      paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
+  }
+
+  kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
@@ -278,7 +284,9 @@ check_kal_pack <- function(kal_list) {
     stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
   }
 
-  u_versions
+  no_bootstrap <- which(sapply(kal_list, function(x) length(x$bootstrap) == 0))
+
+  list(versions = u_versions, no_bootstrap = no_bootstrap)
 }
 
 #' Normalization factors
