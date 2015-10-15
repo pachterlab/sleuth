@@ -271,7 +271,8 @@ sleuth_live <- function(obj, ...) {
               value = TRUE)
             )
           ),
-        fluidRow(plotOutput('pca_plt'))
+        fluidRow(plotOutput('pca_plt')),
+        fluidRow(downloadButton("download_pca_plt", "Download Plot"))
         ),
 
       ###
@@ -466,6 +467,7 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
+    plots <- reactiveValues(pca_plt = NULL)  # Reactive master object storing plots for downloading later
 
     output$which_beta_ctrl_qq <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
@@ -598,7 +600,7 @@ sleuth_live <- function(obj, ...) {
       color_by <- ifelse(is.null(input$color_by), NULL,
         as.character(input$color_by))
 
-      plot_pca(obj,
+      pca_plt <- plot_pca(obj,
         pc_x = as.integer(input$pc_x),
         pc_y = as.integer(input$pc_y),
         text_labels = as.logical(input$text_labels),
@@ -608,7 +610,16 @@ sleuth_live <- function(obj, ...) {
         point_size = input$pca_point_size
         )
 
+      plots$pca_plt <- pca_plt
+      pca_plt
     })
+
+    output$download_pca_plt <- downloadHandler(
+      filename = function() { "pca_plot.pdf" },
+      content = function(file) {
+         ggsave(file, plots$pca_plt, width = 45, height = 10.5833, units = "cm")
+      }
+    )
 
     ### MV plot
     output$mv_plt <- renderPlot({
