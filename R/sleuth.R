@@ -551,8 +551,6 @@ sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group
 #' @param gene_name a string containing the name of the gene you are interested in
 #' @return a vector of strings containing the names of the transcripts that map to a gene
 #' @export
-
-
 transcripts_from_gene <- function(obj, which_beta, which_model, gene_colname, gene_name)
 {
     table = sleuth_results(obj, which_beta, which_model)

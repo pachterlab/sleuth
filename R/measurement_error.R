@@ -210,7 +210,9 @@ sleuth_test <- function(obj, which_beta, which_model = 'full') {
     obj$fits[[which_model]]$wald <- list()
   }
 
-  obj$fits[[which_model]]$wald[[which_beta]] <- res
+  obj <- add_test(obj, res, which_beta, 'wald')
+
+  #obj$fits[[which_model]]$wald[[which_beta]] <- res
 
   obj
 }

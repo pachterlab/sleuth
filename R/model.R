@@ -98,12 +98,18 @@ get_test <- function(obj, label, type) {
   stopifnot( is(obj, 'sleuth') )
   stopifnot( type %in% c('lrt', 'wald') )
 
-  tests_performed <- names(obj$tests)
-  if ( !( label %in% tests_performed ) ) {
+  res <- NULL
+  if (type == 'lrt') {
+    res <- obj$tests[[type]][[label]]
+  } else {
+    res <- obj$tests[[type]][[model]][[label]]
+  }
+  # obj$tests[[type]][[label]]
+  if (is.null(res))) {
     stop("'", label, "' is not a valid label for a test. Please see valid models and tests using the function 'models'")
   }
 
-  obj$tests[[type]][[label]]
+  res
 }
 
 # Add a test to a sleuth object
@@ -114,16 +120,25 @@ get_test <- function(obj, label, type) {
 # @param label the label (name) you want to assign to this test
 # @param type the type of test it is ('lrt' or 'wald')
 # @return a sleuth object with the test added
-add_test <- function(obj, test_table, label, type) {
+add_test <- function(obj, test_table, label, type, model) {
   stopifnot( is(obj, 'sleuth') )
   stopifnot( type %in% c('lrt', 'wald') )
+
+  if (type == 'wald' && missing(model)) {
+    stop('if specifying a wald to test, must also specify a model.')
+  }
 
   # store all tests in obj$tests
   if ( is.null(obj$tests) ) {
     obj$tests <- list()
   }
 
-  obj$tests[[type]][[label]] <- test_table
+  if (label == 'lrt') {
+    obj$tests[[type]][[label]] <- test_table
+  } else {
+    # wald test
+    obj$tests[[type]][[model]][[label]] <- test_table
+  }
 
   obj
 }
