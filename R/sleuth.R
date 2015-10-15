@@ -135,7 +135,6 @@ sleuth_prep <- function(
     warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
   }
 
-  # TODO: ensure all kallisto have same number of transcripts
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
 
@@ -234,22 +233,10 @@ sleuth_prep <- function(
       obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
     })
 
-
-
     # add in eff_len and len
     obs_norm <- dplyr::mutate(obs_norm,
       eff_len = obs_raw$eff_len,
       len = obs_raw$len)
-
-    # suppressWarnings({
-    #   obs_norm <- dplyr::inner_join(
-    #     data.table::as.data.table(obs_norm),
-    #     data.table::as.data.table(
-    #       dplyr::select(obs_raw, target_id, sample, len, eff_len)
-    #       ),
-    #     by = c('target_id', 'sample')
-    #     )
-    # })
 
     msg("normalizing bootstrap samples")
     ret$kal <- lapply(seq_along(ret$kal), function(i) {
@@ -258,6 +245,7 @@ sleuth_prep <- function(
         est_counts_size_factor = est_counts_sf[i])
       })
 
+
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
     ret$est_counts_sf <- est_counts_sf
@@ -265,6 +253,17 @@ sleuth_prep <- function(
     ret$filter_df <- filter_df
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
+
+    msg('summarizing bootstraps')
+    # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
+    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
+    # TODO: check if normalized. if not, normalize
+    # TODO: in normalization step, take out all things that don't pass filter so
+    # don't have to filter out here
+    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
+    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+
+    ret$bs_summary <- bs_summary
   }
 
   class(ret) <- 'sleuth'

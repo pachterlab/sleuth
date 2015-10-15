@@ -64,20 +64,10 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   X <- model.matrix(formula, obj$sample_to_covariates)
   A <- solve( t(X) %*% X )
 
-  # TODO: check if normalized. if not, normalize
 
-  msg('summarizing bootstraps')
-  # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
-  bs_summary <- bs_sigma_summary(obj, function(x) log(x + 0.5))
 
-  # TODO: in normalization step, take out all things that don't pass filter so
-  # don't have to filter out here
-  bs_summary$obs_counts <- bs_summary$obs_counts[obj$filter_df$target_id, ]
-  bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[obj$filter_df$target_id]
 
-  msg('fitting measurement error models')
-
-  mes <- me_model_by_row(obj, X, bs_summary)
+  mes <- me_model_by_row(obj, X, obj$bs_summary)
   tid <- names(mes)
 
   mes_df <- dplyr::bind_rows(lapply(mes,
@@ -251,7 +241,7 @@ covar_beta <- function(sigma, X, A) {
 # @param bs_summary a list from \code{bs_sigma_summary}
 # @return a list with a bunch of objects that are useful for shrinking
 me_model_by_row <- function(obj, design, bs_summary) {
-  stopifnot( is(obj, "sleuth") )
+  # stopifnot( is(obj, "sleuth") )
 
   stopifnot( all.equal(names(bs_summary$sigma_q_sq), rownames(bs_summary$obs_counts)) )
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
