@@ -206,11 +206,11 @@ sleuth_test <- function(obj, which_beta, which_model = 'full') {
 
   res <- dplyr::select(res, -x_group)
 
-  if (is.null(obj$fits[[which_model]]$wald)) {
-    obj$fits[[which_model]]$wald <- list()
-  }
+  # if (is.null(obj$fits[[which_model]]$wald)) {
+  #   obj$fits[[which_model]]$wald <- list()
+  # }
 
-  obj <- add_test(obj, res, which_beta, 'wald')
+  obj <- add_test(obj, res, which_beta, 'wald', which_model)
 
   #obj$fits[[which_model]]$wald[[which_beta]] <- res
 

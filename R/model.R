@@ -27,12 +27,13 @@ print.sleuth_model <- function(obj) {
   cat('formula: ', deparse(obj$formula), '\n')
   cat('coefficients:\n')
   cat(paste0('\t', colnames(obj$design_matrix), '\n'))
-  if (!is.null(obj$wald)) {
-    cat('tests:\n')
-    cat(paste0('\t', names(obj$wald)), '\n')
-  } else {
-    cat('no tests found.\n')
-  }
+  # TODO: put test printing somewhere
+  # if (!is.null(obj$wald)) {
+  #   cat('tests:\n')
+  #   cat(paste0('\t', names(obj$wald)), '\n')
+  # } else {
+  #   cat('no tests found.\n')
+  # }
 
   invisible(obj)
 }
@@ -56,6 +57,7 @@ models.sleuth <- function(obj, verbose = TRUE) {
       models(obj$fits[[x]])
     }
   }
+
 
   invisible(obj$fits)
 }
@@ -105,8 +107,22 @@ get_test <- function(obj, label, type) {
     res <- obj$tests[[type]][[model]][[label]]
   }
   # obj$tests[[type]][[label]]
-  if (is.null(res))) {
+  if (is.null(res)) {
     stop("'", label, "' is not a valid label for a test. Please see valid models and tests using the function 'models'")
+  }
+
+  res
+}
+
+list_tests <- function(obj, type) {
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( type %in% c('lrt', 'wald') )
+
+  res <- NULL
+  if (type == 'lrt') {
+    res <- names(obj$tests[[type]])
+  } else {
+    res <- lapply(obj$tests[[type]], names)
   }
 
   res
@@ -137,6 +153,9 @@ add_test <- function(obj, test_table, label, type, model) {
     obj$tests[[type]][[label]] <- test_table
   } else {
     # wald test
+    if ( is.null(obj$tests[[type]][[model]]) ) {
+      obj$tests[[type]][[model]] <- list()
+    }
     obj$tests[[type]][[model]][[label]] <- test_table
   }
 
@@ -146,6 +165,40 @@ add_test <- function(obj, test_table, label, type, model) {
 #' @export
 tests <- function(obj) {
   UseMethod('tests')
+}
+
+#' @export
+tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
+  if ( lrt ) {
+    cat('~likelihood ratio tests:\n')
+    cur_tests <- list_tests(obj, 'lrt')
+    if (length(cur_tests) > 0) {
+      for (test in cur_tests) {
+        cat('\t', test, '\n', sep = '')
+      }
+    } else {
+      cat('\tno tests found.\n')
+    }
+  }
+
+  if ( lrt && wald ) {
+    cat('\n')
+  }
+
+  if ( wald ) {
+    cat('~wald tests:\n')
+    cur_tests <- list_tests(obj, 'wald')
+    if (length(cur_tests) > 0) {
+      for (i in 1:length(cur_tests)) {
+        cat('\t[ ', names(cur_tests)[i], ' ]\n', sep = '')
+        for (j in 1:length(cur_tests[[i]])) {
+          cat('\t', cur_tests[[i]][j], '\n', sep = '')
+        }
+      }
+    } else {
+      cat('\tno tests found.\n')
+    }
+  }
 }
 
 #' @export
