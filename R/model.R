@@ -27,13 +27,6 @@ print.sleuth_model <- function(obj) {
   cat('formula: ', deparse(obj$formula), '\n')
   cat('coefficients:\n')
   cat(paste0('\t', colnames(obj$design_matrix), '\n'))
-  # TODO: put test printing somewhere
-  # if (!is.null(obj$wald)) {
-  #   cat('tests:\n')
-  #   cat(paste0('\t', names(obj$wald)), '\n')
-  # } else {
-  #   cat('no tests found.\n')
-  # }
 
   invisible(obj)
 }
@@ -66,7 +59,6 @@ models.sleuth <- function(obj, verbose = TRUE) {
 models.sleuth_model <- function(obj) {
   print(obj)
 }
-
 
 #' Extract design matrix
 #'
@@ -114,6 +106,9 @@ get_test <- function(obj, label, type) {
   res
 }
 
+# if type is 'lrt', return character vector tests
+# else, return a list of character vectors.
+# each element in the list corresponds to a particular model
 list_tests <- function(obj, type) {
   stopifnot( is(obj, 'sleuth') )
   stopifnot( type %in% c('lrt', 'wald') )
@@ -201,11 +196,6 @@ tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
   }
 }
 
-#' @export
-tests.sleuth_model <- function(obj) {
-  names(obj$wald)
-}
-
 #' Extract Wald test results from a sleuth object
 #'
 #' This function extracts Wald test results from a sleuth object.
@@ -223,7 +213,8 @@ tests.sleuth_model <- function(obj) {
 #' @seealso \code{\link{wald_test}} to compute tests, \code{\link{models}} to
 #' view which models and betas have been tested
 #' @export
-sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
+sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = TRUE,
+      show_all = TRUE) {
   stopifnot( is(obj, 'sleuth') )
 
   if ( !model_exists(obj, which_model) ) {
