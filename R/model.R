@@ -126,21 +126,6 @@ list_tests <- function(obj, type) {
   res
 }
 
-# test_exists <- function(obj, label, type, model) {
-#   all_tests <- list_tests(obj, type)
-#
-#   res <- NULL
-#   if (type == 'lrt') {
-#     res <- label %in% all_tests
-#   } else {
-#
-#     if (missing(model)) {
-#       stop('must specify a model for wald test')
-#     }
-#
-#     res <-
-#   }
-# }
 # Add a test to a sleuth object
 #
 # Add a test to a sleuth object. Note this function is not meant for users.

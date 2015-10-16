@@ -153,7 +153,7 @@ model_exists <- function(obj, which_model, fail = TRUE) {
 #' coefficients can be tested, \code{\link{wald_results}} to get back
 #' a data.frame of the results
 #' @export
-sleuth_test <- function(obj, which_beta, which_model = 'full') {
+sleuth_wald <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
 
   if ( !model_exists(obj, which_model) ) {
@@ -206,13 +206,7 @@ sleuth_test <- function(obj, which_beta, which_model = 'full') {
 
   res <- dplyr::select(res, -x_group)
 
-  # if (is.null(obj$fits[[which_model]]$wald)) {
-  #   obj$fits[[which_model]]$wald <- list()
-  # }
-
   obj <- add_test(obj, res, which_beta, 'wald', which_model)
-
-  #obj$fits[[which_model]]$wald[[which_beta]] <- res
 
   obj
 }
