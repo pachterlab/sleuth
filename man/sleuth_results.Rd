@@ -4,14 +4,11 @@
 \alias{sleuth_results}
 \title{Extract Wald test results from a sleuth object}
 \usage{
-sleuth_results(obj, which_beta, which_model = "full", rename_cols = TRUE,
+sleuth_results(obj, which_test, which_model = "full", rename_cols = TRUE,
   show_all = TRUE)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
-
-\item{which_beta}{a character string denoting which coefficient test to
-extract}
 
 \item{which_model}{a character string denoting which model to extract}
 
@@ -21,6 +18,9 @@ consistent with vignette}
 \item{show_all}{if \code{TRUE} will show all transcripts (not only the ones
 passing filters). The transcripts that do not pass filters will have
 \code{NA} values in most columns.}
+
+\item{which_beta}{a character string denoting which coefficient test to
+extract}
 }
 \value{
 a \code{data.frame}
