@@ -219,17 +219,16 @@ tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
 #' This function extracts Wald test results from a sleuth object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which coefficient test to
-#' extract
-#' @param which_model a character string denoting which model to extract
+#' @param which_test a character denoting the test to extract
+#' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
 #' consistent with vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
 #' @return a \code{data.frame}
-#' @seealso \code{\link{wald_test}} to compute tests, \code{\link{models}} to
-#' view which models and betas have been tested
+#' @seealso \code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
+#' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 #' @export
 sleuth_results <- function(obj, which_test, which_model = 'full', rename_cols = TRUE,
       show_all = TRUE) {
@@ -248,12 +247,6 @@ sleuth_results <- function(obj, which_test, which_model = 'full', rename_cols = 
     stop("'", substitute(which_test),
       "' is not a valid length. which_test must be of length one.")
   }
-
-  # if ( !(which_test %in% names(obj$fits[[which_model]]$wald)) ) {
-  #   stop("'", which_test, "' is not available in '", which_model,
-  #     "'. Check models(", substitute(obj),
-  #     ") to see list of tests that have been run or run wald_test().")
-  # }
 
   res <- NULL
   if (which_model == 'lrt') {
@@ -281,37 +274,6 @@ sleuth_results <- function(obj, which_test, which_model = 'full', rename_cols = 
       final_sigma_sq = smooth_sigma_sq_pmax
       )
   }
-  # res <- NULL
-  # if (rename_cols) {
-  #   res <- dplyr::select(obj$fits[[which_model]]$wald[[which_test]],
-  #     target_id,
-  #     pval,
-  #     qval,
-  #     b,
-  #     se_b,
-  #     mean_obs,
-  #     var_obs,
-  #     tech_var = sigma_q_sq,
-  #     sigma_sq,
-  #     smooth_sigma_sq,
-  #     final_sigma_sq = smooth_sigma_sq_pmax
-  #     )
-  # } else {
-  #   res <- dplyr::select(obj$fits[[which_model]]$wald[[which_test]],
-  #     target_id,
-  #     pval,
-  #     qval,
-  #     b,
-  #     se_b,
-  #     mean_obs,
-  #     var_obs,
-  #     sigma_q_sq,
-  #     sigma_sq,
-  #     smooth_sigma_sq,
-  #     smooth_sigma_sq_pmax
-  #     )
-  # }
-
 
   if (show_all) {
     tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)

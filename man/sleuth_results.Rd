@@ -10,7 +10,9 @@ sleuth_results(obj, which_test, which_model = "full", rename_cols = TRUE,
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_model}{a character string denoting which model to extract}
+\item{which_test}{a character denoting the test to extract}
+
+\item{which_model}{a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.}
 
 \item{rename_cols}{if \code{TRUE} will rename some columns to be shorter and
 consistent with vignette}
@@ -18,9 +20,6 @@ consistent with vignette}
 \item{show_all}{if \code{TRUE} will show all transcripts (not only the ones
 passing filters). The transcripts that do not pass filters will have
 \code{NA} values in most columns.}
-
-\item{which_beta}{a character string denoting which coefficient test to
-extract}
 }
 \value{
 a \code{data.frame}
@@ -29,7 +28,7 @@ a \code{data.frame}
 This function extracts Wald test results from a sleuth object.
 }
 \seealso{
-\code{\link{wald_test}} to compute tests, \code{\link{models}} to
-view which models and betas have been tested
+\code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
+view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 }
 

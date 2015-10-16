@@ -89,6 +89,12 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
   result <- adf(target_id = names(obj$fits[[alt_model]]$likelihood),
     test_stat = test_statistic, pval = p_value)
   result <- dplyr::mutate(result, qval = p.adjust(pval, method = "BH"))
+  model_info <- data.table::data.table(obj$fits[[null_model]]$summary)
+  model_info <- dplyr::select(model_info, -c(x_group, iqr))
+  result <- dplyr::left_join(
+    data.table::data.table(result),
+    model_info,
+    by = 'target_id')
 
   test_name <- paste0(null_model, ':', alt_model)
   obj <- add_test(obj, result, test_name, 'lrt')
