@@ -419,7 +419,11 @@ sleuth_live <- function(obj, ...) {
           p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
           ),
           offset = 1),
-        fluidRow(plotOutput('mv_plt'))
+        fluidRow(plotOutput('mv_plt')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_mv_plt", "Download Plot")))
+
         ),
 
       tabPanel('scatter plots',
@@ -487,7 +491,7 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
-    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL)  # Reactive master object storing plots for downloading later
+    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL) # Reactive master object storing plots for downloading later
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -649,12 +653,19 @@ sleuth_live <- function(obj, ...) {
       filename = function() { "pca_plot.pdf" },
       content = function(file) {
          ggsave(file, plots$pca_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
-      }
-    )
+    })
 
     ### MV plot
     output$mv_plt <- renderPlot({
-      plot_mean_var(obj)
+      mv_plt <- plot_mean_var(obj)
+      plots$mv_plt <- mv_plt
+      mv_plt
+    })
+
+    output$download_mv_plt <- downloadHandler(
+      filename = function() { "mv_plot.pdf" },
+      content = function(file) {
+         ggsave(file, plots$mv_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     ### MA
