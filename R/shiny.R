@@ -415,7 +415,11 @@ sleuth_live <- function(obj, ...) {
               value = FALSE))
           ),
 
-        fluidRow(dataTableOutput('kallisto_table'))
+        fluidRow(dataTableOutput('kallisto_table')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_kallisto_table", "Download Table")))
+
         )
 
       ),
@@ -511,7 +515,7 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
-    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL, cond_dens_plt = NULL, samp_dens_plt = NULL, sample_table = NULL) # Reactive master object storing plots for downloading later
+    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL, cond_dens_plt = NULL, samp_dens_plt = NULL, sample_table = NULL, kallisto_table = NULL) # Reactive master object storing plots for downloading later
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -584,11 +588,18 @@ sleuth_live <- function(obj, ...) {
 
     ###
     output$kallisto_table <- renderDataTable({
-      kallisto_table(obj,
+      plots$kallisto_table <- kallisto_table(obj,
         use_filtered = input$filt_tbl,
         normalized = input$norm_tbl,
         include_covariates = input$covar_tbl
         )
+      plots$kallisto_table
+    })
+
+    output$download_kallisto_table <- downloadHandler(
+      filename = function() { "kallisto_table.csv" },
+      content = function(file) {
+         write.csv(plots$kallisto_table, file)
     })
 
     output$design_matrix <- renderPrint({
