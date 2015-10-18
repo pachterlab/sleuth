@@ -463,8 +463,15 @@ sleuth_live <- function(obj, ...) {
               min = 0, max = 1, step = 0.01))
           ),
         fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_scatter_plt", "Download Plot"))),
         fluidRow(plotOutput('scatter_vars')),
-        fluidRow(dataTableOutput('scatter_brush_table'))
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_scatter_var_plt", "Download Plot"))),
+        fluidRow(dataTableOutput('scatter_brush_table')),
+        fluidRow(uiOutput("download_scatter_table_button"))
         ),
 
       tabPanel('Q-Q plot',
@@ -559,8 +566,14 @@ sleuth_live <- function(obj, ...) {
       y <- eval(p$mapping$y, envir = p$data)
       rv_scatter$data <- data.frame(target_id = p$data$target_id, x = x, y = y,
         stringsAsFactors = FALSE)
-
+      plots$scatter_plt <- p
       p
+    })
+
+    output$download_scatter_plt <- downloadHandler(
+        filename = function() { "scatter_plot.pdf" },
+        content = function(file) {
+            ggsave(file, plots$scatter_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     output$scatter_vars <- renderPlot({
@@ -569,15 +582,22 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
         wb <- poss_tests[1]
       }
-      plot_vars(obj,
+      scatter_var_plt <- plot_vars(obj,
         which_beta = wb,
         which_model = input$which_model,
         point_alpha = input$scatter_alpha,
         highlight = rv_scatter$highlight_vars,
         sig_level = input$max_fdr
         )
+      plots$scatter_var_plt <- scatter_var_plt
+      scatter_var_plt
     })
 
+    output$download_scatter_var_plt <- downloadHandler(
+        filename = function() { "scatter_var_plot.pdf" },
+        content = function(file) {
+            ggsave(file, plots$scatter_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+    })
 
     output$scatter_brush_table <- renderDataTable({
       res <- NULL
@@ -611,8 +631,20 @@ sleuth_live <- function(obj, ...) {
           final_sigma_sq = smooth_sigma_sq_pmax)
         res <- as_df(res)
       }
-
+      if (!is.null(res)) {
+            plots$scatter_table <- res
+            output$download_scatter_table_button <- renderUI({
+            div(align = "right", style = "margin-right:15px; margin-top:10px",
+                    downloadButton("download_scatter_table", "Download Table"))
+            })
+      }
       res
+    })
+
+    output$download_scatter_table <- downloadHandler(
+      filename = function() { "scatter_table.csv" },
+      content = function(file) {
+         write.csv(plots$scatter_table, file)
     })
 
     ###
@@ -626,8 +658,7 @@ sleuth_live <- function(obj, ...) {
         filename = function() { "samp_heat_plot.pdf" },
         content = function(file) {
             ggsave(file, plots$samp_heat_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
-        }
-    )
+    })
 
     ###
     output$pca_plt <- renderPlot({
@@ -985,8 +1016,7 @@ sleuth_live <- function(obj, ...) {
       filename = function() { "volcano_table.csv" },
       content = function(file) {
          write.csv(plots$volcano_table, file)
-      }
-    )
+    })
     
   }
 
