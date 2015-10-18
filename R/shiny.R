@@ -388,7 +388,10 @@ sleuth_live <- function(obj, ...) {
             p(strong('kallisto version(s): '), obj$kal_versions)),
           offset = 1
           ),
-        fluidRow(dataTableOutput('summary_dt'))
+        fluidRow(dataTableOutput('summary_dt')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_summary_table", "Download Table")))
         ),
 
       ###
@@ -508,7 +511,7 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
-    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL, cond_dens_plt = NULL, samp_dens_plt = NULL) # Reactive master object storing plots for downloading later
+    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL, cond_dens_plt = NULL, samp_dens_plt = NULL, sample_table = NULL) # Reactive master object storing plots for downloading later
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -535,7 +538,16 @@ sleuth_live <- function(obj, ...) {
             ggsave(file, plots$qq_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
-    output$summary_dt <- renderDataTable(summary(obj))
+    output$summary_dt <- renderDataTable({
+        plots$summary_table <- summary(obj)
+        plots$summary_table
+    })
+
+    output$download_summary_table <- downloadHandler(
+      filename = function() { "processed_data_table.csv" },
+      content = function(file) {
+         write.csv(plots$summary_table, file)
+    })
 
     output$condition_density <- renderPlot({
       plots$cond_dens_plt <- plot_group_density(obj,
