@@ -338,11 +338,18 @@ sleuth_live <- function(obj, ...) {
           ),
         fluidRow(plotOutput('condition_density')),
         fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_cond_dens_plt", "Download Plot"))),
+        fluidRow(
           column(4,
             selectInput('samp_dens', 'sample: ',
               choices = samp_names,
               selected = samp_names[1]))),
-        fluidRow(plotOutput('sample_density'))
+        fluidRow(plotOutput('sample_density')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_samp_dens_plt", "Download Plot")))
+ 
         ),
 
 
@@ -501,7 +508,7 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
-    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL) # Reactive master object storing plots for downloading later
+    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL, cond_dens_plt = NULL, samp_dens_plt = NULL) # Reactive master object storing plots for downloading later
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -531,22 +538,36 @@ sleuth_live <- function(obj, ...) {
     output$summary_dt <- renderDataTable(summary(obj))
 
     output$condition_density <- renderPlot({
-      plot_group_density(obj,
+      plots$cond_dens_plt <- plot_group_density(obj,
         grouping = input$cond_dens_grp,
         units = input$cond_dens_units,
         use_filtered = input$cond_dens_filt,
         trans = input$cond_dens_trans,
         offset = input$cond_dens_offset)
+      plots$cond_dens_plt
+    })
+
+    output$download_cond_dens_plt <- downloadHandler(
+        filename = function() { "condition_density_plot.pdf" },
+        content = function(file) {
+            ggsave(file, plots$cond_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     output$sample_density <- renderPlot({
-      plot_sample_density(obj,
+      plots$samp_dens_plt <- plot_sample_density(obj,
         which_sample = input$samp_dens,
         units = input$cond_dens_units,
         use_filtered = input$cond_dens_filt,
         trans = input$cond_dens_trans,
         offset = input$cond_dens_offset
         )
+      plots$samp_dens_plt
+    })
+
+    output$download_samp_dens_plt <- downloadHandler(
+        filename = function() { "sample_density_plot.pdf" },
+        content = function(file) {
+            ggsave(file, plots$samp_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     ###
