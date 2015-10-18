@@ -187,7 +187,11 @@ sleuth_live <- function(obj, ...) {
             uiOutput('group_by')
             )
           ),
-        dataTableOutput('de_dt')
+        dataTableOutput('de_dt'),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                    downloadButton("download_test_table", "Download Table")))
+
         ),
         
             ####
@@ -237,7 +241,11 @@ sleuth_live <- function(obj, ...) {
                         min = 0, max = 1, step = 0.01))
                 ),
             fluidRow(plotOutput('vol', brush = 'vol_brush')),
-            fluidRow(dataTableOutput('vol_brush_out'))
+            fluidRow(
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                    downloadButton("download_volcano_plt", "Download Plot"))),
+            fluidRow(dataTableOutput('vol_brush_out')),
+            fluidRow(uiOutput("download_volcano_table_button"))
           )
       ),
 
@@ -479,7 +487,7 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
-    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL)  # Reactive master object storing plots for downloading later
+    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL)  # Reactive master object storing plots for downloading later
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -776,13 +784,24 @@ sleuth_live <- function(obj, ...) {
       
         if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
             mg <- input$mappingGroup
-            sleuth_gene_table(obj, wb, input$which_model_de, mg)
+            test_table <- sleuth_gene_table(obj, wb, input$which_model_de, mg)
+            plots$test_table <- test_table
+            test_table
         }
       
       else {
-          sleuth_results(obj, wb, input$which_model_de)
+          test_table <- sleuth_results(obj, wb, input$which_model_de)
+          plots$test_table <- test_table
+          test_table
       }
     })
+
+    output$download_test_table <- downloadHandler(
+      filename = function() { "test_table.csv" },
+      content = function(file) {
+         write.csv(plots$test_table, file)
+      }
+    )
 
     ### bootstrap var
     
@@ -900,12 +919,21 @@ sleuth_live <- function(obj, ...) {
             poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
             val <- poss_tests[1]
         }
-        plot_volcano(obj, val,
+        volcano_plt <- plot_volcano(obj, val,
         input$which_model_vol,
         sig_level = input$max_fdr,
         point_alpha = input$vol_alpha
         )
+        plots$volcano_plt <- volcano_plt
+        volcano_plt
     })
+
+    output$download_volcano_plt <- downloadHandler(
+      filename = function() { "volcano.pdf" },
+      content = function(file) {
+         ggsave(file, plots$volcano_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+      }
+    )
     
     #vol_observe
     output$vol_brush_out <- renderDataTable({
@@ -932,9 +960,22 @@ sleuth_live <- function(obj, ...) {
             tech_var = sigma_q_sq,
             final_sigma_sq = smooth_sigma_sq_pmax)
         }
-        
+        if (!is.null(res)) {
+            plots$volcano_table <- res
+            output$download_volcano_table_button <- renderUI({
+            div(align = "right", style = "margin-right:15px; margin-top:10px",
+                    downloadButton("download_volcano_table", "Download Table"))
+            })
+        } 
         res
     })
+
+    output$download_volcano_table <- downloadHandler(
+      filename = function() { "volcano_table.csv" },
+      content = function(file) {
+         write.csv(plots$volcano_table, file)
+      }
+    )
     
   }
 
