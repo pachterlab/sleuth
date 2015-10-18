@@ -59,7 +59,10 @@ likelihood_exists <- function(obj, which_model) {
 #' @param obj a sleuth object
 #' @param null_model the null (or "reduced") model
 #' @param alt_model the alternate (or "full") model
-#' @return a data frame with the test statistic, p-value, and target_id
+#' @return an updated sleuth object with a likelihood ratio test computation
+#' @seealso \code{\link{models}} to view which models have been fit and which
+#' coefficients can be tested, \code{\link{sleuth_results}} to get back
+#' a data.frame of the results
 #' @export
 sleuth_lrt <- function(obj, null_model, alt_model) {
   stopifnot( is(obj, "sleuth") )

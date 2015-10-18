@@ -4,13 +4,13 @@
 \alias{sleuth_results}
 \title{Extract Wald test results from a sleuth object}
 \usage{
-sleuth_results(obj, which_test, which_model = "full", rename_cols = TRUE,
-  show_all = TRUE)
+sleuth_results(obj, test, test_type = "wt", which_model = "full",
+  rename_cols = TRUE, show_all = TRUE)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_test}{a character denoting the test to extract}
+\item{test}{a character denoting the test to extract}
 
 \item{which_model}{a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.}
 

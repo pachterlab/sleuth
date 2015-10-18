@@ -14,10 +14,15 @@ sleuth_lrt(obj, null_model, alt_model)
 \item{alt_model}{the alternate (or "full") model}
 }
 \value{
-a data frame with the test statistic, p-value, and target_id
+an updated sleuth object with a likelihood ratio test computation
 }
 \description{
 compute the likelihood ratio test for 2 models. this requires that the null
 model be nested in the alternate model
+}
+\seealso{
+\code{\link{models}} to view which models have been fit and which
+coefficients can be tested, \code{\link{sleuth_results}} to get back
+a data.frame of the results
 }
 

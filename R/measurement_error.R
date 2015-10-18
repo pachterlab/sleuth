@@ -150,10 +150,10 @@ model_exists <- function(obj, which_model, fail = TRUE) {
 #' use
 #' @return an updated sleuth object
 #' @seealso \code{\link{models}} to view which models have been fit and which
-#' coefficients can be tested, \code{\link{wald_results}} to get back
+#' coefficients can be tested, \code{\link{sleuth_results}} to get back
 #' a data.frame of the results
 #' @export
-sleuth_wald <- function(obj, which_beta, which_model = 'full') {
+sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
 
   if ( !model_exists(obj, which_model) ) {

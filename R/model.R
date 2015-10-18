@@ -204,7 +204,7 @@ tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
 #' This function extracts Wald test results from a sleuth object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_test a character denoting the test to extract
+#' @param test a character denoting the test to extract
 #' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
 #' consistent with vignette
@@ -215,29 +215,33 @@ tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
 #' @seealso \code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 #' @export
-sleuth_results <- function(obj, which_test, which_model = 'full', rename_cols = TRUE,
-      show_all = TRUE) {
+sleuth_results <- function(obj, test, test_type = 'wt',
+  which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
   stopifnot( is(obj, 'sleuth') )
 
-  if ( which_model != 'lrt' && !model_exists(obj, which_model) ) {
+  if (test_type == 'wt' && !model_exists(obj, which_model)) {
     stop("'", which_model, "' does not exist in ", substitute(obj),
       ". Please check  models(", substitute(obj), ") for fitted models.")
   }
+  # if ( which_model != 'lrt' && !model_exists(obj, which_model) ) {
+  #   stop("'", which_model, "' does not exist in ", substitute(obj),
+  #     ". Please check  models(", substitute(obj), ") for fitted models.")
+  # }
 
-  if ( !is(which_test, 'character') ) {
-    stop("'", substitute(which_test), "' is not a valid character.")
+  if ( !is(test, 'character') ) {
+    stop("'", substitute(test), "' is not a valid character.")
   }
 
-  if ( length(which_test) != 1) {
-    stop("'", substitute(which_test),
-      "' is not a valid length. which_test must be of length one.")
+  if ( length(test) != 1) {
+    stop("'", substitute(test),
+      "' is not a valid length. test must be of length one.")
   }
 
   res <- NULL
-  if (which_model == 'lrt') {
-    res <- get_test(obj, which_test, type = 'lrt')
+  if (test_type == 'lrt') {
+    res <- get_test(obj, test, type = 'lrt')
   } else {
-    res <- get_test(obj, which_test, 'wald', which_model)
+    res <- get_test(obj, test, 'wald', which_model)
     res <- dplyr::select(res,
       target_id,
       pval,
