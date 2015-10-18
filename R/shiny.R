@@ -515,7 +515,24 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
-    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL, test_table = NULL, volcano_plt = NULL, volcano_table = NULL, mv_plt = NULL, scatter_plt = NULL, scatter_var_plt = NULL, scatter_table = NULL, qq_plt = NULL, cond_dens_plt = NULL, samp_dens_plt = NULL, sample_table = NULL, kallisto_table = NULL) # Reactive master object storing plots for downloading later
+    # Reactive master object that stores all plots and tables for downloading later
+    saved_plots_and_tables <- reactiveValues(pca_plt = NULL,
+                            samp_heat_plt = NULL,
+                            ma_plt = NULL,
+                            ma_var_plt = NULL,
+                            ma_table = NULL,
+                            test_table = NULL,
+                            volcano_plt = NULL,
+                            volcano_table = NULL,
+                            mv_plt = NULL,
+                            scatter_plt = NULL,
+                            scatter_var_plt = NULL,
+                            scatter_table = NULL,
+                            qq_plt = NULL,
+                            cond_dens_plt = NULL,
+                            samp_dens_plt = NULL,
+                            sample_table = NULL,
+                            kallisto_table = NULL)
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -532,74 +549,74 @@ sleuth_live <- function(obj, ...) {
       }
       qq_plt <-  plot_qqnorm(obj, wb, which_model = input$which_model_qq,
         sig_level = input$max_fdr_qq)
-      plots$qq_plt <- qq_plt
+      saved_plots_and_tables$qq_plt <- qq_plt
       qq_plt
     })
 
     output$download_qq_plt <- downloadHandler(
         filename = function() { "qq_plot.pdf" },
         content = function(file) {
-            ggsave(file, plots$qq_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file, saved_plots_and_tables$qq_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     output$summary_dt <- renderDataTable({
-        plots$summary_table <- summary(obj)
-        plots$summary_table
+        saved_plots_and_tables$summary_table <- summary(obj)
+        saved_plots_and_tables$summary_table
     })
 
     output$download_summary_table <- downloadHandler(
       filename = function() { "processed_data_table.csv" },
       content = function(file) {
-         write.csv(plots$summary_table, file)
+         write.csv(saved_plots_and_tables$summary_table, file)
     })
 
     output$condition_density <- renderPlot({
-      plots$cond_dens_plt <- plot_group_density(obj,
+      saved_plots_and_tables$cond_dens_plt <- plot_group_density(obj,
         grouping = input$cond_dens_grp,
         units = input$cond_dens_units,
         use_filtered = input$cond_dens_filt,
         trans = input$cond_dens_trans,
         offset = input$cond_dens_offset)
-      plots$cond_dens_plt
+      saved_plots_and_tables$cond_dens_plt
     })
 
     output$download_cond_dens_plt <- downloadHandler(
         filename = function() { "condition_density_plot.pdf" },
         content = function(file) {
-            ggsave(file, plots$cond_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file, saved_plots_and_tables$cond_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     output$sample_density <- renderPlot({
-      plots$samp_dens_plt <- plot_sample_density(obj,
+      saved_plots_and_tables$samp_dens_plt <- plot_sample_density(obj,
         which_sample = input$samp_dens,
         units = input$cond_dens_units,
         use_filtered = input$cond_dens_filt,
         trans = input$cond_dens_trans,
         offset = input$cond_dens_offset
         )
-      plots$samp_dens_plt
+      saved_plots_and_tables$samp_dens_plt
     })
 
     output$download_samp_dens_plt <- downloadHandler(
         filename = function() { "sample_density_plot.pdf" },
         content = function(file) {
-            ggsave(file, plots$samp_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file, saved_plots_and_tables$samp_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     ###
     output$kallisto_table <- renderDataTable({
-      plots$kallisto_table <- kallisto_table(obj,
+      saved_plots_and_tables$kallisto_table <- kallisto_table(obj,
         use_filtered = input$filt_tbl,
         normalized = input$norm_tbl,
         include_covariates = input$covar_tbl
         )
-      plots$kallisto_table
+      saved_plots_and_tables$kallisto_table
     })
 
     output$download_kallisto_table <- downloadHandler(
       filename = function() { "kallisto_table.csv" },
       content = function(file) {
-         write.csv(plots$kallisto_table, file)
+         write.csv(saved_plots_and_tables$kallisto_table, file)
     })
 
     output$design_matrix <- renderPrint({
@@ -621,14 +638,14 @@ sleuth_live <- function(obj, ...) {
       y <- eval(p$mapping$y, envir = p$data)
       rv_scatter$data <- data.frame(target_id = p$data$target_id, x = x, y = y,
         stringsAsFactors = FALSE)
-      plots$scatter_plt <- p
+      saved_plots_and_tables$scatter_plt <- p
       p
     })
 
     output$download_scatter_plt <- downloadHandler(
         filename = function() { "scatter_plot.pdf" },
         content = function(file) {
-            ggsave(file, plots$scatter_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file, saved_plots_and_tables$scatter_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     output$scatter_vars <- renderPlot({
@@ -644,14 +661,14 @@ sleuth_live <- function(obj, ...) {
         highlight = rv_scatter$highlight_vars,
         sig_level = input$max_fdr
         )
-      plots$scatter_var_plt <- scatter_var_plt
+      saved_plots_and_tables$scatter_var_plt <- scatter_var_plt
       scatter_var_plt
     })
 
     output$download_scatter_var_plt <- downloadHandler(
         filename = function() { "scatter_var_plot.pdf" },
         content = function(file) {
-            ggsave(file, plots$scatter_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file, saved_plots_and_tables$scatter_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     output$scatter_brush_table <- renderDataTable({
@@ -687,7 +704,7 @@ sleuth_live <- function(obj, ...) {
         res <- as_df(res)
       }
       if (!is.null(res)) {
-            plots$scatter_table <- res
+            saved_plots_and_tables$scatter_table <- res
             output$download_scatter_table_button <- renderUI({
             div(align = "right", style = "margin-right:15px; margin-top:10px",
                     downloadButton("download_scatter_table", "Download Table"))
@@ -699,20 +716,20 @@ sleuth_live <- function(obj, ...) {
     output$download_scatter_table <- downloadHandler(
       filename = function() { "scatter_table.csv" },
       content = function(file) {
-         write.csv(plots$scatter_table, file)
+         write.csv(saved_plots_and_tables$scatter_table, file)
     })
 
     ###
     output$samp_heat_plt <- renderPlot({
       samp_heat_plt <- plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt)
-      plots$samp_heat_plt <- samp_heat_plt
+      saved_plots_and_tables$samp_heat_plt <- samp_heat_plt
       samp_heat_plt
     })
 
     output$download_samp_heat_plt <- downloadHandler(
         filename = function() { "samp_heat_plot.pdf" },
         content = function(file) {
-            ggsave(file, plots$samp_heat_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file, saved_plots_and_tables$samp_heat_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     ###
@@ -731,27 +748,27 @@ sleuth_live <- function(obj, ...) {
         point_size = input$pca_point_size
         )
 
-      plots$pca_plt <- pca_plt
+      saved_plots_and_tables$pca_plt <- pca_plt
       pca_plt
     })
 
     output$download_pca_plt <- downloadHandler(
       filename = function() { "pca_plot.pdf" },
       content = function(file) {
-         ggsave(file, plots$pca_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file, saved_plots_and_tables$pca_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     ### MV plot
     output$mv_plt <- renderPlot({
       mv_plt <- plot_mean_var(obj)
-      plots$mv_plt <- mv_plt
+      saved_plots_and_tables$mv_plt <- mv_plt
       mv_plt
     })
 
     output$download_mv_plt <- downloadHandler(
       filename = function() { "mv_plot.pdf" },
       content = function(file) {
-         ggsave(file, plots$mv_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file, saved_plots_and_tables$mv_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     ### MA
@@ -775,14 +792,14 @@ sleuth_live <- function(obj, ...) {
         sig_level = input$max_fdr,
         point_alpha = input$ma_alpha
         )
-      plots$ma_plt <- ma_plt
+      saved_plots_and_tables$ma_plt <- ma_plt
       ma_plt
     })
 
     output$download_ma_plt <- downloadHandler(
       filename = function() { "ma_plot.pdf" },
       content = function(file) {
-         ggsave(file, plots$ma_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file, saved_plots_and_tables$ma_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
       }
     )
 
@@ -799,14 +816,14 @@ sleuth_live <- function(obj, ...) {
         highlight = rv_ma$highlight_vars,
         sig_level = input$max_fdr
         )
-      plots$ma_var_plt <- ma_var_plt
+      saved_plots_and_tables$ma_var_plt <- ma_var_plt
       ma_var_plt
     })
 
     output$download_ma_var_plt <- downloadHandler(
       filename = function() { "ma_var_plot.pdf" },
       content = function(file) {
-         ggsave(file, plots$ma_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file, saved_plots_and_tables$ma_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
       }
     )
 
@@ -835,7 +852,7 @@ sleuth_live <- function(obj, ...) {
           final_sigma_sq = smooth_sigma_sq_pmax)
       }
       if (!is.null(res)) {
-        plots$ma_table <- res 
+        saved_plots_and_tables$ma_table <- res 
         output$download_ma_table_button <- renderUI({
             div(align = "right", style = "margin-right:15px; margin-top:10px",
                     downloadButton("download_ma_table", "Download Table"))
@@ -847,7 +864,7 @@ sleuth_live <- function(obj, ...) {
     output$download_ma_table <- downloadHandler(
       filename = function() { "ma_table.csv" },
       content = function(file) {
-         write.csv(plots$ma_table, file)
+         write.csv(saved_plots_and_tables$ma_table, file)
       }
     )
 
@@ -882,13 +899,13 @@ sleuth_live <- function(obj, ...) {
         if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
             mg <- input$mappingGroup
             test_table <- sleuth_gene_table(obj, wb, input$which_model_de, mg)
-            plots$test_table <- test_table
+            saved_plots_and_tables$test_table <- test_table
             test_table
         }
       
       else {
           test_table <- sleuth_results(obj, wb, input$which_model_de)
-          plots$test_table <- test_table
+          saved_plots_and_tables$test_table <- test_table
           test_table
       }
     })
@@ -896,7 +913,7 @@ sleuth_live <- function(obj, ...) {
     output$download_test_table <- downloadHandler(
       filename = function() { "test_table.csv" },
       content = function(file) {
-         write.csv(plots$test_table, file)
+         write.csv(saved_plots_and_tables$test_table, file)
       }
     )
 
@@ -1021,14 +1038,14 @@ sleuth_live <- function(obj, ...) {
         sig_level = input$max_fdr,
         point_alpha = input$vol_alpha
         )
-        plots$volcano_plt <- volcano_plt
+        saved_plots_and_tables$volcano_plt <- volcano_plt
         volcano_plt
     })
 
     output$download_volcano_plt <- downloadHandler(
       filename = function() { "volcano.pdf" },
       content = function(file) {
-         ggsave(file, plots$volcano_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file, saved_plots_and_tables$volcano_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
       }
     )
     
@@ -1058,7 +1075,7 @@ sleuth_live <- function(obj, ...) {
             final_sigma_sq = smooth_sigma_sq_pmax)
         }
         if (!is.null(res)) {
-            plots$volcano_table <- res
+            saved_plots_and_tables$volcano_table <- res
             output$download_volcano_table_button <- renderUI({
             div(align = "right", style = "margin-right:15px; margin-top:10px",
                     downloadButton("download_volcano_table", "Download Table"))
@@ -1070,7 +1087,7 @@ sleuth_live <- function(obj, ...) {
     output$download_volcano_table <- downloadHandler(
       filename = function() { "volcano_table.csv" },
       content = function(file) {
-         write.csv(plots$volcano_table, file)
+         write.csv(saved_plots_and_tables$volcano_table, file)
     })
     
   }
