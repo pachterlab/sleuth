@@ -491,7 +491,10 @@ sleuth_live <- function(obj, ...) {
           ),
         fluidRow(
           plotOutput('qqplot')
-          )
+          ),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_qq_plt", "Download Plot")))  
         )
 
       )
@@ -513,8 +516,16 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
         wb <- poss_tests[1]
       }
-      plot_qqnorm(obj, wb, which_model = input$which_model_qq,
+      qq_plt <-  plot_qqnorm(obj, wb, which_model = input$which_model_qq,
         sig_level = input$max_fdr_qq)
+      plots$qq_plt <- qq_plt
+      qq_plt
+    })
+
+    output$download_qq_plt <- downloadHandler(
+        filename = function() { "qq_plot.pdf" },
+        content = function(file) {
+            ggsave(file, plots$qq_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
     output$summary_dt <- renderDataTable(summary(obj))
