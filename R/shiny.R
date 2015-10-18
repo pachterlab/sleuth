@@ -150,9 +150,16 @@ sleuth_live <- function(obj, ...) {
         #       multiple = TRUE, width = '100%'))
         #   ),
         fluidRow(plotOutput('ma', brush = 'ma_brush')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_ma_plt", "Download Plot"))),
         #fluidRow(plotOutput('vars', brush = 'vars_brush')),
         fluidRow(plotOutput('vars')),
-        fluidRow(dataTableOutput('ma_brush_out'))
+        fluidRow(
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                    downloadButton("download_ma_var_plt", "Download Plot"))),
+        fluidRow(dataTableOutput('ma_brush_out')),
+        fluidRow(uiOutput("download_ma_table_button"))
         ),
 
 
@@ -272,7 +279,9 @@ sleuth_live <- function(obj, ...) {
             )
           ),
         fluidRow(plotOutput('pca_plt')),
-        fluidRow(downloadButton("download_pca_plt", "Download Plot"))
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_pca_plt", "Download Plot")))
         ),
 
       ###
@@ -283,7 +292,10 @@ sleuth_live <- function(obj, ...) {
           ),
           offset = 1),
         fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
-        fluidRow(plotOutput('samp_heat_plt'))
+        fluidRow(plotOutput('samp_heat_plt')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_samp_heat_plt", "Download Map")))
         )
 
       ),
@@ -467,7 +479,9 @@ sleuth_live <- function(obj, ...) {
     ) # navbarPage
 
   server_fun <- function(input, output) {
-    plots <- reactiveValues(pca_plt = NULL)  # Reactive master object storing plots for downloading later
+    plots <- reactiveValues(pca_plt = NULL, samp_heat_plt = NULL, ma_plt = NULL, ma_var_plt = NULL, ma_table = NULL)  # Reactive master object storing plots for downloading later
+    user_settings <- reactiveValues(save_width = 45, save_height = 11)
+    # TODO: Once user settings are available, read these values from input 
 
     output$which_beta_ctrl_qq <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
@@ -591,8 +605,17 @@ sleuth_live <- function(obj, ...) {
 
     ###
     output$samp_heat_plt <- renderPlot({
-      plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt)
+      samp_heat_plt <- plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt)
+      plots$samp_heat_plt <- samp_heat_plt
+      samp_heat_plt
     })
+
+    output$download_samp_heat_plt <- downloadHandler(
+        filename = function() { "samp_heat_plot.pdf" },
+        content = function(file) {
+            ggsave(file, plots$samp_heat_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+        }
+    )
 
     ###
     output$pca_plt <- renderPlot({
@@ -617,7 +640,7 @@ sleuth_live <- function(obj, ...) {
     output$download_pca_plt <- downloadHandler(
       filename = function() { "pca_plot.pdf" },
       content = function(file) {
-         ggsave(file, plots$pca_plt, width = 45, height = 10.5833, units = "cm")
+         ggsave(file, plots$pca_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
       }
     )
 
@@ -642,12 +665,21 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
         val <- poss_tests[1]
       }
-      plot_ma(obj, val,
+      ma_plt <- plot_ma(obj, val,
         input$which_model,
         sig_level = input$max_fdr,
         point_alpha = input$ma_alpha
         )
+      plots$ma_plt <- ma_plt
+      ma_plt
     })
+
+    output$download_ma_plt <- downloadHandler(
+      filename = function() { "ma_plot.pdf" },
+      content = function(file) {
+         ggsave(file, plots$ma_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+      }
+    )
 
     output$vars <- renderPlot({
       wb <- input$which_beta
@@ -655,14 +687,23 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
         wb <- poss_tests[1]
       }
-      plot_vars(obj,
+      ma_var_plt <- plot_vars(obj,
         which_beta = wb,
         which_model = input$which_model,
         point_alpha = input$ma_alpha,
         highlight = rv_ma$highlight_vars,
         sig_level = input$max_fdr
         )
+      plots$ma_var_plt <- ma_var_plt
+      ma_var_plt
     })
+
+    output$download_ma_var_plt <- downloadHandler(
+      filename = function() { "ma_var_plot.pdf" },
+      content = function(file) {
+         ggsave(file, plots$ma_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+      }
+    )
 
     #observe
     output$ma_brush_out <- renderDataTable({
@@ -688,9 +729,22 @@ sleuth_live <- function(obj, ...) {
           tech_var = sigma_q_sq,
           final_sigma_sq = smooth_sigma_sq_pmax)
       }
-
+      if (!is.null(res)) {
+        plots$ma_table <- res 
+        output$download_ma_table_button <- renderUI({
+            div(align = "right", style = "margin-right:15px; margin-top:10px",
+                    downloadButton("download_ma_table", "Download Table"))
+        })
+      }
       res
     })
+
+    output$download_ma_table <- downloadHandler(
+      filename = function() { "ma_table.csv" },
+      content = function(file) {
+         write.csv(plots$ma_table, file)
+      }
+    )
 
     ### DE table
     
