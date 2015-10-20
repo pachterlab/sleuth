@@ -218,7 +218,10 @@ sleuth_live <- function(obj, ...) {
                         selected = 'est_counts'))
                     ),
                 fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-                fluidRow(plotOutput('bs_var_plt'))
+                fluidRow(plotOutput('bs_var_plt')),
+                fluidRow(
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                    downloadButton("download_bs_var_plt", "Download Plot")))
             ),
       
           ####
@@ -537,7 +540,8 @@ sleuth_live <- function(obj, ...) {
                             samp_dens_plt = NULL,
                             sample_table = NULL,
                             kallisto_table = NULL,
-                            hm_plt = NULL)
+                            hm_plt = NULL,
+                            bs_var_plt = NULL)
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -930,9 +934,16 @@ sleuth_live <- function(obj, ...) {
     
     
     output$bs_var_plt <- renderPlot({
-        plot_bootstrap(obj, bs_var_text(),
+        saved_plots_and_tables$bs_var_plt <- plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
+        saved_plots_and_tables$bs_var_plt
+    })
+
+    output$download_bs_var_plt <- downloadHandler(
+        filename = function() { "bootstrap_vars.pdf" },
+        content = function(file) {
+            ggsave(file, saved_plots_and_tables$bs_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
     
     
