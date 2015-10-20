@@ -117,7 +117,11 @@ sleuth_live <- function(obj, ...) {
             )
         ),
         tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
-        fluidRow(plotOutput('hm_plot'))
+        fluidRow(plotOutput('hm_plot')),
+        fluidRow(
+                div(align = "right", style = "margin-right:15px",
+                    downloadButton("download_hm_plt", "Download Plot")))
+
     ),
         
     
@@ -532,7 +536,8 @@ sleuth_live <- function(obj, ...) {
                             cond_dens_plt = NULL,
                             samp_dens_plt = NULL,
                             sample_table = NULL,
-                            kallisto_table = NULL)
+                            kallisto_table = NULL,
+                            hm_plt = NULL)
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input 
 
@@ -1017,9 +1022,15 @@ sleuth_live <- function(obj, ...) {
     })
     
     output$hm_plot <- renderPlot ({
-        plot_transcript_heatmap(hm_transcripts(), obj, input$hm_units, hm_func())
+        saved_plots_and_tables$hm_plt <- plot_transcript_heatmap(hm_transcripts(), obj, input$hm_units, hm_func())
+        saved_plots_and_tables$hm_plt
     }, height = hm_plot_height)
-    
+   
+    output$download_hm_plt <- downloadHandler(
+      filename = function() { "heat_map.pdf" },
+      content = function(file) {
+         ggsave(file, saved_plots_and_tables$hm_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+    }) 
     
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({
@@ -1046,8 +1057,7 @@ sleuth_live <- function(obj, ...) {
       filename = function() { "volcano.pdf" },
       content = function(file) {
          ggsave(file, saved_plots_and_tables$volcano_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
-      }
-    )
+    })
     
     #vol_observe
     output$vol_brush_out <- renderDataTable({
