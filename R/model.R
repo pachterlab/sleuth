@@ -103,7 +103,7 @@ get_test <- function(obj, label, type, model) {
   }
 
   if (is.null(res)) {
-    stop("'", label, "' is not a valid label for a test. Please see valid models and tests using the functions 'models' and 'tests'")
+    stop("'", label, "' is not a valid label for a test. Please see valid models and tests using the functions 'models' and 'tests'. Remember to also correctly specify the test type.")
   }
 
   res
@@ -121,6 +121,9 @@ list_tests <- function(obj, type) {
     res <- names(obj$tests[[type]])
   } else {
     res <- lapply(obj$tests[[type]], names)
+    if ( length(res) == 0 ) {
+      res <- NULL
+    }
   }
 
   res

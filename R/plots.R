@@ -306,6 +306,8 @@ plot_scatter <- function(obj,
 #' Plot technical variance versus observed variance
 #'
 #' @param obj a \code{sleuth} object
+#' @param test the name of the test to highlight significant transcripts for
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param point_alpha the alpha for the points
@@ -317,7 +319,8 @@ plot_scatter <- function(obj,
 #' @return a \code{ggplot2} object
 #' @export
 plot_vars <- function(obj,
-  which_beta = NULL,
+  test = NULL,
+  test_type = 'wt',
   which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
@@ -331,12 +334,12 @@ plot_vars <- function(obj,
 
   cur_summary <- NULL
 
-  if (is.null(which_beta)) {
+  if (is.null(test)) {
     cur_summary <- obj$fits[[which_model]][['summary']]
     cur_summary <- dplyr::mutate(cur_summary,
       obs_var = sigma_sq + sigma_q_sq)
   } else {
-    cur_summary <- sleuth_results(obj, which_beta, which_model,
+    cur_summary <- sleuth_results(obj, test, test_type, which_model,
       rename_cols = FALSE, show_all = FALSE)
     cur_summary <- dplyr::mutate(cur_summary,
       obs_var = sigma_sq + sigma_q_sq,
@@ -345,7 +348,7 @@ plot_vars <- function(obj,
 
   p <- ggplot(cur_summary, aes(sqrt(obs_var), sqrt(sigma_q_sq)))
 
-  if (is.null(which_beta)) {
+  if (is.null(test)) {
     p <- p + geom_point(alpha = point_alpha)
   } else {
     p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
@@ -516,20 +519,20 @@ plot_volcano = function(obj, which_beta, which_model = 'full',
     highlight = NULL
     ) {
     stopifnot( is(obj, 'sleuth') )
-    
+
     res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
         show_all = FALSE)
     res <- dplyr::mutate(res, significant = qval < sig_level)
-    
-   
+
+
         p = ggplot(res, aes(b, -log10(qval)))
         p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
         p <- p + scale_colour_manual(values = c('black', sig_color))
         p <- p + xlab('beta_value')
         p <- p + ylab('-log10(qval)')
         p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
-    
-    
+
+
     p
 }
 
@@ -619,10 +622,10 @@ plot_transcript_heatmap <- function(transcripts, obj, units = 'tpm', trans = 'lo
     {
         stop("Couldn't find the following transcripts: ", paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "))
     }
-    
-    
+
+
     tabd_df = obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
-    
+
     if(units == 'tpm')
     {
         tabd_df = dplyr::select(tabd_df, target_id, sample, tpm)
@@ -637,18 +640,18 @@ plot_transcript_heatmap <- function(transcripts, obj, units = 'tpm', trans = 'lo
     {
         stop("Didn't recognize the following unit: ", units)
     }
-    
+
     rownames(tabd_df) = tabd_df$target_id
     tabd_df$target_id = NULL
-        
+
     if(nchar(trans) > 0 && !is.null(trans)) {
         tFunc = eval(parse(text = trans))
-        
+
         ggPlotExpression(as.matrix(tFunc(tabd_df)), clustRows = FALSE)
         #gplots::heatmap.2(as.matrix(tFunc(tabd_df)), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
     }
     else {
-        
+
         ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
         #Change the following to not rely on gplots:
         #gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
@@ -683,7 +686,7 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
         colOrder <- orderByDendrogram(t(exMat))
     exMat <- exMat[rowOrder, colOrder]
     meltMat <- reshape2::melt(exMat, varnames = c("x", "y"))
-    breaksM <- round(seq(min(meltMat$value, na.rm = T), max(meltMat$value, na.rm = T), 
+    breaksM <- round(seq(min(meltMat$value, na.rm = T), max(meltMat$value, na.rm = T),
                          length.out = 10), 3)
                          #print(rownames(exMat))
     if (is.null(colnames(exMat)))
@@ -693,7 +696,7 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
     p <- ggplot(meltMat, aes(x, y, fill = value))
     p <- p + geom_tile() + scale_fill_gradientn(colours = heat.colors(20),
                                                 guide = guide_legend(title = "Expression: ",
-                                                                     reverse = T, size = 14)) 
+                                                                     reverse = T, size = 14))
     p <- p + theme_bw() + theme(legend.text = element_text(size = 14),
                                                                    legend.title = element_text(size = 14),
                                                            legend.direction = 'vertical',

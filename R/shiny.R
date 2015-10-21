@@ -34,6 +34,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
       install.packages('shiny')")
   }
 
+  if ( is.null(list_tests(obj, settings$test_type)) ) {
+    stop('You specified tests "', settings$test_type,
+      '" but we didn\'t find any tests of that type. Please call the function tests() to verify which tests have been performed.')
+  }
+
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
     'sample')
@@ -463,7 +468,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
           )
         )
 
-      ),
+      )#,
     # tabPanel('settings',
     #
     #     ####
