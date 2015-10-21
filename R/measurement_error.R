@@ -206,7 +206,7 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
 
   res <- dplyr::select(res, -x_group)
 
-  obj <- add_test(obj, res, which_beta, 'wald', which_model)
+  obj <- add_test(obj, res, which_beta, 'wt', which_model)
 
   obj
 }

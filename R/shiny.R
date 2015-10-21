@@ -22,11 +22,12 @@
 #'
 #' @param obj a \code{sleuth} object already processed and has run
 #' \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}
+#' @param settings see the function \code{\link{sleuth_alive_settings}} for options
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result
 #' @export
-#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_test}}
-sleuth_live <- function(obj, ...) {
+#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}
+sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
   stopifnot( is(obj, 'sleuth') )
   if ( !require('shiny') ) {
     stop("'sleuth_interact()' requires 'shiny'. Please install it using
@@ -58,12 +59,12 @@ sleuth_live <- function(obj, ...) {
                      tags$li(strong('v0.27.3'),': gene table, gene viewer, transcript heatmap, and volcano plot by Pascal Sturmfels.'),
                      tags$li(strong('v0.27.2'),': design matrix, kallisto table, transcript view, and QQplot by Harold Pimentel.'),
                      tags$li(strong('v0.27.1'),': densities, MA plot, mean-variance plot, PCA,  processed data, sample heatmap, scatter plots, and test table by Harold Pimentel.')
-                     
+
                      )
           ))),
 
                              navbarMenu('analyses',
-    
+
       tabPanel('gene view',
         fluidRow(
             column(12,
@@ -93,7 +94,7 @@ sleuth_live <- function(obj, ...) {
         fluidRow(uiOutput('no_genes_message')),
         fluidRow(uiOutput('gv_var_plts'))
     ),
-    
+
       ####
       tabPanel('heat map',
         fluidRow(
@@ -119,8 +120,8 @@ sleuth_live <- function(obj, ...) {
         tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
         fluidRow(plotOutput('hm_plot'))
     ),
-        
-    
+
+
       ####
       tabPanel('MA plot',
       fluidRow(
@@ -182,7 +183,7 @@ sleuth_live <- function(obj, ...) {
           ),
         dataTableOutput('de_dt')
         ),
-        
+
             ####
             tabPanel('transcript view',
                 fluidRow(
@@ -205,7 +206,7 @@ sleuth_live <- function(obj, ...) {
                 fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
                 fluidRow(plotOutput('bs_var_plt'))
             ),
-      
+
           ####
           tabPanel('volcano plot',
             fluidRow(
@@ -388,7 +389,7 @@ sleuth_live <- function(obj, ...) {
         )
 
       ),
-                         
+
       navbarMenu('diagnostics',
 
       ####
@@ -462,7 +463,13 @@ sleuth_live <- function(obj, ...) {
           )
         )
 
-      )
+      ),
+    # tabPanel('settings',
+    #
+    #     ####
+    #     'hello world'
+    #   )
+
     ) # navbarPage
 
   server_fun <- function(input, output) {
@@ -682,19 +689,19 @@ sleuth_live <- function(obj, ...) {
     })
 
     ### DE table
-    
+
     output$which_beta_ctrl_de <- renderUI({
       poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
       selectInput('which_beta_de', 'beta: ', choices = poss_tests)
     })
-    
+
     output$table_type <- renderUI({
         if(!is.null(obj$target_mapping))
         {
             selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2), selected = 1)
         }
     })
-    
+
     output$group_by <- renderUI({
         if(!is.null(input$pop_genes) && input$pop_genes == 2)
         {
@@ -708,31 +715,31 @@ sleuth_live <- function(obj, ...) {
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         wb <- poss_tests[1]
       }
-      
+
         if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
             mg <- input$mappingGroup
             sleuth_gene_table(obj, wb, input$which_model_de, mg)
         }
-      
+
       else {
           sleuth_results(obj, wb, input$which_model_de)
       }
     })
 
     ### bootstrap var
-    
+
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
     })
-    
-    
+
+
     output$bs_var_plt <- renderPlot({
         plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
     })
-    
-    
+
+
     ### Gene Viewer
     gv_var_text <- eventReactive(input$gv_go, {
         if(!is.null(obj$target_mapping))
@@ -740,20 +747,20 @@ sleuth_live <- function(obj, ...) {
             input$gv_var_input
         }
     })
-    
+
     output$gv_gene_column <- renderUI({
         if(!is.null(obj$target_mapping))
         {
             selectInput('gv_gene_colname', label = 'genes from: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
         }
     })
-    
+
     output$which_beta_ctrl_gv <- renderUI({
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
         selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
     })
-    
-    
+
+
     gv_var_list <- reactive({
         wb <- input$which_beta_gv
         if ( is.null(wb) ) {
@@ -762,20 +769,20 @@ sleuth_live <- function(obj, ...) {
         }
         transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
     })
-    
-    
-        
+
+
+
     output$gv_var_plts <- renderUI({
         gv_plot_list <- lapply(1:input$gv_maxplots, function(i) {
                 gv_plotname <- paste("plot", i, sep="")
                 plotOutput(gv_plotname)
             })
-        
+
             do.call(tagList, gv_plot_list)
         })
-    
+
         for (i in 1:15) {
-            
+
             local({
                 my_i <- i
                 gv_plotname <- paste("plot", my_i, sep="")
@@ -788,20 +795,20 @@ sleuth_live <- function(obj, ...) {
                    })
            })
         }
-        
+
     output$no_genes_message <- renderUI({
         if(is.null(obj$target_mapping))
         {
             HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
         }
     })
-    
-    
+
+
     ### Heat Map
     hm_transcripts <- eventReactive(input$hm_go, {
             unlist(strsplit(input$hm_transcripts, " +"))
     })
-    
+
     hm_plot_height <- function()
     {
         if(length(hm_transcripts()) > 5)
@@ -813,22 +820,22 @@ sleuth_live <- function(obj, ...) {
             400
         }
     }
-    
+
     hm_func <- eventReactive(input$hm_go, {
         input$hm_trans
     })
-    
+
     output$hm_plot <- renderPlot ({
         plot_transcript_heatmap(hm_transcripts(), obj, input$hm_units, hm_func())
     }, height = hm_plot_height)
-    
-    
+
+
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({
         poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
         selectInput('which_beta_vol', 'beta: ', choices = poss_tests)
     })
-    
+
     output$vol <- renderPlot({
         val <- input$which_beta_vol
         if ( is.null(val) ) {
@@ -841,7 +848,7 @@ sleuth_live <- function(obj, ...) {
         point_alpha = input$vol_alpha
         )
     })
-    
+
     #vol_observe
     output$vol_brush_out <- renderDataTable({
         wb <- input$which_beta_vol
@@ -858,7 +865,7 @@ sleuth_live <- function(obj, ...) {
         }  else {
             res <- NULL
         }
-        
+
         # TODO: total hack -- fix this correctly eventually
         if (is(res, 'data.frame')) {
             res <- dplyr::rename(res,
@@ -867,10 +874,10 @@ sleuth_live <- function(obj, ...) {
             tech_var = sigma_q_sq,
             final_sigma_sq = smooth_sigma_sq_pmax)
         }
-        
+
         res
     })
-    
+
   }
 
   shinyApp(ui = p_layout, server = server_fun)
@@ -886,4 +893,21 @@ enclosed_brush <- function(df, brush) {
   ybool <- brush$ymin <= df[[yvar]] & df[[yvar]] <= brush$ymax
 
   df[xbool & ybool,]
+}
+
+#' settings for sleuth_live
+#'
+#' This is a helper function for setting preferences in sleuth live.
+#' Currently, this is somewhat limited, but it will be expanded in the future.
+#'
+#' @param test_type either 'wt' for the wald test or 'lrt' for the likelihood ratio test
+#' @return a named to list with the options and settings
+#' @export
+sleuth_live_settings <- function(test_type = 'wt') {
+  stopifnot( is(test_type, 'character') )
+
+  result <- list()
+  result$test_type <- test_type
+
+  result
 }

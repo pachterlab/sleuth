@@ -86,11 +86,11 @@ design_matrix <- function(obj, which_model = 'full') {
 #
 # @param obj a sleuth object
 # @param label a string which is a label for the test you are trying to extract
-# @param type the type of test (either: 'lrt', 'wald')
+# @param type the type of test (either: 'lrt', 'wt')
 # @return a data frame with the relevant test information
 get_test <- function(obj, label, type, model) {
   stopifnot( is(obj, 'sleuth') )
-  stopifnot( type %in% c('lrt', 'wald') )
+  stopifnot( type %in% c('lrt', 'wt') )
 
   res <- NULL
   if (type == 'lrt') {
@@ -114,7 +114,7 @@ get_test <- function(obj, label, type, model) {
 # each element in the list corresponds to a particular model
 list_tests <- function(obj, type) {
   stopifnot( is(obj, 'sleuth') )
-  stopifnot( type %in% c('lrt', 'wald') )
+  stopifnot( type %in% c('lrt', 'wt') )
 
   res <- NULL
   if (type == 'lrt') {
@@ -124,6 +124,12 @@ list_tests <- function(obj, type) {
   }
 
   res
+}
+
+list_all_tests <- function(obj) {
+  stopifnot( is(obj, 'sleuth') )
+
+  list(lrt = list_tests(obj, 'lrt'), wt = list_tests(obj, 'wt'))
 }
 
 # Add a test to a sleuth object
@@ -136,9 +142,9 @@ list_tests <- function(obj, type) {
 # @return a sleuth object with the test added
 add_test <- function(obj, test_table, label, type, model) {
   stopifnot( is(obj, 'sleuth') )
-  stopifnot( type %in% c('lrt', 'wald') )
+  stopifnot( type %in% c('lrt', 'wt') )
 
-  if (type == 'wald' && missing(model)) {
+  if (type == 'wt' && missing(model)) {
     stop('if specifying a wald to test, must also specify a model.')
   }
 
@@ -166,7 +172,7 @@ tests <- function(obj) {
 }
 
 #' @export
-tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
+tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
   if ( lrt ) {
     cat('~likelihood ratio tests:\n')
     cur_tests <- list_tests(obj, 'lrt')
@@ -179,13 +185,13 @@ tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
     }
   }
 
-  if ( lrt && wald ) {
+  if ( lrt && wt ) {
     cat('\n')
   }
 
-  if ( wald ) {
+  if ( wt ) {
     cat('~wald tests:\n')
-    cur_tests <- list_tests(obj, 'wald')
+    cur_tests <- list_tests(obj, 'wt')
     if (length(cur_tests) > 0) {
       for (i in 1:length(cur_tests)) {
         cat('\t[ ', names(cur_tests)[i], ' ]\n', sep = '')
@@ -197,6 +203,8 @@ tests.sleuth <- function(obj, lrt = TRUE, wald = TRUE) {
       cat('\tno tests found.\n')
     }
   }
+
+
 }
 
 #' Extract Wald test results from a sleuth object
@@ -241,7 +249,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   if (test_type == 'lrt') {
     res <- get_test(obj, test, type = 'lrt')
   } else {
-    res <- get_test(obj, test, 'wald', which_model)
+    res <- get_test(obj, test, 'wt', which_model)
     res <- dplyr::select(res,
       target_id,
       pval,
