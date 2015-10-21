@@ -662,7 +662,7 @@ plot_transcript_heatmap <- function(obj,
   tabd_df$target_id <- NULL
 
   p <- NULL
-  if(nchar(trans) > 0 && !is.null(trans)) {
+  if (nchar(trans) > 0 && !is.null(trans)) {
     tFunc = eval(parse(text = trans))
     p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)), clustRows = FALSE)
   } else {

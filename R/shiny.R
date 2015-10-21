@@ -60,7 +60,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
   if (length(valid_test_types) == 0) {
     stop("We found no valid tests. Please add some tests and rerun sleuth_live()")
   }
-  print(valid_test_types)
 
   p_layout <- navbarPage(
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
@@ -151,31 +150,32 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
           p(h3('MA plot'), "Plot of abundance versus fixed effect (e.g. fold change). Select a set of transcripts to explore their variance across samples. ")
           ),
           offset = 1),
-        fluidRow(
-          column(2,
-            numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
-              min = 0, max = 1, step = 0.01)),
-          column(4,
-            selectInput('which_model', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
+          conditionalPanel(condition = 'input.settings_test_type == "wt"',
+            fluidRow(
+              column(2,
+                numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                  min = 0, max = 1, step = 0.01)),
+              column(4,
+                selectInput('which_model_ma', label = 'fit: ',
+                  choices = poss_models,
+                  selected = poss_models[1])
+                ),
+              column(4,
+                uiOutput('which_beta_ctrl_ma')
+                ),
+              column(2,
+                numericInput('ma_alpha', label = 'opacity:', value = 0.2,
+                  min = 0, max = 1, step = 0.01))
+              ),
+
+            fluidRow(plotOutput('ma', brush = 'ma_brush')),
+            fluidRow(plotOutput('vars')),
+            fluidRow(dataTableOutput('ma_brush_out'))
             ),
-          column(4,
-            uiOutput('which_beta_ctrl')
-            ),
-          column(2,
-            numericInput('ma_alpha', label = 'opacity:', value = 0.2,
-              min = 0, max = 1, step = 0.01))
-          ),
-        # fluidRow(column(8,
-        #     selectizeInput('ma_trans', 'highlight transcripts: ',
-        #       choices = obj$filter_df[['target_id']],
-        #       multiple = TRUE, width = '100%'))
-        #   ),
-        fluidRow(plotOutput('ma', brush = 'ma_brush')),
-        #fluidRow(plotOutput('vars', brush = 'vars_brush')),
-        fluidRow(plotOutput('vars')),
-        fluidRow(dataTableOutput('ma_brush_out'))
+
+          conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+            strong("Only supported for 'setting' Wald tests.")
+          )
         ),
 
 
@@ -488,14 +488,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
               selectInput('test_qq', label = 'test: ',
                 choices = poss_lrt, selected = poss_lrt[1]))
           )
-                # column(4,
-                # selectInput('which_model_qq', label = 'fit: ',
-                #   choices = poss_models,
-                #   selected = poss_models[1])
-                # ),
-                # column(4,
-                #   uiOutput('which_beta_ctrl_qq')
-                #   )
 
           ),
         fluidRow(
@@ -548,7 +540,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
       #   wb <- poss_tests[1]
       # }
 
-      plot_qqnorm(obj, current_test, test_type = input$settings_test_type,
+      plot_qqnorm(obj, current_test,
+        test_type = input$settings_test_type,
         which_model = input$which_model_qq,
         sig_level = input$max_fdr_qq)
     })
@@ -691,48 +684,57 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
       highlight_vars = NULL
       )
 
-    output$which_beta_ctrl <- renderUI({
-      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-      selectInput('which_beta', 'beta: ', choices = poss_tests)
+    output$which_beta_ctrl_ma <- renderUI({
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      possible_tests <- possible_tests[[input$which_model_ma]]
+      selectInput('which_beta_ma', 'beta: ', choices = possible_tests,
+        selected = possible_tests[1])
     })
 
     output$ma <- renderPlot({
-      val <- input$which_beta
-      if ( is.null(val) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        val <- poss_tests[1]
+
+      current_test <- input$which_beta_ma
+      if ( is.null(current_test) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_ma]]
+        current_test <- possible_tests[1]
       }
-      plot_ma(obj, val,
-        input$which_model,
+      plot_ma(obj, current_test,
+        input$settings_test_type,
+        input$which_model_ma,
         sig_level = input$max_fdr,
         point_alpha = input$ma_alpha
         )
     })
 
     output$vars <- renderPlot({
-      wb <- input$which_beta
+      wb <- input$which_beta_ma
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_ma]]
+        wb <- possible_tests[1]
       }
       plot_vars(obj,
-        which_beta = wb,
-        which_model = input$which_model,
+        test = wb,
+        test_type = input$settings_test_type,
+        which_model = input$which_model_ma,
         point_alpha = input$ma_alpha,
         highlight = rv_ma$highlight_vars,
         sig_level = input$max_fdr
         )
     })
 
-    #observe
     output$ma_brush_out <- renderDataTable({
-      wb <- input$which_beta
+      wb <- input$which_beta_ma
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_ma]]
+        wb <- possible_tests[1]
       }
-      res <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
-        show_all = FALSE)
+      res <- sleuth_results(obj,
+        wb,
+        input$settings_test_type,
+        input$which_model_ma, rename_cols = FALSE, show_all = FALSE)
       if (!is.null(input$ma_brush)) {
         res <- enclosed_brush(res, input$ma_brush)
         rv_ma$highlight_vars <- res
