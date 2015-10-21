@@ -388,7 +388,7 @@ plot_vars <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param test the name of the test to highlight significant transcripts for
-#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param point_alpha the alpha for the points
@@ -430,7 +430,6 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
 
   p
 }
-
 
 #' Plot bootstrap summary
 #'
@@ -503,8 +502,9 @@ plot_sample_heatmap <- function(obj,
 #' vs. log(significance). Ideally, it looks like a volcano; more significance typically
 #' results in higher beta
 #' @param obj a  \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use for
+#' @param test a character string denoting which beta to use for
 #' highlighting the transcript
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param sig_level the significance level for Fdr
@@ -514,30 +514,31 @@ plot_sample_heatmap <- function(obj,
 #' These points will be displayed below in a table.
 #' @return a \code{ggplot} object
 #' @export
-
-
-plot_volcano = function(obj, which_beta, which_model = 'full',
+plot_volcano = function(obj, test, test_type = 'wt', which_model = 'full',
     sig_level = 0.10,
     point_alpha = 0.2,
     sig_color = 'red',
     highlight = NULL
     ) {
-    stopifnot( is(obj, 'sleuth') )
+  stopifnot( is(obj, 'sleuth') )
 
-    res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
-        show_all = FALSE)
-    res <- dplyr::mutate(res, significant = qval < sig_level)
+  if ( test_type == 'lrt' ) {
+    stop('Currently only works for the Wald test. Eventually we will do something for the likelihood ratio test. Suggestions? Email us.')
+  }
+
+  res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
+      show_all = FALSE)
+  res <- dplyr::mutate(res, significant = qval < sig_level)
+
+  p <- ggplot(res, aes(b, -log10(qval)))
+  p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+  p <- p + scale_colour_manual(values = c('black', sig_color))
+  p <- p + xlab('beta_value')
+  p <- p + ylab('-log10(qval)')
+  p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
 
 
-        p = ggplot(res, aes(b, -log10(qval)))
-        p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
-        p <- p + scale_colour_manual(values = c('black', sig_color))
-        p <- p + xlab('beta_value')
-        p <- p + ylab('-log10(qval)')
-        p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
-
-
-    p
+  p
 }
 
 #' QQ norm plot
@@ -548,8 +549,9 @@ plot_volcano = function(obj, which_beta, which_model = 'full',
 #' what you would get from \code{\link{qqnorm}} and \code{\link{qqline}}.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use for
+#' @param test a character string denoting which beta to use for
 #' highlighting the transcript
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param sig_level the significance level for Fdr
@@ -562,7 +564,7 @@ plot_volcano = function(obj, which_beta, which_model = 'full',
 #' @param line_color what color to make the QQ line
 #' @return a \code{ggplot2} object
 #' @export
-plot_qqnorm <- function(obj, which_beta, which_model = 'full',
+plot_qqnorm <- function(obj, test, test_type = 'wt', which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
   sig_color = 'red',
@@ -572,19 +574,33 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
   ) {
   stopifnot( is(obj, 'sleuth') )
 
-  res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+  if ( test_type == 'lrt' ) {
+    stop('Currently only works for the Wald test. We will fix this in the next version.')
+  }
+
+  res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
     show_all = FALSE)
-  res <- dplyr::mutate(res, wald_stat = b / se_b)
-  res <- dplyr::filter(res, !is.na(wald_stat))
+
+  if ( test_type == 'wt' ) {
+    res <- dplyr::mutate(res, test_stat = b / se_b)
+    res <- dplyr::filter(res, !is.na(test_stat))
+  }
+
   res <- dplyr::mutate(res, significant = qval < sig_level)
-  pnts <- stats::qqnorm(res$wald_stat, plot.it = FALSE)
-  res <- dplyr::mutate(res, theoretical = pnts[['x']], observed = pnts[['y']])
 
-  y <- quantile(res$observed, c(0.25, 0.75))
-  x <- qnorm(c(0.25, 0.75))
+  if ( test_type == 'wt' ) {
+    pnts <- stats::qqnorm(res$test_stat, plot.it = FALSE)
+    res <- dplyr::mutate(res, theoretical = pnts[['x']], observed = pnts[['y']])
 
-  slope <- diff(y) / diff(x)
-  intercept <- y[1L] - slope * x[1L]
+    y <- quantile(res$observed, c(0.25, 0.75))
+    x <- qnorm(c(0.25, 0.75))
+
+    slope <- diff(y) / diff(x)
+    intercept <- y[1L] - slope * x[1L]
+  } else {
+    #pnts <- stats::
+  }
+
 
   p <- ggplot(res, aes(theoretical, observed))
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
@@ -618,49 +634,42 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
 #' @param trans a string specifying a function to transform the data by
 #' @return a \code{ggplot} object
 #' @export
-
-
-plot_transcript_heatmap <- function(transcripts, obj, units = 'tpm', trans = 'log')
+plot_transcript_heatmap <- function(obj,
+  transcripts,
+  units = 'tpm',
+  trans = 'log',
+  offset = 1)
 {
-    if(!all(transcripts %in% obj$obs_norm$target_id))
-    {
-        stop("Couldn't find the following transcripts: ", paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "))
-    }
+  if(!all(transcripts %in% obj$obs_norm$target_id)) {
+    stop("Couldn't find the following transcripts: ",
+      paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "),
+      "\n\tIt is highly likely that some of them were filtered out.")
+  }
 
+  tabd_df <- obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
 
-    tabd_df = obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
+  if(units == 'tpm') {
+    tabd_df <- dplyr::select(tabd_df, target_id, sample, tpm)
+    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
+  } else if (units == 'est_counts') {
+    tabd_df <- dplyr::select(tabd_df, target_id, sample, est_counts)
+    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
+  } else {
+    stop("Didn't recognize the following unit: ", units)
+  }
 
-    if(units == 'tpm')
-    {
-        tabd_df = dplyr::select(tabd_df, target_id, sample, tpm)
-        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
-    }
-    else if (units == 'est_counts')
-    {
-        tabd_df = dplyr::select(tabd_df, target_id, sample, est_counts)
-        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
-    }
-    else
-    {
-        stop("Didn't recognize the following unit: ", units)
-    }
+  rownames(tabd_df) <- tabd_df$target_id
+  tabd_df$target_id <- NULL
 
-    rownames(tabd_df) = tabd_df$target_id
-    tabd_df$target_id = NULL
+  p <- NULL
+  if(nchar(trans) > 0 && !is.null(trans)) {
+    tFunc = eval(parse(text = trans))
+    p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)), clustRows = FALSE)
+  } else {
+    p <- ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
+  }
 
-    if(nchar(trans) > 0 && !is.null(trans)) {
-        tFunc = eval(parse(text = trans))
-
-        ggPlotExpression(as.matrix(tFunc(tabd_df)), clustRows = FALSE)
-        #gplots::heatmap.2(as.matrix(tFunc(tabd_df)), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
-    }
-    else {
-
-        ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
-        #Change the following to not rely on gplots:
-        #gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
-    }
-
+  p
 }
 
 
