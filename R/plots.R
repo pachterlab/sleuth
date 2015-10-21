@@ -387,14 +387,14 @@ plot_vars <- function(obj,
 #' x-axis and fold change on the y-axis.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use for
-#' highlighting the transcript
+#' @param test the name of the test to highlight significant transcripts for
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param point_alpha the alpha for the points
 #' @return a \code{ggplot2} object
 #' @export
-plot_ma <- function(obj, which_beta, which_model = 'full',
+plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
   sig_color = 'red',
@@ -403,7 +403,11 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   ) {
   stopifnot( is(obj, 'sleuth') )
 
-  res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+  if ( test_type == 'lrt' ) {
+    stop('Currently only works for the Wald test. Eventually we will do something for the likelihood ratio test. Suggestions? Email us.')
+  }
+
+  res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
     show_all = FALSE)
   res <- dplyr::mutate(res, significant = qval < sig_level)
 
@@ -411,7 +415,7 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
   p <- p + scale_colour_manual(values = c('black', sig_color))
   p <- p + xlab('mean( log( counts + 0.5 ) )')
-  p <- p + ylab(paste0('beta: ', which_beta))
+  p <- p + ylab(paste0('beta: ', test))
 
   if (!is.null(highlight)) {
     suppressWarnings({
