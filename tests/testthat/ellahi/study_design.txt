@@ -1,0 +1,8 @@
+run condition sample
+SRR1812768 delta_sir2 C
+SRR1812767 delta_sir2 B
+SRR1812760 delta_sir2 A
+SRR1812759 wildtype C
+SRR1812754 wildtype B
+SRR1811834 wildtype A
+
