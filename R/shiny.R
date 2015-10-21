@@ -34,16 +34,33 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
       install.packages('shiny')")
   }
 
-  if ( is.null(list_tests(obj, settings$test_type)) ) {
-    stop('You specified tests "', settings$test_type,
-      '" but we didn\'t find any tests of that type. Please call the function tests() to verify which tests have been performed.')
-  }
+  # if ( is.null(list_tests(obj, settings$test_type)) ) {
+  #   stop('You specified tests "', settings$test_type,
+  #     '" but we didn\'t find any tests of that type. Please call the function tests() to verify which tests have been performed.')
+  # }
 
+  # set up for the different types of tests
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
     'sample')
   samp_names <- obj$sample_to_covariates[['sample']]
   poss_models <- names(models(obj, verbose = FALSE))
+
+  poss_wt <- list_tests(obj, 'wt')
+  poss_lrt <- list_tests(obj, 'lrt')
+  valid_test_types <- if (!is.null(poss_wt)) {
+    c('Wald' = 'wt')
+  } else {
+    c()
+  }
+  if (!is.null(poss_lrt)) {
+    valid_test_types <- c(valid_test_types, c('likelihood ratio' = 'lrt'))
+  }
+
+  if (length(valid_test_types) == 0) {
+    stop("We found no valid tests. Please add some tests and rerun sleuth_live()")
+  }
+  print(valid_test_types)
 
   p_layout <- navbarPage(
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
@@ -454,43 +471,85 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
           column(2,
             numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
               min = 0, max = 1, step = 0.01)),
-          column(4,
-            selectInput('which_model_qq', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
+
+          conditionalPanel(condition = 'input.settings_test_type == "wt"',
+              column(4,
+              selectInput('which_model_qq', label = 'fit: ',
+                choices = poss_models,
+                selected = poss_models[1])
+              ),
+              column(4,
+                uiOutput('which_beta_ctrl_qq')
+                )
             ),
-          column(4,
-            uiOutput('which_beta_ctrl_qq')
-            )
+
+          conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+            column(4,
+              selectInput('test_qq', label = 'test: ',
+                choices = poss_lrt, selected = poss_lrt[1]))
+          )
+                # column(4,
+                # selectInput('which_model_qq', label = 'fit: ',
+                #   choices = poss_models,
+                #   selected = poss_models[1])
+                # ),
+                # column(4,
+                #   uiOutput('which_beta_ctrl_qq')
+                #   )
+
           ),
         fluidRow(
           plotOutput('qqplot')
           )
         )
 
-      )#,
-    # tabPanel('settings',
-    #
-    #     ####
-    #     'hello world'
-    #   )
+      ),
+    ####
+      tabPanel('settings',
+        fluidRow(
+          column(2,
+            selectInput('settings_test_type',
+              label = 'test type:',
+              choices = valid_test_types,
+              selected = valid_test_types[1])
+          )
+        )
+      )
 
     ) # navbarPage
 
   server_fun <- function(input, output) {
 
     output$which_beta_ctrl_qq <- renderUI({
-      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
-      selectInput('which_beta_qq', 'beta: ', choices = poss_tests)
+      current_ui <- NULL
+      poss_tests <- list_tests(obj, input$settings_test_type)
+      if (settings$test_type == 'wt') {
+        poss_tests <- poss_tests[[input$which_model_qq]]
+        current_ui <- selectInput('which_test_qq', 'beta: ',
+          choices = poss_tests, selected = poss_tests[1])
+      } else {
+        # TODO: I believe this code is defunct due to the conditionalPanel()
+        current_ui <- selectInput('which_test_qq', 'test: ',
+          choices = poss_tests, selected = poss_tests[1])
+      }
+
+      current_ui
     })
 
     output$qqplot <- renderPlot({
-      wb <- input$which_beta_qq
-      if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
-        wb <- poss_tests[1]
+      poss_tests <- list_tests(obj, input$settings_test_type)
+      current_test <- NULL
+      if (input$settings_test_type == 'wt') {
+        poss_tests <- poss_tests[[input$which_model_qq]]
+        current_test <- poss_tests[1]
       }
-      plot_qqnorm(obj, wb, which_model = input$which_model_qq,
+      # if ( is.null(wb) ) {
+      #   poss_tests <- list_tests(obj, 'wt')[[input$which_model_qq]]
+      #   wb <- poss_tests[1]
+      # }
+
+      plot_qqnorm(obj, current_test, test_type = input$settings_test_type,
+        which_model = input$which_model_qq,
         sig_level = input$max_fdr_qq)
     })
 

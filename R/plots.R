@@ -598,15 +598,15 @@ plot_qqnorm <- function(obj, test, test_type = 'wt', which_model = 'full',
     slope <- diff(y) / diff(x)
     intercept <- y[1L] - slope * x[1L]
   } else {
+    # TODO: deal with the chisq case
     #pnts <- stats::
   }
-
 
   p <- ggplot(res, aes(theoretical, observed))
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
   p <- p + scale_colour_manual(values = c('black', sig_color))
   p <- p + xlab('theoretical quantile')
-  p <- p + ylab(paste0('observed quantile: ', which_beta))
+  p <- p + ylab(paste0('observed quantile: ', test))
   p <- p + geom_abline(intercept = intercept, slope = slope, color = line_color)
 
   if (!is.null(highlight)) {

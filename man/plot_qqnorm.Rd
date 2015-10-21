@@ -4,15 +4,17 @@
 \alias{plot_qqnorm}
 \title{QQ norm plot}
 \usage{
-plot_qqnorm(obj, which_beta, which_model = "full", sig_level = 0.1,
-  point_alpha = 0.2, sig_color = "red", highlight = NULL,
-  highlight_color = "green", line_color = "blue")
+plot_qqnorm(obj, test, test_type = "wt", which_model = "full",
+  sig_level = 0.1, point_alpha = 0.2, sig_color = "red",
+  highlight = NULL, highlight_color = "green", line_color = "blue")
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_beta}{a character string denoting which beta to use for
+\item{test}{a character string denoting which beta to use for
 highlighting the transcript}
+
+\item{test_type}{either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.}
 
 \item{which_model}{a character string denoting which model to use for the
 test}
