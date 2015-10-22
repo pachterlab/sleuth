@@ -9,7 +9,7 @@ navbarMenu('maps',
 		offset = 1),
 		fluidRow(
 			column(3, #figure out dynamic PC parts
-				selectInput('PC_relative', label = 'starting PC', choices = "", #this may pose a problem later
+				selectInput('Starting Principal Component', label = 'PC_relative', choices = "", #this may pose a problem later
 					selected = 1)
 				),
 			column(3
