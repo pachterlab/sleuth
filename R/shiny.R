@@ -274,6 +274,67 @@ sleuth_live <- function(obj, ...) {
         fluidRow(plotOutput('pca_plt'))
         ),
 
+      ####
+      tabPanel('PC variance',
+      fluidRow(
+        column(12,
+          p(h3('principal component variance'), "plot variances retained by each principal component")
+          ),
+          offset = 1),
+        fluidRow(
+          column(3,
+            selectInput('PC_relative', label = 'starting PC: ', choices = 1:5,
+              selected = 1)
+            ),
+          column(3,
+            selectInput('pca_number', label = 'number of principal components ', choices = 3:10,
+              selected = 2))
+          ),
+        fluidRow(
+          column(2,
+            checkboxInput('pca_filt', label = 'filter',
+              value = TRUE),
+            checkboxInput('bool', label = 'scale',
+              value = FALSE)
+            )
+          ),
+        fluidRow(plotOutput('pca_pc_var'))
+        ),
+
+      ####
+      tabPanel('loadings',
+      fluidRow(
+        column(12,
+          p(h3('loadings'), "observe principal component and gene contributions")
+          ),
+          offset = 1),
+        fluidRow(
+          column(3,
+            selectInput('gene', label = 'gene: ', choices = '',
+              selected = 1)
+            ),
+          column(3,
+            selectInput('principal component', label = 'PC: ', choices = 1:5,
+              selected = 1)
+            ),
+          column(3,
+            selectInput('pc_count', label = 'number of principal components: ', choices = 1:5,
+              selected = 2))
+          ),
+        fluidRow(
+          column(2,
+            checkboxInput('pca_filt', label = 'filter',
+              value = TRUE),
+            checkboxInput('absl', label = 'absolute value',
+              value = TRUE),
+            checkboxInput('bool', label = 'scale',
+              value = FALSE)
+            )
+          ),
+        fluidRow(plotOutput('pca_plt'))
+        ),
+
+
       ###
       tabPanel('sample heatmap',
       fluidRow(
@@ -613,6 +674,30 @@ sleuth_live <- function(obj, ...) {
     ### MV plot
     output$mv_plt <- renderPlot({
       plot_mean_var(obj)
+    })
+
+    ### Plot pc loadings
+    output$plt_pc_loadings <- renderPlot({
+
+      plot_loadings(obj,
+        use_filtered = input$pc_filt,
+        pc_count = as.integer(input$pc_count),
+        bool = as.logical(input$bool),
+        gene = input$gene,
+        PC = as.integer(input$PC),
+        absolute = input$absl
+        )
+    })
+
+    ###plot pc variance
+    output$plt_pc_var <- renderPlot({
+
+      plot_pc_variance(obj,
+        use_filtered = input$pc_filt,
+        pca_number = input$pca_number,
+        bool = input$bool,
+        PC_relative = input$PC_relative
+        )
     })
 
     ### MA
