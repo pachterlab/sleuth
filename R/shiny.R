@@ -225,39 +225,40 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           )
         ),
 
-            ####
-            tabPanel('transcript view',
-                fluidRow(
-                    column(12,
-                        p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
-                        ),
-                        offset = 1),
-                fluidRow(
-                    column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
-                    ),
-                    column(4,
-                        selectInput('bs_var_color_by', label = 'color by: ',
-                        choices = c(NULL, poss_covars), selected = NULL)
-                    ),
-                    column(3,
-                        selectInput('bs_var_units', label = 'units: ',
-                        choices = c('est_counts', 'tpm'),
-                        selected = 'est_counts'))
-                    ),
-                fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-                fluidRow(plotOutput('bs_var_plt'))
-            ),
-
-          ####
-          tabPanel('volcano plot',
+        ####
+        tabPanel('transcript view',
             fluidRow(
                 column(12,
-                    p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                    p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
                     ),
                     offset = 1),
             fluidRow(
+                column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
+                ),
+                column(4,
+                    selectInput('bs_var_color_by', label = 'color by: ',
+                    choices = c(NULL, poss_covars), selected = NULL)
+                ),
+                column(3,
+                    selectInput('bs_var_units', label = 'units: ',
+                    choices = c('est_counts', 'tpm'),
+                    selected = 'est_counts'))
+                ),
+            fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+            fluidRow(plotOutput('bs_var_plt'))
+        ),
+
+        ####
+        tabPanel('volcano plot',
+          fluidRow(
+              column(12,
+                  p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                  ),
+                  offset = 1),
+          conditionalPanel(condition = 'input.settings_test_type == "wt"',
+            fluidRow(
                 column(2,
-                    numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                    numericInput('max_fdr_vol', label = 'max Fdr:', value = 0.10,
                         min = 0, max = 1, step = 0.01)),
                 column(4,
                     selectInput('which_model_vol', label = 'fit: ',
@@ -273,7 +274,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                 ),
             fluidRow(plotOutput('vol', brush = 'vol_brush')),
             fluidRow(dataTableOutput('vol_brush_out'))
-          )
+          ),
+        conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+          strong('Only supported for "setting" Wald test.')
+        )
+        )
       ),
 
     navbarMenu('maps',
@@ -891,7 +896,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     gv_var_list <- reactive({
         wb <- input$which_beta_gv
         if ( is.null(wb) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
+            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]]) # FIXME: this looks like a potential bug -HP
             wb <- poss_tests[1]
         }
         transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
@@ -959,50 +964,56 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
-        selectInput('which_beta_vol', 'beta: ', choices = poss_tests)
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      possible_tests <- possible_tests[[input$which_model_vol]]
+      selectInput('which_beta_vol', 'beta: ', choices = possible_tests,
+        selected = possible_tests[1])
     })
 
     output$vol <- renderPlot({
-        val <- input$which_beta_vol
-        if ( is.null(val) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
-            val <- poss_tests[1]
-        }
-        plot_volcano(obj, val,
+      which_test <- input$which_beta_vol
+      if ( is.null(which_test) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_vol]]
+        which_test <- possible_tests[1]
+      }
+      plot_volcano(obj, which_test,
+        input$settings_test_type,
         input$which_model_vol,
-        sig_level = input$max_fdr,
+        sig_level = input$max_fdr_vol,
         point_alpha = input$vol_alpha
         )
     })
 
     #vol_observe
     output$vol_brush_out <- renderDataTable({
-        wb <- input$which_beta_vol
-        if ( is.null(wb) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
-            wb <- poss_tests[1]
-        }
-        res <- sleuth_results(obj, wb, input$which_model_vol, rename_cols = FALSE,
-        show_all = FALSE)
-        res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
-        if (!is.null(input$vol_brush)) {
-            res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
-            res$Nlog10_qval = NULL
-        }  else {
-            res <- NULL
-        }
+      wb <- input$which_beta_vol
+      if ( is.null(wb) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_vol]]
+        wb <- possible_tests[1]
+      }
 
-        # TODO: total hack -- fix this correctly eventually
-        if (is(res, 'data.frame')) {
-            res <- dplyr::rename(res,
-            mean = mean_obs,
-            var = var_obs,
-            tech_var = sigma_q_sq,
-            final_sigma_sq = smooth_sigma_sq_pmax)
-        }
+      res <- sleuth_results(obj, wb, input$settings_test_type,
+        input$which_model_vol, rename_cols = FALSE, show_all = FALSE)
+      res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
+      if (!is.null(input$vol_brush)) {
+        res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
+        res$Nlog10_qval <- NULL
+      }  else {
+        res <- NULL
+      }
 
-        res
+      # TODO: total hack -- fix this correctly eventually
+      if (is(res, 'data.frame')) {
+        res <- dplyr::rename(res,
+          mean = mean_obs,
+          var = var_obs,
+          tech_var = sigma_q_sq,
+          final_sigma_sq = smooth_sigma_sq_pmax)
+      }
+
+      res
     })
 
   }
