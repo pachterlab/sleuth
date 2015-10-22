@@ -108,11 +108,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         fluidRow(
             column(3, actionButton('gv_go', 'view')),
             column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
-                    min = 1, max = 15, step = 1)),
-            column(3,
-                selectInput('which_model_gv', label = 'fit: ', choices = poss_models, selected = poss_models[1])),
-            column(3,
-                uiOutput('which_beta_ctrl_gv'))
+                    min = 1, max = 15, step = 1))#,
+            # column(3,
+            #     selectInput('which_model_gv', label = 'fit: ', choices = poss_models, selected = poss_models[1])),
+            # column(3,
+            #     uiOutput('which_beta_ctrl_gv'))
         ),
         fluidRow(uiOutput('no_genes_message')),
         fluidRow(uiOutput('gv_var_plts'))
@@ -893,33 +893,47 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
 
     ### Gene Viewer
+    # the name of the gene supplied
     gv_var_text <- eventReactive(input$gv_go, {
-        if(!is.null(obj$target_mapping))
-        {
-            input$gv_var_input
-        }
+      if(!is.null(obj$target_mapping)) {
+          input$gv_var_input
+      }
     })
 
     output$gv_gene_column <- renderUI({
-        if(!is.null(obj$target_mapping))
-        {
-            selectInput('gv_gene_colname', label = 'genes from: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
-        }
+      if(!is.null(obj$target_mapping))
+      {
+        selectInput('gv_gene_colname',
+          label = 'genes from: ',
+          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+      }
     })
 
     output$which_beta_ctrl_gv <- renderUI({
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
-        selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
+      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+      selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
     })
 
 
     gv_var_list <- reactive({
-        wb <- input$which_beta_gv
-        if ( is.null(wb) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]]) # FIXME: this looks like a potential bug -HP
-            wb <- poss_tests[1]
+      test_type <- input$settings_test_type
+
+      current_test <- input$which_test_qq
+      if ( is.null(current_test) ||
+        !test_exists(obj, current_test, test_type, input$which_model_qq)) {
+        possible_tests <- list_tests(obj, test_type)
+        if (test_type == 'wt') {
+          possible_tests <- possible_tests[[input$which_model_qq]]
         }
-        transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
+        current_test <- possible_tests[1]
+      }
+
+      transcripts_from_gene(obj,
+        current_test,
+        test_type,
+        input$which_model_qq,
+        input$gv_gene_colname,
+        gv_var_text())
     })
 
     output$gv_var_plts <- renderUI({

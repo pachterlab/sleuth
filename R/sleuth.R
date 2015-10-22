@@ -548,7 +548,8 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
 #' Get the names of the transcripts associated to a gene, assuming genes are added to the input \code{sleuth} object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use
+#' @param test a character string denoting which beta to use
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
 #' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
@@ -556,14 +557,14 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
 #' @param gene_name a string containing the name of the gene you are interested in
 #' @return a vector of strings containing the names of the transcripts that map to a gene
 #' @export
-transcripts_from_gene <- function(obj, which_beta, which_model, gene_colname, gene_name)
+transcripts_from_gene <- function(obj, test, test_type,
+  which_model, gene_colname, gene_name)
 {
-    table = sleuth_results(obj, which_beta, which_model)
-    table = dplyr::select_(table, ~target_id, gene_colname, ~qval)
-    table = dplyr::arrange_(table, gene_colname, ~qval)
-    if(!(gene_name %in% table[,2]))
-    {
-        stop("Couldn't find gene ", gene_name)
-    }
-    table$target_id[table[,2] == gene_name]
+  table <- sleuth_results(obj, test, test_type, which_model)
+  table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
+  table <- dplyr::arrange_(table, gene_colname, ~qval)
+  if(!(gene_name %in% table[,2])) {
+      stop("Couldn't find gene ", gene_name)
+  }
+  table$target_id[table[,2] == gene_name]
 }
