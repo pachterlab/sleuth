@@ -512,29 +512,34 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' list the most significant transcript mapping to themselves
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use
+#' @param test a character string denoting which beta to use
+#' @param test_type either 'wt' for Wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param which_group a character string denoting which gene group to use
 #' @return a \code{data.frame} containing gene names, transcript names, and significance
 #' @export
-sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group = 'ens_gene') {
+sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full', which_group = 'ens_gene') {
 
-    if(is.null(obj$target_mapping))
-    {
-        stop("This sleuth object doesn't have added gene names.")
-    }
-    popped_gene_table = sleuth_results(obj, which_beta, which_model)
+  if(is.null(obj$target_mapping)) {
+    stop("This sleuth object doesn't have added gene names.")
+  }
+  popped_gene_table = sleuth_results(obj, test, test_type, which_model)
 
+  popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
+  popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
 
-    popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
-    popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
+  popped_gene_table = dplyr::summarise_(popped_gene_table,
+    most_sig_transcript = ~target_id[1],
+    pval = ~min(pval, na.rm  = TRUE),
+    qval = ~min(qval, na.rm = TRUE),
+    num_transcripts = ~n(),
+    list_of_transcripts = ~toString(target_id[1:length(target_id)])
+    )
 
-    popped_gene_table = dplyr::summarise_(popped_gene_table, most_sig_transcript = ~target_id[1], pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n(), list_of_transcripts = ~toString(target_id[1:length(target_id)]))
-
-    popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
-    popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
-    popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
-    popped_gene_table
+  popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
+  popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
+  popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+  popped_gene_table
 }
 
 

@@ -182,28 +182,45 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
 
       ####
       tabPanel('test table',
-      fluidRow(
-        column(12,
-          p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+        # fluidRow(
+        #   column(12,
+        #     p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+        #     ),
+        #     offset = 1),
+        conditionalPanel(condition = 'input.settings_test_type == "wt"',
+          fluidRow(
+            column(3,
+              selectInput('which_model_de', label = 'fit: ',
+                choices = poss_models,
+                selected = poss_models[1])
+              ),
+            column(3,
+              uiOutput('which_beta_ctrl_de')
+              ),
+            column(3,
+              uiOutput('table_type')
+              ),
+            column(3,
+              uiOutput('group_by')
+              )
+            ),
+          dataTableOutput('de_dt')
           ),
-          offset = 1),
-        fluidRow(
-          column(3,
-            selectInput('which_model_de', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
+
+        conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+          fluidRow(
+            column(3,
+              uiOutput('test_control_de')
+              ),
+            column(3,
+              uiOutput('table_type_lrt')
+              ),
+            column(3,
+              uiOutput('group_by_lrt')
+              )
             ),
-          column(3,
-            uiOutput('which_beta_ctrl_de')
-            ),
-          column(3,
-            uiOutput('table_type')
-            ),
-          column(3,
-            uiOutput('group_by')
-            )
-          ),
-        dataTableOutput('de_dt')
+          dataTableOutput('lrt_de_dt')
+          )
         ),
 
             ####
@@ -757,40 +774,82 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
     ### DE table
 
     output$which_beta_ctrl_de <- renderUI({
-      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
-      selectInput('which_beta_de', 'beta: ', choices = poss_tests)
-    })
+      # poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      result <- NULL
+      if ( input$settings_test_type == 'wt' ) {
+        possible_tests <- possible_tests[[input$which_model_de]]
+        result <- selectInput('which_beta_de', 'beta: ', choices = possible_tests)
+      } else {
+        result <- selectInput('which_beta_de', 'test: ', choices = possible_tests)
+      }
 
+      result
+    })
     output$table_type <- renderUI({
-        if(!is.null(obj$target_mapping))
-        {
-            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2), selected = 1)
-        }
+      if(!is.null(obj$target_mapping)) {
+        selectInput('pop_genes', label = 'table type: ',
+          choices = list('transcript table' = 1, 'gene table' = 2),
+          selected = 1)
+      }
     })
 
     output$group_by <- renderUI({
-        if(!is.null(input$pop_genes) && input$pop_genes == 2)
-        {
-            selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
-        }
+      if(!is.null(input$pop_genes) && input$pop_genes == 2) {
+        selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+      }
     })
 
     output$de_dt <- renderDataTable({
       wb <- input$which_beta_de
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
-        wb <- poss_tests[1]
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_de]]
+        wb <- possible_tests[1]
       }
 
-        if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
-            mg <- input$mappingGroup
-            sleuth_gene_table(obj, wb, input$which_model_de, mg)
-        }
-
-      else {
+      if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
+          mg <- input$mappingGroup
+          sleuth_gene_table(obj, wb, input$settings_test_type,
+            input$which_model_de, mg)
+      } else {
           sleuth_results(obj, wb, input$which_model_de)
       }
     })
+
+    output$test_control_de <- renderUI({
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      selectInput('which_test_de', 'test: ', choices = possible_tests)
+    })
+
+    output$lrt_de_dt <- renderDataTable({
+      which_test <- input$which_test_de
+      if ( is.null(which_test) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        which_test <- possible_tests[1]
+      }
+      if(!is.null(input$mapping_group_lrt) && (input$pop_genes_lrt == 2)) {
+          mg <- input$mapping_group_lrt
+          sleuth_gene_table(obj, which_test, input$settings_test_type,
+            which_group = mg)
+      } else {
+          sleuth_results(obj, which_test, input$settings_test_type)
+      }
+    })
+
+    output$table_type_lrt <- renderUI({
+      if(!is.null(obj$target_mapping)) {
+        selectInput('pop_genes_lrt', label = 'table type: ',
+          choices = list('transcript table' = 1, 'gene table' = 2),
+          selected = 1)
+      }
+    })
+    output$group_by_lrt <- renderUI({
+      if(!is.null(input$pop_genes_lrt) && input$pop_genes_lrt == 2) {
+        selectInput('mapping_group_lrt', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+      }
+    })
+
 
     ### bootstrap var
 
