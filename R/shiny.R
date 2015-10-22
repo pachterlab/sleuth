@@ -288,7 +288,7 @@ sleuth_live <- function(obj, ...) {
             ),
           column(3,
             selectInput('pca_number', label = 'number of principal components ', choices = 3:10,
-              selected = 2)
+              selected = 2))
           ),
         fluidRow(
           column(2,
@@ -319,7 +319,7 @@ sleuth_live <- function(obj, ...) {
             ),
           column(3,
             selectInput('pc_count', label = 'number of principal components: ', choices = 1:5,
-              selected = 2)
+              selected = 2))
           ),
         fluidRow(
           column(2,
