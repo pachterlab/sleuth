@@ -109,6 +109,19 @@ get_test <- function(obj, label, type, model) {
   res
 }
 
+test_exists <- function(obj, label, type, model) {
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( type %in% c('lrt', 'wt') )
+
+  tryCatch({
+    temp <- get_test(obj, label, type, model)
+  }, error = function(e) {
+    return(FALSE)
+  }, finally = function(x) {})
+
+  TRUE
+}
+
 # if type is 'lrt', return character vector tests
 # else, return a list of character vectors.
 # each element in the list corresponds to a particular model

@@ -184,11 +184,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
       ####
       tabPanel('test table',
-        # fluidRow(
-        #   column(12,
-        #     p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
-        #     ),
-        #     offset = 1),
+      fluidRow(
+        column(12,
+          p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+          ),
+          offset = 1),
         conditionalPanel(condition = 'input.settings_test_type == "wt"',
           fluidRow(
             column(3,
@@ -651,25 +651,23 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       test_type <- input$settings_test_type
 
       current_test <- input$which_test_qq
-      if ( is.null(current_test) ) {
+      if ( is.null(current_test) ||
+        !test_exists(obj, current_test, test_type, input$which_model_qq)) {
         possible_tests <- list_tests(obj, test_type)
         if (test_type == 'wt') {
           possible_tests <- possible_tests[[input$which_model_qq]]
         }
         current_test <- possible_tests[1]
       }
+
       res <- NULL
-      # wb <- input$which_beta
-      # if ( is.null(wb) ) {
-      #   poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-      #   wb <- poss_tests[1]
-      # }
       sr <- sleuth_results(obj,
         current_test,
         test_type,
         input$which_model_qq,
         rename_cols = FALSE,
         show_all = TRUE)
+
       if (!is.null(input$scatter_brush)) {
         cur_brush <- input$scatter_brush
         cur_brush$mapping$x <- 'x'
@@ -924,8 +922,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
     })
 
-
-
     output$gv_var_plts <- renderUI({
         gv_plot_list <- lapply(1:input$gv_maxplots, function(i) {
                 gv_plotname <- paste("plot", i, sep="")
@@ -956,7 +952,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
         }
     })
-
 
     ### Heat Map
     hm_transcripts <- eventReactive(input$hm_go, {
