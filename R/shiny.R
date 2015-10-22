@@ -121,24 +121,26 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       ####
       tabPanel('heat map',
         fluidRow(
-            column(12,
-                p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
-                ),
-            offset = 1
+          column(12,
+              p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
+              ),
+          offset = 1
         ),
         fluidRow(
-            column(3,
-                selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
-                ),
-            column(3,
-                textInput('hm_transcripts', label = 'enter target ids: ', value = '')
-                ),
-            column(3,
-                textInput('hm_trans', label = 'tranform: ', value = 'log')
-                ),
-            column(1,
-                actionButton('hm_go', 'view')
-            )
+          column(3,
+            textInput('hm_transcripts', label = 'enter target ids: ', value = '')
+              ),
+          column(3,
+            selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
+              ),
+          column(3,
+            textInput('hm_trans', label = 'tranform: ', value = 'log')
+              ),
+          column(2,
+            numericInput('hm_offset', label = 'offset: ', value = 1)),
+          column(1,
+            actionButton('hm_go', 'view')
+          )
         ),
         tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
         fluidRow(plotOutput('hm_plot'))
@@ -972,14 +974,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             unlist(strsplit(input$hm_transcripts, " +"))
     })
 
-    hm_plot_height <- function()
-    {
-        if(length(hm_transcripts()) > 5)
-        {
+    hm_plot_height <- function() {
+        if(length(hm_transcripts()) > 5) {
             length(hm_transcripts()) * 60
-        }
-        else
-        {
+        } else {
             400
         }
     }
@@ -989,7 +987,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$hm_plot <- renderPlot ({
-        plot_transcript_heatmap(hm_transcripts(), obj, input$hm_units, hm_func())
+        plot_transcript_heatmap(obj,
+          hm_transcripts(),
+          input$hm_units, hm_func(),
+          offset = input$hm_offset)
     }, height = hm_plot_height)
 
 

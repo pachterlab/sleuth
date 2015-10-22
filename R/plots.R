@@ -642,7 +642,7 @@ plot_transcript_heatmap <- function(obj,
 {
   if(!all(transcripts %in% obj$obs_norm$target_id)) {
     stop("Couldn't find the following transcripts: ",
-      paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "),
+      paste(transcripts[!(transcripts %in% obj$obs_norm$target_id)], collapse = ", "),
       "\n\tIt is highly likely that some of them were filtered out.")
   }
 

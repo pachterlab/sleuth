@@ -12,6 +12,8 @@ transcripts_from_gene(obj, test, test_type, which_model, gene_colname,
 
 \item{test}{a character string denoting which beta to use}
 
+\item{test_type}{either 'wt' for wald test or 'lrt' for likelihood ratio test}
+
 \item{which_model}{a character string denoting which model to use}
 
 \item{gene_colname}{the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
