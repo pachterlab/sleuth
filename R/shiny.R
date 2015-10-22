@@ -624,14 +624,22 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$scatter_vars <- renderPlot({
-      wb <- input$which_beta
-      if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+      # NB: inherence the test from the QQ plot
+      test_type <- input$settings_test_type
+
+      current_test <- input$which_test_qq
+      if ( is.null(current_test) ) {
+        possible_tests <- list_tests(obj, test_type)
+        if (test_type == 'wt') {
+          possible_tests <- possible_tests[[input$which_model_qq]]
+        }
+        current_test <- possible_tests[1]
       }
+
       plot_vars(obj,
-        which_beta = wb,
-        which_model = input$which_model,
+        current_test,
+        test_type,
+        which_model = input$which_model_qq,
         point_alpha = input$scatter_alpha,
         highlight = rv_scatter$highlight_vars,
         sig_level = input$max_fdr
@@ -640,13 +648,27 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
 
     output$scatter_brush_table <- renderDataTable({
-      res <- NULL
-      wb <- input$which_beta
-      if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+      test_type <- input$settings_test_type
+
+      current_test <- input$which_test_qq
+      if ( is.null(current_test) ) {
+        possible_tests <- list_tests(obj, test_type)
+        if (test_type == 'wt') {
+          possible_tests <- possible_tests[[input$which_model_qq]]
+        }
+        current_test <- possible_tests[1]
       }
-      sr <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
+      res <- NULL
+      # wb <- input$which_beta
+      # if ( is.null(wb) ) {
+      #   poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
+      #   wb <- poss_tests[1]
+      # }
+      sr <- sleuth_results(obj,
+        current_test,
+        test_type,
+        input$which_model_qq,
+        rename_cols = FALSE,
         show_all = TRUE)
       if (!is.null(input$scatter_brush)) {
         cur_brush <- input$scatter_brush
