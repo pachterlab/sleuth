@@ -127,12 +127,16 @@ plot_pca <- function(obj,
 
 
 #' Plot Loadings and Interpretations 
+#' 
+#' give a principal component, tells you which contribute the most or give a gene, tells you which PC's it contributes to the most
+#' 
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param PC  principal component to view genes contribution to that PC
 #' @param gene user input on which gene and which PC's contribute the most
-#' @param bool, scale or not
-#' @param absolute, default true, to see all PC's magnitude (recommended)
+#' @param PC  principal component to view genes contribution to that PC
+#' @param pc_count # of PC's
+#' @param bool scale or not
+#' @param absolute default true, to see all PC's magnitude (recommended)
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
@@ -208,14 +212,15 @@ plot_loadings <- function(obj,
 
 }
 
+#' Plot PC Variance
+#'
 #' Plot PC variances retained by percentage with option to compare specified PC
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param pca_number user input on how many PC to display, otherwise default is 5
 #' @param bool determines scaling
-#' @param (integer) PC_relative gives the option to compare subsequent principal
-#' components and their contributions
+#' @param PC_relative gives the option to compare subsequent principal components and their contributions
 #' @return a ggplot object
 #' @export
 plot_pc_variance <- function(obj, 
