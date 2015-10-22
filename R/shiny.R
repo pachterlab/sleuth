@@ -23,11 +23,13 @@
 #' @param obj a \code{sleuth} object already processed and has run
 #' \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}
 #' @param settings see the function \code{\link{sleuth_alive_settings}} for options
+#' @param options additional options which are sent to shiny
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result
 #' @export
 #' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}
-sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
+sleuth_live <- function(obj, settings = sleuth_live_settings(),
+  options = list(port = 42427), ...) {
   stopifnot( is(obj, 'sleuth') )
   if ( !require('shiny') ) {
     stop("'sleuth_interact()' requires 'shiny'. Please install it using
@@ -1005,7 +1007,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(), ...) {
 
   }
 
-  shinyApp(ui = p_layout, server = server_fun)
+  shinyApp(ui = p_layout, server = server_fun, options = options)
 }
 
 #' @export

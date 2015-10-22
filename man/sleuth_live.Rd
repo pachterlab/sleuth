@@ -4,13 +4,16 @@
 \alias{sleuth_live}
 \title{Interactive sleuth visualization with Shiny}
 \usage{
-sleuth_live(obj, settings = sleuth_live_settings(), ...)
+sleuth_live(obj, settings = sleuth_live_settings(), options = list(port =
+  4242), ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object already processed and has run
 \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}}
 
 \item{settings}{see the function \code{\link{sleuth_alive_settings}} for options}
+
+\item{options}{additional options which are sent to shiny}
 
 \item{...}{additional parameters sent to plotting functions}
 }
