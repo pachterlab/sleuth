@@ -36,11 +36,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       install.packages('shiny')")
   }
 
-  # if ( is.null(list_tests(obj, settings$test_type)) ) {
-  #   stop('You specified tests "', settings$test_type,
-  #     '" but we didn\'t find any tests of that type. Please call the function tests() to verify which tests have been performed.')
-  # }
-
   # set up for the different types of tests
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
@@ -106,13 +101,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             )
         ),
         fluidRow(
-            column(3, actionButton('gv_go', 'view')),
-            column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
-                    min = 1, max = 15, step = 1))#,
-            # column(3,
-            #     selectInput('which_model_gv', label = 'fit: ', choices = poss_models, selected = poss_models[1])),
-            # column(3,
-            #     uiOutput('which_beta_ctrl_gv'))
+          column(3, actionButton('gv_go', 'view')),
+          column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
+                  min = 1, max = 15, step = 1))
         ),
         fluidRow(uiOutput('no_genes_message')),
         fluidRow(uiOutput('gv_var_plts'))

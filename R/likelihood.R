@@ -9,9 +9,6 @@ compute_likelihood <- function(obj, which_model) {
   # the fitted values are here:
   #   obj$fits[[which_model]]$models$ols_fit$fitted.values
   #
-  # TODO: after computing bootstrap summary once, get the observations from
-  # there
-  #
   # the observations can be recovered by:
   #   obj$fits$full$models[[1]]$ols_fit$residuals + fitted values
 
