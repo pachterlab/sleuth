@@ -1,3 +1,5 @@
+#how much additional information is revealed
+
 plot_pc_variance <- function(obj, 
   use_filtered = TRUE,
   pca_number = NULL,

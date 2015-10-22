@@ -129,16 +129,22 @@ plot_pca <- function(obj,
 #' Plot Loadings and Interpretations 
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param PC is the (string) name of which principal component to view genes contribution to that PC
-#' @param gene_count user input on how many genes to display, otherwise default is 5
+#' @param PC  principal component to view genes contribution to that PC
+#' @param gene user input on which gene and which PC's contribute the most
+#' @param bool, scale or not
+#' @param absolute, default true, to see all PC's magnitude (recommended)
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
-  PC = NULL, #this is a string of the PC actual name
-  gene_count = NULL,
+  gene = NULL, #string please
+  PC = NULL, #apparently if u type in a string or an integer (corresponding to the PC), they're both ok
+  pc_count = NULL,
   bool = FALSE,
+  absolute = TRUE, 
   ...) {
+  stopifnot( !is.null(gene) && !is.null(PC) )# make sure proper arguments are given
+  stopifnot( is(obj, 'sleuth') )
 
   mat <- NULL
   if (use_filtered) {
@@ -149,39 +155,53 @@ plot_loadings <- function(obj,
   
   pca_calc <- prcomp(mat, scale = bool)
   #transpose
-  loadings <- t(pca_calc$rotation)
+  loadings <- pca_calc
 
+  #given a gene
   if (!is.null(gene)) {
-    loadings <- loadings[, gene]
-  } else {
-    title <- colnames(loadings)[1]
-    loadings <- loadings[, 1]
+    loadings <- pca_calc$x[gene,]
+    if (absolute) {
+      loadings <- abs(loadings)
+    }
+    loadings <- sort(loadings, decreasing = TRUE)
+    names <- names(loadings)
+  }
+
+  #given a PC, which samples contribute the most?
+  if (!is.null(PC)) {
+    loadings <- pca_calc$x[,PC]
+    if (absolute) {
+      loadings <- abs(loadings)
+    }
+    loadings <- sort(loadings, decreasing = TRUE)
+    names <- names(loadings)
   }
 
   if (!is.null(pc_count)) {
-    loadings <- loadings[1:pc_count]
-  } else {
-    loadings <- loadings[1:5]
-  }
-  #absolute value
-  if (absolute) {
-    loadings <- abs(loadings)
-  }
-  #sort loadings vector to obtain highest contribution
-  loadings <- sort(loadings, decreasing = TRUE)
-  names <- names(loadings)
+      loadings <- loadings[1:pc_count]
+      names <- names[1:pc_count]
+    } else {
+      loadings <- loadings[1:5]
+      names <- names[1:5]
+    }
 
   dat <- data.frame(pc = names, loadings = loadings)
   dat$pc <- factor(dat$pc, levels = unique(dat$pc))
 
   p <- ggplot(dat, aes(x = pc, y = loadings)) 
   p <- p + geom_bar(stat = "identity")
-  p <- p + xlab("Principal Components") + ylab("Contribution")
+  p <- p + xlab("Principal Components") + ylab("Contribution Scores")
+
+  #logistics of graph
+  print(is.numeric(PC))
+  if (is.numeric(PC)) {
+    PC <- paste0("PC ", PC)
+  }
 
   if (!is.null(gene)) {
     p <- p + ggtitle(gene)
   } else {
-    p <- p + ggtitle(title)
+    p <- p + ggtitle(PC)
   }
 
   p
