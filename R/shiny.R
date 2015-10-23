@@ -553,7 +553,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       }
       current_test <- poss_tests[1]
 
-      plot_qqnorm(obj, current_test,
+      plot_qq(obj, current_test,
         test_type = input$settings_test_type,
         which_model = input$which_model_qq,
         sig_level = input$max_fdr_qq)

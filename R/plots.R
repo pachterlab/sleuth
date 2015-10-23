@@ -541,17 +541,17 @@ plot_volcano = function(obj, test, test_type = 'wt', which_model = 'full',
   p
 }
 
-#' QQ norm plot
+#' QQ plot
 #'
-#' Create a Q-Q norm plot of the Wald statistics. The x-axis has the
+#' Create a Q-Q plot of the test statistics. The x-axis has the
 #' theoretical quantile you would expect from a standard normal distribution.
-#' The y-axis has the observed quantiles. It is a \code{ggplot2} version of
+#' The y-axis has the observed quantiles. In the Wald case, it is a \code{ggplot2} version of
 #' what you would get from \code{\link{qqnorm}} and \code{\link{qqline}}.
 #'
 #' @param obj a \code{sleuth} object
 #' @param test a character string denoting which beta to use for
 #' highlighting the transcript
-#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test.
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param sig_level the significance level for Fdr
@@ -564,7 +564,7 @@ plot_volcano = function(obj, test, test_type = 'wt', which_model = 'full',
 #' @param line_color what color to make the QQ line
 #' @return a \code{ggplot2} object
 #' @export
-plot_qqnorm <- function(obj, test, test_type = 'wt', which_model = 'full',
+plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
   sig_color = 'red',
