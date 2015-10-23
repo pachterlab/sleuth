@@ -131,7 +131,10 @@ sleuth_prep <- function(
     stop("max_bootstrap must be > 0")
   }
 
-  # TODO: ensure all kallisto have same number of transcripts
+  if ( any(is.na(sample_to_covariates)) ) {
+    warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
+  }
+
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
 
@@ -230,22 +233,10 @@ sleuth_prep <- function(
       obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
     })
 
-
-
     # add in eff_len and len
     obs_norm <- dplyr::mutate(obs_norm,
       eff_len = obs_raw$eff_len,
       len = obs_raw$len)
-
-    # suppressWarnings({
-    #   obs_norm <- dplyr::inner_join(
-    #     data.table::as.data.table(obs_norm),
-    #     data.table::as.data.table(
-    #       dplyr::select(obs_raw, target_id, sample, len, eff_len)
-    #       ),
-    #     by = c('target_id', 'sample')
-    #     )
-    # })
 
     msg("normalizing bootstrap samples")
     ret$kal <- lapply(seq_along(ret$kal), function(i) {
@@ -254,6 +245,7 @@ sleuth_prep <- function(
         est_counts_size_factor = est_counts_sf[i])
       })
 
+
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
     ret$est_counts_sf <- est_counts_sf
@@ -261,6 +253,17 @@ sleuth_prep <- function(
     ret$filter_df <- filter_df
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
+
+    msg('summarizing bootstraps')
+    # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
+    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
+    # TODO: check if normalized. if not, normalize
+    # TODO: in normalization step, take out all things that don't pass filter so
+    # don't have to filter out here
+    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
+    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+
+    ret$bs_summary <- bs_summary
   }
 
   class(ret) <- 'sleuth'
@@ -509,31 +512,34 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' list the most significant transcript mapping to themselves
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use
+#' @param test a character string denoting which beta to use
+#' @param test_type either 'wt' for Wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param which_group a character string denoting which gene group to use
 #' @return a \code{data.frame} containing gene names, transcript names, and significance
 #' @export
+sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full', which_group = 'ens_gene') {
 
+  if(is.null(obj$target_mapping)) {
+    stop("This sleuth object doesn't have added gene names.")
+  }
+  popped_gene_table = sleuth_results(obj, test, test_type, which_model)
 
-sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group = 'ens_gene') {
+  popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
+  popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
 
-    if(is.null(obj$target_mapping))
-    {
-        stop("This sleuth object doesn't have added gene names.")
-    }
-    popped_gene_table = sleuth_results(obj, which_beta, which_model)
+  popped_gene_table = dplyr::summarise_(popped_gene_table,
+    most_sig_transcript = ~target_id[1],
+    pval = ~min(pval, na.rm  = TRUE),
+    qval = ~min(qval, na.rm = TRUE),
+    num_transcripts = ~n(),
+    list_of_transcripts = ~toString(target_id[1:length(target_id)])
+    )
 
-
-    popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
-    popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
-
-    popped_gene_table = dplyr::summarise_(popped_gene_table, most_sig_transcript = ~target_id[1], pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n(), list_of_transcripts = ~toString(target_id[1:length(target_id)]))
-
-    popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
-    popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
-    popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
-    popped_gene_table
+  popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
+  popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
+  popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+  popped_gene_table
 }
 
 
@@ -542,7 +548,8 @@ sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group
 #' Get the names of the transcripts associated to a gene, assuming genes are added to the input \code{sleuth} object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use
+#' @param test a character string denoting which beta to use
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
 #' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
@@ -550,16 +557,14 @@ sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group
 #' @param gene_name a string containing the name of the gene you are interested in
 #' @return a vector of strings containing the names of the transcripts that map to a gene
 #' @export
-
-
-transcripts_from_gene <- function(obj, which_beta, which_model, gene_colname, gene_name)
+transcripts_from_gene <- function(obj, test, test_type,
+  which_model, gene_colname, gene_name)
 {
-    table = sleuth_results(obj, which_beta, which_model)
-    table = dplyr::select_(table, ~target_id, gene_colname, ~qval)
-    table = dplyr::arrange_(table, gene_colname, ~qval)
-    if(!(gene_name %in% table[,2]))
-    {
-        stop("Couldn't find gene ", gene_name)
-    }
-    table$target_id[table[,2] == gene_name]
+  table <- sleuth_results(obj, test, test_type, which_model)
+  table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
+  table <- dplyr::arrange_(table, gene_colname, ~qval)
+  if(!(gene_name %in% table[,2])) {
+      stop("Couldn't find gene ", gene_name)
+  }
+  table$target_id[table[,2] == gene_name]
 }

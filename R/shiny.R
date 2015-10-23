@@ -22,22 +22,41 @@
 #'
 #' @param obj a \code{sleuth} object already processed and has run
 #' \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}
+#' @param settings see the function \code{\link{sleuth_alive_settings}} for options
+#' @param options additional options which are sent to shiny
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result
 #' @export
-#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_test}}
-sleuth_live <- function(obj, ...) {
+#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}
+sleuth_live <- function(obj, settings = sleuth_live_settings(),
+  options = list(port = 42427), ...) {
   stopifnot( is(obj, 'sleuth') )
   if ( !require('shiny') ) {
     stop("'sleuth_interact()' requires 'shiny'. Please install it using
       install.packages('shiny')")
   }
 
+  # set up for the different types of tests
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
     'sample')
   samp_names <- obj$sample_to_covariates[['sample']]
   poss_models <- names(models(obj, verbose = FALSE))
+
+  poss_wt <- list_tests(obj, 'wt')
+  poss_lrt <- list_tests(obj, 'lrt')
+  valid_test_types <- if (!is.null(poss_wt)) {
+    c('Wald' = 'wt')
+  } else {
+    c()
+  }
+  if (!is.null(poss_lrt)) {
+    valid_test_types <- c(valid_test_types, c('likelihood ratio' = 'lrt'))
+  }
+
+  if (length(valid_test_types) == 0) {
+    stop("We found no valid tests. Please add some tests and rerun sleuth_live()")
+  }
 
   p_layout <- navbarPage(
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
@@ -58,12 +77,12 @@ sleuth_live <- function(obj, ...) {
                      tags$li(strong('v0.27.3'),': gene table, gene viewer, transcript heatmap, and volcano plot by Pascal Sturmfels.'),
                      tags$li(strong('v0.27.2'),': design matrix, kallisto table, transcript view, and QQplot by Harold Pimentel.'),
                      tags$li(strong('v0.27.1'),': densities, MA plot, mean-variance plot, PCA,  processed data, sample heatmap, scatter plots, and test table by Harold Pimentel.')
-                     
+
                      )
           ))),
 
                              navbarMenu('analyses',
-    
+
       tabPanel('gene view',
         fluidRow(
             column(12,
@@ -82,45 +101,43 @@ sleuth_live <- function(obj, ...) {
             )
         ),
         fluidRow(
-            column(3, actionButton('gv_go', 'view')),
-            column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
-                    min = 1, max = 15, step = 1)),
-            column(3,
-                selectInput('which_model_gv', label = 'fit: ', choices = poss_models, selected = poss_models[1])),
-            column(3,
-                uiOutput('which_beta_ctrl_gv'))
+          column(3, actionButton('gv_go', 'view')),
+          column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
+                  min = 1, max = 15, step = 1))
         ),
         fluidRow(uiOutput('no_genes_message')),
         fluidRow(uiOutput('gv_var_plts'))
     ),
-    
+
       ####
       tabPanel('heat map',
         fluidRow(
-            column(12,
-                p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
-                ),
-            offset = 1
+          column(12,
+              p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
+              ),
+          offset = 1
         ),
         fluidRow(
-            column(3,
-                selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
-                ),
-            column(3,
-                textInput('hm_transcripts', label = 'enter target ids: ', value = '')
-                ),
-            column(3,
-                textInput('hm_trans', label = 'tranform: ', value = 'log')
-                ),
-            column(1,
-                actionButton('hm_go', 'view')
-            )
+          column(3,
+            textInput('hm_transcripts', label = 'enter target ids: ', value = '')
+              ),
+          column(3,
+            selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
+              ),
+          column(3,
+            textInput('hm_trans', label = 'tranform: ', value = 'log')
+              ),
+          column(2,
+            numericInput('hm_offset', label = 'offset: ', value = 1)),
+          column(1,
+            actionButton('hm_go', 'view')
+          )
         ),
         tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
         fluidRow(plotOutput('hm_plot'))
     ),
-        
-    
+
+
       ####
       tabPanel('MA plot',
       fluidRow(
@@ -128,31 +145,32 @@ sleuth_live <- function(obj, ...) {
           p(h3('MA plot'), "Plot of abundance versus fixed effect (e.g. fold change). Select a set of transcripts to explore their variance across samples. ")
           ),
           offset = 1),
-        fluidRow(
-          column(2,
-            numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
-              min = 0, max = 1, step = 0.01)),
-          column(4,
-            selectInput('which_model', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
+          conditionalPanel(condition = 'input.settings_test_type == "wt"',
+            fluidRow(
+              column(2,
+                numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                  min = 0, max = 1, step = 0.01)),
+              column(4,
+                selectInput('which_model_ma', label = 'fit: ',
+                  choices = poss_models,
+                  selected = poss_models[1])
+                ),
+              column(4,
+                uiOutput('which_beta_ctrl_ma')
+                ),
+              column(2,
+                numericInput('ma_alpha', label = 'opacity:', value = 0.2,
+                  min = 0, max = 1, step = 0.01))
+              ),
+
+            fluidRow(plotOutput('ma', brush = 'ma_brush')),
+            fluidRow(plotOutput('vars')),
+            fluidRow(dataTableOutput('ma_brush_out'))
             ),
-          column(4,
-            uiOutput('which_beta_ctrl')
-            ),
-          column(2,
-            numericInput('ma_alpha', label = 'opacity:', value = 0.2,
-              min = 0, max = 1, step = 0.01))
-          ),
-        # fluidRow(column(8,
-        #     selectizeInput('ma_trans', 'highlight transcripts: ',
-        #       choices = obj$filter_df[['target_id']],
-        #       multiple = TRUE, width = '100%'))
-        #   ),
-        fluidRow(plotOutput('ma', brush = 'ma_brush')),
-        #fluidRow(plotOutput('vars', brush = 'vars_brush')),
-        fluidRow(plotOutput('vars')),
-        fluidRow(dataTableOutput('ma_brush_out'))
+
+          conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+            strong("Only supported for 'setting' Wald tests.")
+          )
         ),
 
 
@@ -164,58 +182,76 @@ sleuth_live <- function(obj, ...) {
           p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
           ),
           offset = 1),
-        fluidRow(
-          column(3,
-            selectInput('which_model_de', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
+        conditionalPanel(condition = 'input.settings_test_type == "wt"',
+          fluidRow(
+            column(3,
+              selectInput('which_model_de', label = 'fit: ',
+                choices = poss_models,
+                selected = poss_models[1])
+              ),
+            column(3,
+              uiOutput('which_beta_ctrl_de')
+              ),
+            column(3,
+              uiOutput('table_type')
+              ),
+            column(3,
+              uiOutput('group_by')
+              )
             ),
-          column(3,
-            uiOutput('which_beta_ctrl_de')
-            ),
-          column(3,
-            uiOutput('table_type')
-            ),
-          column(3,
-            uiOutput('group_by')
-            )
+          dataTableOutput('de_dt')
           ),
-        dataTableOutput('de_dt')
-        ),
-        
-            ####
-            tabPanel('transcript view',
-                fluidRow(
-                    column(12,
-                        p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
-                        ),
-                        offset = 1),
-                fluidRow(
-                    column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
-                    ),
-                    column(4,
-                        selectInput('bs_var_color_by', label = 'color by: ',
-                        choices = c(NULL, poss_covars), selected = NULL)
-                    ),
-                    column(3,
-                        selectInput('bs_var_units', label = 'units: ',
-                        choices = c('est_counts', 'tpm'),
-                        selected = 'est_counts'))
-                    ),
-                fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-                fluidRow(plotOutput('bs_var_plt'))
+
+        conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+          fluidRow(
+            column(3,
+              uiOutput('test_control_de')
+              ),
+            column(3,
+              uiOutput('table_type_lrt')
+              ),
+            column(3,
+              uiOutput('group_by_lrt')
+              )
             ),
-      
-          ####
-          tabPanel('volcano plot',
+          dataTableOutput('lrt_de_dt')
+          )
+        ),
+
+        ####
+        tabPanel('transcript view',
             fluidRow(
                 column(12,
-                    p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                    p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
                     ),
                     offset = 1),
             fluidRow(
+                column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
+                ),
+                column(4,
+                    selectInput('bs_var_color_by', label = 'color by: ',
+                    choices = c(NULL, poss_covars), selected = NULL)
+                ),
+                column(3,
+                    selectInput('bs_var_units', label = 'units: ',
+                    choices = c('est_counts', 'tpm'),
+                    selected = 'est_counts'))
+                ),
+            fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+            fluidRow(plotOutput('bs_var_plt'))
+        ),
+
+        ####
+        tabPanel('volcano plot',
+          fluidRow(
+              column(12,
+                  p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
+                  ),
+                  offset = 1),
+          conditionalPanel(condition = 'input.settings_test_type == "wt"',
+            fluidRow(
                 column(2,
-                    numericInput('max_fdr', label = 'max Fdr:', value = 0.10,
+                    numericInput('max_fdr_vol', label = 'max Fdr:', value = 0.10,
                         min = 0, max = 1, step = 0.01)),
                 column(4,
                     selectInput('which_model_vol', label = 'fit: ',
@@ -231,7 +267,11 @@ sleuth_live <- function(obj, ...) {
                 ),
             fluidRow(plotOutput('vol', brush = 'vol_brush')),
             fluidRow(dataTableOutput('vol_brush_out'))
-          )
+          ),
+        conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+          strong('Only supported for "setting" Wald test.')
+        )
+        )
       ),
 
     navbarMenu('maps',
@@ -388,7 +428,7 @@ sleuth_live <- function(obj, ...) {
         )
 
       ),
-                         
+
       navbarMenu('diagnostics',
 
       ####
@@ -448,37 +488,74 @@ sleuth_live <- function(obj, ...) {
           column(2,
             numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
               min = 0, max = 1, step = 0.01)),
-          column(4,
-            selectInput('which_model_qq', label = 'fit: ',
-              choices = poss_models,
-              selected = poss_models[1])
+
+          conditionalPanel(condition = 'input.settings_test_type == "wt"',
+              column(4,
+              selectInput('which_model_qq', label = 'fit: ',
+                choices = poss_models,
+                selected = poss_models[1])
+              ),
+              column(4,
+                uiOutput('which_beta_ctrl_qq')
+                )
             ),
-          column(4,
-            uiOutput('which_beta_ctrl_qq')
-            )
+
+          conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+            column(4,
+              selectInput('test_qq', label = 'test: ',
+                choices = poss_lrt, selected = poss_lrt[1]))
+          )
+
           ),
         fluidRow(
           plotOutput('qqplot')
           )
         )
 
+      ),
+    ####
+      tabPanel('settings',
+        fluidRow(
+          column(2,
+            selectInput('settings_test_type',
+              label = 'test type:',
+              choices = valid_test_types,
+              selected = valid_test_types[1])
+          )
+        )
       )
+
     ) # navbarPage
 
   server_fun <- function(input, output) {
 
     output$which_beta_ctrl_qq <- renderUI({
-      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
-      selectInput('which_beta_qq', 'beta: ', choices = poss_tests)
+      current_ui <- NULL
+      poss_tests <- list_tests(obj, input$settings_test_type)
+      if (settings$test_type == 'wt') {
+        poss_tests <- poss_tests[[input$which_model_qq]]
+        current_ui <- selectInput('which_test_qq', 'beta: ',
+          choices = poss_tests, selected = poss_tests[1])
+      } else {
+        # TODO: I believe this code is defunct due to the conditionalPanel()
+        current_ui <- selectInput('which_test_qq', 'test: ',
+          choices = poss_tests, selected = poss_tests[1])
+      }
+
+      current_ui
     })
 
     output$qqplot <- renderPlot({
-      wb <- input$which_beta_qq
-      if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_qq]])
-        wb <- poss_tests[1]
+      poss_tests <- list_tests(obj, input$settings_test_type)
+      current_test <- NULL
+      if (input$settings_test_type == 'wt') {
+        poss_tests <- poss_tests[[input$which_model_qq]]
       }
-      plot_qqnorm(obj, wb, which_model = input$which_model_qq,
+      current_test <- poss_tests[1]
+
+      plot_qq(obj, current_test,
+        test_type = input$settings_test_type,
+        which_model = input$which_model_qq,
         sig_level = input$max_fdr_qq)
     })
 
@@ -536,14 +613,22 @@ sleuth_live <- function(obj, ...) {
     })
 
     output$scatter_vars <- renderPlot({
-      wb <- input$which_beta
-      if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+      # NB: inherence the test from the QQ plot
+      test_type <- input$settings_test_type
+
+      current_test <- input$which_test_qq
+      if ( is.null(current_test) ) {
+        possible_tests <- list_tests(obj, test_type)
+        if (test_type == 'wt') {
+          possible_tests <- possible_tests[[input$which_model_qq]]
+        }
+        current_test <- possible_tests[1]
       }
+
       plot_vars(obj,
-        which_beta = wb,
-        which_model = input$which_model,
+        current_test,
+        test_type,
+        which_model = input$which_model_qq,
         point_alpha = input$scatter_alpha,
         highlight = rv_scatter$highlight_vars,
         sig_level = input$max_fdr
@@ -552,14 +637,26 @@ sleuth_live <- function(obj, ...) {
 
 
     output$scatter_brush_table <- renderDataTable({
-      res <- NULL
-      wb <- input$which_beta
-      if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+      test_type <- input$settings_test_type
+
+      current_test <- input$which_test_qq
+      if ( is.null(current_test) ||
+        !test_exists(obj, current_test, test_type, input$which_model_qq)) {
+        possible_tests <- list_tests(obj, test_type)
+        if (test_type == 'wt') {
+          possible_tests <- possible_tests[[input$which_model_qq]]
+        }
+        current_test <- possible_tests[1]
       }
-      sr <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
+
+      res <- NULL
+      sr <- sleuth_results(obj,
+        current_test,
+        test_type,
+        input$which_model_qq,
+        rename_cols = FALSE,
         show_all = TRUE)
+
       if (!is.null(input$scatter_brush)) {
         cur_brush <- input$scatter_brush
         cur_brush$mapping$x <- 'x'
@@ -620,48 +717,57 @@ sleuth_live <- function(obj, ...) {
       highlight_vars = NULL
       )
 
-    output$which_beta_ctrl <- renderUI({
-      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-      selectInput('which_beta', 'beta: ', choices = poss_tests)
+    output$which_beta_ctrl_ma <- renderUI({
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      possible_tests <- possible_tests[[input$which_model_ma]]
+      selectInput('which_beta_ma', 'beta: ', choices = possible_tests,
+        selected = possible_tests[1])
     })
 
     output$ma <- renderPlot({
-      val <- input$which_beta
-      if ( is.null(val) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        val <- poss_tests[1]
+
+      current_test <- input$which_beta_ma
+      if ( is.null(current_test) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_ma]]
+        current_test <- possible_tests[1]
       }
-      plot_ma(obj, val,
-        input$which_model,
+      plot_ma(obj, current_test,
+        input$settings_test_type,
+        input$which_model_ma,
         sig_level = input$max_fdr,
         point_alpha = input$ma_alpha
         )
     })
 
     output$vars <- renderPlot({
-      wb <- input$which_beta
+      wb <- input$which_beta_ma
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_ma]]
+        wb <- possible_tests[1]
       }
       plot_vars(obj,
-        which_beta = wb,
-        which_model = input$which_model,
+        test = wb,
+        test_type = input$settings_test_type,
+        which_model = input$which_model_ma,
         point_alpha = input$ma_alpha,
         highlight = rv_ma$highlight_vars,
         sig_level = input$max_fdr
         )
     })
 
-    #observe
     output$ma_brush_out <- renderDataTable({
-      wb <- input$which_beta
+      wb <- input$which_beta_ma
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model]])
-        wb <- poss_tests[1]
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_ma]]
+        wb <- possible_tests[1]
       }
-      res <- sleuth_results(obj, wb, input$which_model, rename_cols = FALSE,
-        show_all = FALSE)
+      res <- sleuth_results(obj,
+        wb,
+        input$settings_test_type,
+        input$which_model_ma, rename_cols = FALSE, show_all = FALSE)
       if (!is.null(input$ma_brush)) {
         res <- enclosed_brush(res, input$ma_brush)
         rv_ma$highlight_vars <- res
@@ -682,100 +788,154 @@ sleuth_live <- function(obj, ...) {
     })
 
     ### DE table
-    
+
     output$which_beta_ctrl_de <- renderUI({
-      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
-      selectInput('which_beta_de', 'beta: ', choices = poss_tests)
+      # poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      result <- NULL
+      if ( input$settings_test_type == 'wt' ) {
+        possible_tests <- possible_tests[[input$which_model_de]]
+        result <- selectInput('which_beta_de', 'beta: ', choices = possible_tests)
+      } else {
+        result <- selectInput('which_beta_de', 'test: ', choices = possible_tests)
+      }
+
+      result
     })
-    
     output$table_type <- renderUI({
-        if(!is.null(obj$target_mapping))
-        {
-            selectInput('pop_genes', label = 'table type: ', choices = list('transcript table' = 1, 'gene table' = 2), selected = 1)
-        }
+      if(!is.null(obj$target_mapping)) {
+        selectInput('pop_genes', label = 'table type: ',
+          choices = list('transcript table' = 1, 'gene table' = 2),
+          selected = 1)
+      }
     })
-    
+
     output$group_by <- renderUI({
-        if(!is.null(input$pop_genes) && input$pop_genes == 2)
-        {
-            selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
-        }
+      if(!is.null(input$pop_genes) && input$pop_genes == 2) {
+        selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+      }
     })
 
     output$de_dt <- renderDataTable({
       wb <- input$which_beta_de
       if ( is.null(wb) ) {
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
-        wb <- poss_tests[1]
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_de]]
+        wb <- possible_tests[1]
       }
-      
-        if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
-            mg <- input$mappingGroup
-            sleuth_gene_table(obj, wb, input$which_model_de, mg)
-        }
-      
-      else {
+
+      if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
+          mg <- input$mappingGroup
+          sleuth_gene_table(obj, wb, input$settings_test_type,
+            input$which_model_de, mg)
+      } else {
           sleuth_results(obj, wb, input$which_model_de)
       }
     })
 
+    output$test_control_de <- renderUI({
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      selectInput('which_test_de', 'test: ', choices = possible_tests)
+    })
+
+    output$lrt_de_dt <- renderDataTable({
+      which_test <- input$which_test_de
+      if ( is.null(which_test) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        which_test <- possible_tests[1]
+      }
+      if(!is.null(input$mapping_group_lrt) && (input$pop_genes_lrt == 2)) {
+          mg <- input$mapping_group_lrt
+          sleuth_gene_table(obj, which_test, input$settings_test_type,
+            which_group = mg)
+      } else {
+          sleuth_results(obj, which_test, input$settings_test_type)
+      }
+    })
+
+    output$table_type_lrt <- renderUI({
+      if(!is.null(obj$target_mapping)) {
+        selectInput('pop_genes_lrt', label = 'table type: ',
+          choices = list('transcript table' = 1, 'gene table' = 2),
+          selected = 1)
+      }
+    })
+    output$group_by_lrt <- renderUI({
+      if(!is.null(input$pop_genes_lrt) && input$pop_genes_lrt == 2) {
+        selectInput('mapping_group_lrt', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+      }
+    })
+
+
     ### bootstrap var
-    
+
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
     })
-    
-    
+
+
     output$bs_var_plt <- renderPlot({
         plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
     })
-    
-    
+
+
     ### Gene Viewer
+    # the name of the gene supplied
     gv_var_text <- eventReactive(input$gv_go, {
-        if(!is.null(obj$target_mapping))
-        {
-            input$gv_var_input
-        }
+      if(!is.null(obj$target_mapping)) {
+          input$gv_var_input
+      }
     })
-    
+
     output$gv_gene_column <- renderUI({
-        if(!is.null(obj$target_mapping))
-        {
-            selectInput('gv_gene_colname', label = 'genes from: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
-        }
+      if(!is.null(obj$target_mapping))
+      {
+        selectInput('gv_gene_colname',
+          label = 'genes from: ',
+          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+      }
     })
-    
+
     output$which_beta_ctrl_gv <- renderUI({
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
-        selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
+      poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_de]])
+      selectInput('which_beta_gv', 'beta: ', choices = poss_tests)
     })
-    
-    
+
+
     gv_var_list <- reactive({
-        wb <- input$which_beta_gv
-        if ( is.null(wb) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
-            wb <- poss_tests[1]
+      test_type <- input$settings_test_type
+
+      current_test <- input$which_test_qq
+      if ( is.null(current_test) ||
+        !test_exists(obj, current_test, test_type, input$which_model_qq)) {
+        possible_tests <- list_tests(obj, test_type)
+        if (test_type == 'wt') {
+          possible_tests <- possible_tests[[input$which_model_qq]]
         }
-        transcripts_from_gene(obj, wb, input$which_model_gv, input$gv_gene_colname, gv_var_text())
+        current_test <- possible_tests[1]
+      }
+
+      transcripts_from_gene(obj,
+        current_test,
+        test_type,
+        input$which_model_qq,
+        input$gv_gene_colname,
+        gv_var_text())
     })
-    
-    
-        
+
     output$gv_var_plts <- renderUI({
         gv_plot_list <- lapply(1:input$gv_maxplots, function(i) {
                 gv_plotname <- paste("plot", i, sep="")
                 plotOutput(gv_plotname)
             })
-        
+
             do.call(tagList, gv_plot_list)
         })
-    
+
         for (i in 1:15) {
-            
+
             local({
                 my_i <- i
                 gv_plotname <- paste("plot", my_i, sep="")
@@ -788,92 +948,96 @@ sleuth_live <- function(obj, ...) {
                    })
            })
         }
-        
+
     output$no_genes_message <- renderUI({
         if(is.null(obj$target_mapping))
         {
             HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
         }
     })
-    
-    
+
     ### Heat Map
     hm_transcripts <- eventReactive(input$hm_go, {
             unlist(strsplit(input$hm_transcripts, " +"))
     })
-    
-    hm_plot_height <- function()
-    {
-        if(length(hm_transcripts()) > 5)
-        {
+
+    hm_plot_height <- function() {
+        if(length(hm_transcripts()) > 5) {
             length(hm_transcripts()) * 60
-        }
-        else
-        {
+        } else {
             400
         }
     }
-    
+
     hm_func <- eventReactive(input$hm_go, {
         input$hm_trans
     })
-    
+
     output$hm_plot <- renderPlot ({
-        plot_transcript_heatmap(hm_transcripts(), obj, input$hm_units, hm_func())
+        plot_transcript_heatmap(obj,
+          hm_transcripts(),
+          input$hm_units, hm_func(),
+          offset = input$hm_offset)
     }, height = hm_plot_height)
-    
-    
+
+
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({
-        poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
-        selectInput('which_beta_vol', 'beta: ', choices = poss_tests)
+      possible_tests <- list_tests(obj, input$settings_test_type)
+      possible_tests <- possible_tests[[input$which_model_vol]]
+      selectInput('which_beta_vol', 'beta: ', choices = possible_tests,
+        selected = possible_tests[1])
     })
-    
+
     output$vol <- renderPlot({
-        val <- input$which_beta_vol
-        if ( is.null(val) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
-            val <- poss_tests[1]
-        }
-        plot_volcano(obj, val,
+      which_test <- input$which_beta_vol
+      if ( is.null(which_test) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_vol]]
+        which_test <- possible_tests[1]
+      }
+      plot_volcano(obj, which_test,
+        input$settings_test_type,
         input$which_model_vol,
-        sig_level = input$max_fdr,
+        sig_level = input$max_fdr_vol,
         point_alpha = input$vol_alpha
         )
     })
-    
+
     #vol_observe
     output$vol_brush_out <- renderDataTable({
-        wb <- input$which_beta_vol
-        if ( is.null(wb) ) {
-            poss_tests <- tests(models(obj, verbose = FALSE)[[input$which_model_vol]])
-            wb <- poss_tests[1]
-        }
-        res <- sleuth_results(obj, wb, input$which_model_vol, rename_cols = FALSE,
-        show_all = FALSE)
-        res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
-        if (!is.null(input$vol_brush)) {
-            res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
-            res$Nlog10_qval = NULL
-        }  else {
-            res <- NULL
-        }
-        
-        # TODO: total hack -- fix this correctly eventually
-        if (is(res, 'data.frame')) {
-            res <- dplyr::rename(res,
-            mean = mean_obs,
-            var = var_obs,
-            tech_var = sigma_q_sq,
-            final_sigma_sq = smooth_sigma_sq_pmax)
-        }
-        
-        res
+      wb <- input$which_beta_vol
+      if ( is.null(wb) ) {
+        possible_tests <- list_tests(obj, input$settings_test_type)
+        possible_tests <- possible_tests[[input$which_model_vol]]
+        wb <- possible_tests[1]
+      }
+
+      res <- sleuth_results(obj, wb, input$settings_test_type,
+        input$which_model_vol, rename_cols = FALSE, show_all = FALSE)
+      res <- dplyr::mutate(res, Nlog10_qval = -log10(qval))
+      if (!is.null(input$vol_brush)) {
+        res <- brushedPoints(res, input$vol_brush, xvar = 'b', yvar = 'Nlog10_qval')
+        res$Nlog10_qval <- NULL
+      }  else {
+        res <- NULL
+      }
+
+      # TODO: total hack -- fix this correctly eventually
+      if (is(res, 'data.frame')) {
+        res <- dplyr::rename(res,
+          mean = mean_obs,
+          var = var_obs,
+          tech_var = sigma_q_sq,
+          final_sigma_sq = smooth_sigma_sq_pmax)
+      }
+
+      res
     })
-    
+
   }
 
-  shinyApp(ui = p_layout, server = server_fun)
+  shinyApp(ui = p_layout, server = server_fun, options = options)
 }
 
 #' @export
@@ -886,4 +1050,21 @@ enclosed_brush <- function(df, brush) {
   ybool <- brush$ymin <= df[[yvar]] & df[[yvar]] <= brush$ymax
 
   df[xbool & ybool,]
+}
+
+#' settings for sleuth_live
+#'
+#' This is a helper function for setting preferences in sleuth live.
+#' Currently, this is somewhat limited, but it will be expanded in the future.
+#'
+#' @param test_type either 'wt' for the wald test or 'lrt' for the likelihood ratio test
+#' @return a named to list with the options and settings
+#' @export
+sleuth_live_settings <- function(test_type = 'wt') {
+  stopifnot( is(test_type, 'character') )
+
+  result <- list()
+  result$test_type <- test_type
+
+  result
 }
