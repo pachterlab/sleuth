@@ -151,7 +151,8 @@ plot_loadings <- function(obj,
   ...) {
 
   stopifnot( is(obj, 'sleuth') )
-
+  #filtering?? doesn't work right now
+  
   # mat <- NULL
   # if (use_filtered) {
   #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
@@ -167,19 +168,21 @@ plot_loadings <- function(obj,
     sample <- NULL
   }
 
+  loadings <- t(pca_calc$x)
+
   #debugging
-  print(sample)
-  print(head(pca_calc$x))
-  print(head(pca_calc$rotation))
-  print(pc_count)
-  print("pc")
-  print(PC)
+  # print(sample)
+  # print(summary(loadings))
+  # print(pc_count)
+  # print("pc")
+  # print(PC)
+
 
   executed <- FALSE
   #given a sample
   if (!is.null(sample)) {
     executed <- TRUE
-    loadings <- pca_calc$rotation[sample,]
+    loadings <- pca_calc$x[sample,]
     if (absolute) {
       loadings <- abs(loadings)
     }
@@ -189,9 +192,9 @@ plot_loadings <- function(obj,
 
   #given a PC, which samples contribute the most?
   if (!executed) {
-    loadings <- pca_calc$rotation[,PC]
-    print('reached here')
-    print(loadings)
+    loadings <- pca_calc$x[,PC]
+    #print('reached here')
+    #print(loadings)
     if (absolute) {
       loadings <- abs(loadings)
     }
@@ -214,9 +217,13 @@ plot_loadings <- function(obj,
   p <- ggplot(dat, aes(x = pc, y = loadings)) 
   p <- p + geom_bar(stat = "identity")
   p <- p + xlab("Principal Components") + ylab("Contribution Scores")
+  if (!executed) {
+    p <- p + xlab("Genes")
+  }
 
   #logistics of graph
-  print(is.numeric(PC))
+  #print(is.numeric(PC))
+
   if (is.numeric(PC)) {
     PC <- paste0("PC ", PC)
   }
@@ -257,7 +264,7 @@ plot_pc_variance <- function(obj,
   # } else {
   #   mat <- spread_abundance_by(obj$obs_norm, units)
   # }
-mat <- spread_abundance_by(obj$obs_norm, units)
+  mat <- spread_abundance_by(obj$obs_norm, units)
 
   pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
 
