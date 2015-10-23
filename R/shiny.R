@@ -259,20 +259,7 @@ sleuth_live <- function(obj, ...) {
           column(2,
             numericInput('pca_point_size', label = 'size: ', value = 3))
           ),
-        fluidRow(
-        column(12,
-          p(h3('principal component variance'), "plot variances retained by each principal component")
-          ),
-          offset = 1),
-        fluidRow(
-          column(3,
-            selectInput('PC_relative', label = 'starting PC: ', choices = 1:5,
-              selected = 1)
-            ),
-          column(3,
-            selectInput('pca_number', label = 'number of principal components ', choices = 3:10,
-              selected = 2))
-          ),
+      
         fluidRow(
         column(12,
           p(h3('loadings'), "observe principal component and sample contributions")
@@ -280,7 +267,7 @@ sleuth_live <- function(obj, ...) {
           offset = 1),
         fluidRow(
           column(3,
-            textInput('sample', label = 'sample: ', value = '',
+            textInput('sample', label = 'transcript: ', value = '',
               )
             ),
           column(3,
@@ -315,7 +302,7 @@ sleuth_live <- function(obj, ...) {
         fluidRow(plotOutput('pca_plt')),
         fluidRow(
           column(12,
-            p(h3('principal component variance'))
+            p(h3('variance explained'))
             ),
             offset = 1),
         fluidRow(plotOutput('plt_pc_var')),
@@ -751,10 +738,10 @@ sleuth_live <- function(obj, ...) {
 
       plot_pc_variance(obj,
         use_filtered = input$pc_filt,
-        pca_number = as.integer(input$pca_number),
+        pca_number = 5,
         bool = input$bool,
         units = input$pca_units,
-        PC_relative = as.integer(input$PC_relative)
+        PC_relative = 1
         )
     })
 
