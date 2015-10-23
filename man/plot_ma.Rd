@@ -4,15 +4,16 @@
 \alias{plot_ma}
 \title{MA plot}
 \usage{
-plot_ma(obj, which_beta, which_model = "full", sig_level = 0.1,
-  point_alpha = 0.2, sig_color = "red", highlight = NULL,
-  highlight_color = "green")
+plot_ma(obj, test, test_type = "wt", which_model = "full",
+  sig_level = 0.1, point_alpha = 0.2, sig_color = "red",
+  highlight = NULL, highlight_color = "green")
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_beta}{a character string denoting which beta to use for
-highlighting the transcript}
+\item{test}{the name of the test to highlight significant transcripts for}
+
+\item{test_type}{either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.}
 
 \item{which_model}{a character string denoting which model to use for the
 test}

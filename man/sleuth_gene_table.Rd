@@ -4,13 +4,15 @@
 \alias{sleuth_gene_table}
 \title{Create a gene table from a sleuth object}
 \usage{
-sleuth_gene_table(obj, which_beta, which_model = "full",
+sleuth_gene_table(obj, test, test_type = "lrt", which_model = "full",
   which_group = "ens_gene")
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_beta}{a character string denoting which beta to use}
+\item{test}{a character string denoting which beta to use}
+
+\item{test_type}{either 'wt' for Wald test or 'lrt' for likelihood ratio test}
 
 \item{which_model}{a character string denoting which model to use}
 

@@ -4,16 +4,15 @@
 \alias{sleuth_results}
 \title{Extract Wald test results from a sleuth object}
 \usage{
-sleuth_results(obj, which_beta, which_model = "full", rename_cols = TRUE,
-  show_all = TRUE)
+sleuth_results(obj, test, test_type = "wt", which_model = "full",
+  rename_cols = TRUE, show_all = TRUE)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_beta}{a character string denoting which coefficient test to
-extract}
+\item{test}{a character denoting the test to extract}
 
-\item{which_model}{a character string denoting which model to extract}
+\item{which_model}{a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.}
 
 \item{rename_cols}{if \code{TRUE} will rename some columns to be shorter and
 consistent with vignette}
@@ -29,7 +28,7 @@ a \code{data.frame}
 This function extracts Wald test results from a sleuth object.
 }
 \seealso{
-\code{\link{wald_test}} to compute tests, \code{\link{models}} to
-view which models and betas have been tested
+\code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
+view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 }
 

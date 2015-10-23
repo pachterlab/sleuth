@@ -27,12 +27,6 @@ print.sleuth_model <- function(obj) {
   cat('formula: ', deparse(obj$formula), '\n')
   cat('coefficients:\n')
   cat(paste0('\t', colnames(obj$design_matrix), '\n'))
-  if (!is.null(obj$wald)) {
-    cat('tests:\n')
-    cat(paste0('\t', names(obj$wald)), '\n')
-  } else {
-    cat('no tests found.\n')
-  }
 
   invisible(obj)
 }
@@ -49,13 +43,14 @@ models <- function(obj, ...) {
 
 #' @export
 models.sleuth <- function(obj, verbose = TRUE) {
-
+  # TODO: output a new in between models for readability
   if (verbose) {
     for (x in names(obj$fits)) {
       cat('[ ', x,' ]\n')
       models(obj$fits[[x]])
     }
   }
+
 
   invisible(obj$fits)
 }
@@ -64,7 +59,6 @@ models.sleuth <- function(obj, verbose = TRUE) {
 models.sleuth_model <- function(obj) {
   print(obj)
 }
-
 
 #' Extract design matrix
 #'
@@ -85,14 +79,148 @@ design_matrix <- function(obj, which_model = 'full') {
   obj[['fits']][[which_model]][['design_matrix']]
 }
 
+# Extract a test from a sleuth object
+#
+# Get the data frame from a sleuth object that corresponds to a specific test.
+# Note: this function is not meant for users. The user facing version of this is \code{sleuth_results}
+#
+# @param obj a sleuth object
+# @param label a string which is a label for the test you are trying to extract
+# @param type the type of test (either: 'lrt', 'wt')
+# @return a data frame with the relevant test information
+get_test <- function(obj, label, type, model) {
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( type %in% c('lrt', 'wt') )
+
+  res <- NULL
+  if (type == 'lrt') {
+    res <- obj$tests[[type]][[label]]
+  } else {
+    if ( missing(model) ) {
+      stop('must specify a model with wald test')
+    }
+    res <- obj$tests[[type]][[model]][[label]]
+  }
+
+  if (is.null(res)) {
+    stop("'", label, "' is not a valid label for a test. Please see valid models and tests using the functions 'models' and 'tests'. Remember to also correctly specify the test type.")
+  }
+
+  res
+}
+
+test_exists <- function(obj, label, type, model) {
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( type %in% c('lrt', 'wt') )
+
+  tryCatch({
+    temp <- get_test(obj, label, type, model)
+  }, error = function(e) {
+    return(FALSE)
+  }, finally = function(x) {})
+
+  TRUE
+}
+
+# if type is 'lrt', return character vector tests
+# else, return a list of character vectors.
+# each element in the list corresponds to a particular model
+list_tests <- function(obj, type) {
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( type %in% c('lrt', 'wt') )
+
+  res <- NULL
+  if (type == 'lrt') {
+    res <- names(obj$tests[[type]])
+  } else {
+    res <- lapply(obj$tests[[type]], names)
+    if ( length(res) == 0 ) {
+      res <- NULL
+    }
+  }
+
+  res
+}
+
+list_all_tests <- function(obj) {
+  stopifnot( is(obj, 'sleuth') )
+
+  list(lrt = list_tests(obj, 'lrt'), wt = list_tests(obj, 'wt'))
+}
+
+# Add a test to a sleuth object
+#
+# Add a test to a sleuth object. Note this function is not meant for users.
+# @param obj a sleuth object
+# @param test_table the data frame/data table you're interested inserting as the actual test
+# @param label the label (name) you want to assign to this test
+# @param type the type of test it is ('lrt' or 'wald')
+# @return a sleuth object with the test added
+add_test <- function(obj, test_table, label, type, model) {
+  stopifnot( is(obj, 'sleuth') )
+  stopifnot( type %in% c('lrt', 'wt') )
+
+  if (type == 'wt' && missing(model)) {
+    stop('if specifying a wald to test, must also specify a model.')
+  }
+
+  # store all tests in obj$tests
+  if ( is.null(obj$tests) ) {
+    obj$tests <- list()
+  }
+
+  if (type == 'lrt') {
+    obj$tests[[type]][[label]] <- test_table
+  } else {
+    # wald test
+    if ( is.null(obj$tests[[type]][[model]]) ) {
+      obj$tests[[type]][[model]] <- list()
+    }
+    obj$tests[[type]][[model]][[label]] <- test_table
+  }
+
+  obj
+}
+
 #' @export
 tests <- function(obj) {
   UseMethod('tests')
 }
 
 #' @export
-tests.sleuth_model <- function(obj) {
-  names(obj$wald)
+tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
+  if ( lrt ) {
+    cat('~likelihood ratio tests:\n')
+    cur_tests <- list_tests(obj, 'lrt')
+    if (length(cur_tests) > 0) {
+      for (test in cur_tests) {
+        cat('\t', test, '\n', sep = '')
+      }
+    } else {
+      cat('\tno tests found.\n')
+    }
+  }
+
+  if ( lrt && wt ) {
+    cat('\n')
+  }
+
+  if ( wt ) {
+    cat('~wald tests:\n')
+    cur_tests <- list_tests(obj, 'wt')
+    if (length(cur_tests) > 0) {
+      for (i in 1:length(cur_tests)) {
+        cat('\t[ ', names(cur_tests)[i], ' ]\n', sep = '')
+        for (j in 1:length(cur_tests[[i]])) {
+          cat('\t', cur_tests[[i]][j], '\n', sep = '')
+        }
+      }
+    } else {
+      cat('\tno tests found.\n')
+    }
+  }
+
+
 }
 
 #' Extract Wald test results from a sleuth object
@@ -100,59 +228,45 @@ tests.sleuth_model <- function(obj) {
 #' This function extracts Wald test results from a sleuth object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which coefficient test to
-#' extract
-#' @param which_model a character string denoting which model to extract
+#' @param test a character denoting the test to extract
+#' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
 #' consistent with vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
 #' @return a \code{data.frame}
-#' @seealso \code{\link{wald_test}} to compute tests, \code{\link{models}} to
-#' view which models and betas have been tested
+#' @seealso \code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
+#' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 #' @export
-sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
+sleuth_results <- function(obj, test, test_type = 'wt',
+  which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
   stopifnot( is(obj, 'sleuth') )
 
-  if ( !model_exists(obj, which_model) ) {
+  if (test_type == 'wt' && !model_exists(obj, which_model)) {
     stop("'", which_model, "' does not exist in ", substitute(obj),
       ". Please check  models(", substitute(obj), ") for fitted models.")
   }
+  # if ( which_model != 'lrt' && !model_exists(obj, which_model) ) {
+  #   stop("'", which_model, "' does not exist in ", substitute(obj),
+  #     ". Please check  models(", substitute(obj), ") for fitted models.")
+  # }
 
-  if ( !is(which_beta, 'character') ) {
-    stop("'", substitute(which_beta), "' is not a valid character.")
+  if ( !is(test, 'character') ) {
+    stop("'", substitute(test), "' is not a valid character.")
   }
 
-  if ( length(which_beta) != 1) {
-    stop("'", substitute(which_beta),
-      "' is not a valid length. which_beta must be of length one.")
+  if ( length(test) != 1) {
+    stop("'", substitute(test),
+      "' is not a valid length. test must be of length one.")
   }
 
-  if ( !(which_beta %in% names(obj$fits[[which_model]]$wald)) ) {
-    stop("'", which_beta, "' is not available in '", which_model,
-      "'. Check models(", substitute(obj),
-      ") to see list of tests that have been run or run wald_test().")
-  }
-
-  # obj$fits[[which_model]]$wald[[which_beta]]
   res <- NULL
-  if (rename_cols) {
-    res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
-      target_id,
-      pval,
-      qval,
-      b,
-      se_b,
-      mean_obs,
-      var_obs,
-      tech_var = sigma_q_sq,
-      sigma_sq,
-      smooth_sigma_sq,
-      final_sigma_sq = smooth_sigma_sq_pmax
-      )
+  if (test_type == 'lrt') {
+    res <- get_test(obj, test, type = 'lrt')
   } else {
-    res <- dplyr::select(obj$fits[[which_model]]$wald[[which_beta]],
+    res <- get_test(obj, test, 'wt', which_model)
+    res <- dplyr::select(res,
       target_id,
       pval,
       qval,
@@ -167,6 +281,12 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
       )
   }
 
+  if (rename_cols) {
+    res <- dplyr::rename(res,
+      tech_var = sigma_q_sq,
+      final_sigma_sq = smooth_sigma_sq_pmax
+      )
+  }
 
   if (show_all) {
     tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
@@ -187,6 +307,3 @@ sleuth_results <- function(obj, which_beta, which_model = 'full', rename_cols = 
 
   dplyr::arrange(res, qval)
 }
-
-# TODO: get betas
-# TODO: get covars from betas

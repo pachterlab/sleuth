@@ -4,12 +4,13 @@
 \alias{plot_transcript_heatmap}
 \title{Plot clustered heatmap}
 \usage{
-plot_transcript_heatmap(transcripts, obj, units = "tpm", trans = "log")
+plot_transcript_heatmap(obj, transcripts, units = "tpm", trans = "log",
+  offset = 1)
 }
 \arguments{
-\item{transcripts}{a vector of strings containing a list of transcripts to be plotted in a heatmap}
-
 \item{obj}{a \code{sleuth} object}
+
+\item{transcripts}{a vector of strings containing a list of transcripts to be plotted in a heatmap}
 
 \item{units}{a string specifying which units to use, either tpm or est_counts}
 
