@@ -95,6 +95,7 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
     data.table::data.table(result),
     model_info,
     by = 'target_id')
+  result <- dplyr::mutate(result, degrees_free = degrees_free)
 
   test_name <- paste0(null_model, ':', alt_model)
   obj <- add_test(obj, result, test_name, 'lrt')

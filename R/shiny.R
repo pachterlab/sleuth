@@ -550,12 +550,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       current_test <- NULL
       if (input$settings_test_type == 'wt') {
         poss_tests <- poss_tests[[input$which_model_qq]]
-        current_test <- poss_tests[1]
       }
-      # if ( is.null(wb) ) {
-      #   poss_tests <- list_tests(obj, 'wt')[[input$which_model_qq]]
-      #   wb <- poss_tests[1]
-      # }
+      current_test <- poss_tests[1]
 
       plot_qqnorm(obj, current_test,
         test_type = input$settings_test_type,

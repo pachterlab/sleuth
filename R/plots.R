@@ -574,9 +574,9 @@ plot_qqnorm <- function(obj, test, test_type = 'wt', which_model = 'full',
   ) {
   stopifnot( is(obj, 'sleuth') )
 
-  if ( test_type == 'lrt' ) {
-    stop('Currently only works for the Wald test. We will fix this in the next version.')
-  }
+  # if ( test_type == 'lrt' ) {
+  #   stop('Currently only works for the Wald test. We will fix this in the next version.')
+  # }
 
   res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
     show_all = FALSE)
@@ -599,7 +599,11 @@ plot_qqnorm <- function(obj, test, test_type = 'wt', which_model = 'full',
     intercept <- y[1L] - slope * x[1L]
   } else {
     # TODO: deal with the chisq case
-    #pnts <- stats::
+    pnts <- stats::ppoints(nrow(res))
+    df <- res$degrees_free[1]
+    x <- qchisq(pnts, df = df)
+    res <- dplyr::arrange(res, test_stat)
+    res <- dplyr::mutate(res, theoretical = x, observed = test_stat)
   }
 
   p <- ggplot(res, aes(theoretical, observed))
@@ -607,7 +611,9 @@ plot_qqnorm <- function(obj, test, test_type = 'wt', which_model = 'full',
   p <- p + scale_colour_manual(values = c('black', sig_color))
   p <- p + xlab('theoretical quantile')
   p <- p + ylab(paste0('observed quantile: ', test))
-  p <- p + geom_abline(intercept = intercept, slope = slope, color = line_color)
+  if (test_type == 'wt') {
+    p <- p + geom_abline(intercept = intercept, slope = slope, color = line_color)
+  }
 
   if (!is.null(highlight)) {
     suppressWarnings({
