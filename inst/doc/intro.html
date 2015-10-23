@@ -10,7 +10,7 @@
 
 <meta name="author" content="Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter" />
 
-<meta name="date" content="2015-10-14" />
+<meta name="date" content="2015-10-22" />
 
 <title>Introduction to sleuth</title>
 
@@ -72,7 +72,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="header">
 <h1 class="title">Introduction to sleuth</h1>
 <h4 class="author"><em>Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter</em></h4>
-<h4 class="date"><em>2015-10-14</em></h4>
+<h4 class="date"><em>2015-10-22</em></h4>
 </div>
 
 
@@ -89,7 +89,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p><span class="math display">\[ y_{t,i} = \beta_{t,0} + \beta_{t,1} x_{t,i} + \epsilon_{t,i} \]</span></p>
 <p>where <span class="math inline">\(x_{t,i}\)</span> is an indicator variable describing the condition, <span class="math inline">\(\beta_{t,0}\)</span> and <span class="math inline">\(\beta_{t,1}\)</span> are parameters of the model and <span class="math inline">\(\epsilon_{t,i}\)</span> is biological “noise”. However, conditioned on <span class="math inline">\(x_i\)</span> and <span class="math inline">\(y_i\)</span> the estimated number of counts from the observations in the experiment is given by</p>
 <p><span class="math display">\[ d_{t,i} = y_{t,i} + \zeta_{t,i} \]</span></p>
-<p>where <span class="math inline">\(\zeta_{t,i}\)</span> represents technical “noise”, i.e. uncertainty in the measurement due to effects other than biological variability. The <strong>sleuth</strong> model incorporates the assumptions that the expectation <span class="math inline">\(E(\zeta_{t,i}|y_{t,i}) = 0\)</span>, that <span class="math inline">\(E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}\)</span> and that the response error is <em>additive</em>, i.e. if $ the variance V(_{t,i}) = _t^2$ and the variance <span class="math inline">\(V(\zeta_{t,i}|y_{t,i}) = \sigma_t^2\)</span> then the variance <span class="math inline">\(V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2\)</span>. <strong>sleuth</strong> makes use of the boostraps from <strong>kallisto</strong> to estimate the <span class="math inline">\(\tau_t^2\)</span>, and after subtracting the estimated technical variance the <span class="math inline">\(\sigma_t^2\)</span> are estimated via a shrinkage procedure similar to that used in <a href="http://www.genomebiology.com/2014/15/2/R29">Limma Voom</a>.</p>
+<p>where <span class="math inline">\(\zeta_{t,i}\)</span> represents technical “noise”, i.e. uncertainty in the measurement due to effects other than biological variability. The <strong>sleuth</strong> model incorporates the assumptions that the expectation <span class="math inline">\(E(\zeta_{t,i}|y_{t,i}) = 0\)</span>, that <span class="math inline">\(E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}\)</span> and that the response error is <em>additive</em>, i.e. if the variance <span class="math inline">\(V(\epsilon_{t,i}) = \sigma_t^2\)</span> and the variance <span class="math inline">\(V(\zeta_{t,i}|y_{t,i}) = \sigma_t^2\)</span> then the variance <span class="math inline">\(V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2\)</span>. <strong>sleuth</strong> makes use of the boostraps from <strong>kallisto</strong> to estimate the <span class="math inline">\(\tau_t^2\)</span>, and after subtracting the estimated technical variance the <span class="math inline">\(\sigma_t^2\)</span> are estimated via a shrinkage procedure similar to that used in <a href="http://www.genomebiology.com/2014/15/2/R29">Limma Voom</a>.</p>
 <p>More generally, <strong>sleuth</strong> can be used to analyze multiple conditions organized in complex experimental designs. In the general case the unobserved model is given by</p>
 <p><span class="math display">\[ Y_t = X_t \beta_t + \epsilon_t \]</span></p>
 <p>where <span class="math inline">\(t\)</span> is a transcript, <span class="math inline">\(Y_t\)</span> is a vector of length <span class="math inline">\(n\)</span> where <span class="math inline">\(n\)</span> is the number of samples, <span class="math inline">\(X_t\)</span> is an <span class="math inline">\(n \times p\)</span> matrix where <span class="math inline">\(p\)</span> is the number of covariates, <span class="math inline">\(\beta_t\)</span> represents the effect sizes and is a vector of length <span class="math inline">\(p\)</span>, and <span class="math inline">\(\epsilon_t\)</span> is a vector of length <span class="math inline">\(n\)</span>. The observed response is described by</p>
@@ -116,7 +116,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><a href="http://www.nature.com/nbt/journal/v31/n1/full/nbt.2450.html">Differential analysis of gene regulation at transcript resolution with RNA-seq</a> by Cole Trapnell, David G Henderickson, Martin Savageau, Loyal Goff, John L Rinn and Lior Pachter, Nature Biotechnology <strong>31</strong>, 46–53 (2013).</li>
 </ul>
 <p>The human fibroblast RNA-Seq data for the paper is available on GEO at accession <a href="http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704">GSE37704</a>. The samples to be analyzed are the six samples LFB_scramble_hiseq_repA, LFB_scramble_hiseq_repB, LFB_scramble_hiseq_repC, LFB_HOXA1KD_hiseq_repA, LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions (scramble and HoxA1 knockdown) that will be compared with <strong>sleuth</strong>.</p>
-<p>To analyze the data, first download the raw reads, install <strong>kallisto</strong> and then quantify the data with boostraps as described <a href="http://pachterlab.github.io/kallisto/starting.html">here</a>. This step can be skipped for the purposes of the vignette, by downloading the <strong>kallisto</strong> processsed data directly by clicking <a href="http://bio.math.berkeley.edu/sleuth/cuffdiff2/cuffdiff2_data_kallisto_results.zip">here</a>.</p>
+<p>To analyze the data, first download the raw reads, install <strong>kallisto</strong> and then quantify the data with boostraps as described <a href="http://pachterlab.github.io/kallisto/starting.html">here</a>. This step can be skipped for the purposes of the vignette, by downloading the <strong>kallisto</strong> processed data directly by clicking <a href="http://bio.math.berkeley.edu/sleuth/cuffdiff2/cuffdiff2_data_kallisto_results.zip">here</a>.</p>
 <p>The first step in a <strong>sleuth</strong> analysis is to specify where the <strong>kallisto</strong> results are stored. Begin by storing the base directory of the results in a variable,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">base_dir &lt;-<span class="st"> &quot;~/Downloads/cuffdiff2_data_kallisto_results&quot;</span></code></pre></div>
 <p>Next get the list of sample IDs with</p>
@@ -141,7 +141,7 @@ kal_dirs</code></pre></div>
 ##                                                                SRR493371 
 ## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493371/kallisto&quot;</code></pre>
 <p>The next step is to load an auxillary table that describes the experimental design and the relationship between the kallisto directories and the samples:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">s2c &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(base_dir,<span class="st">&quot;hiseq_info.txt&quot;</span>), <span class="dt">header =</span> <span class="ot">TRUE</span>, <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">s2c &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(base_dir, <span class="st">&quot;hiseq_info.txt&quot;</span>), <span class="dt">header =</span> <span class="ot">TRUE</span>, <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)
 s2c &lt;-<span class="st"> </span>dplyr::<span class="kw">select</span>(s2c, <span class="dt">sample =</span> run_accession, condition)
 s2c</code></pre></div>
 <pre><code>##      sample condition
@@ -178,24 +178,21 @@ s2c</code></pre></div>
 ## 50844 targets passed the filter
 ## normalizing tpm
 ## merging in metadata
-## normalizing bootstrap samples</code></pre>
+## normalizing bootstrap samples
+## summarizing bootstraps</code></pre>
 <p>then</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_fit</span>(so)</code></pre></div>
-<pre><code>## summarizing bootstraps
-## fitting measurement error models
-## shrinkage estimation
+<pre><code>## shrinkage estimation
 ## computing variance of betas</code></pre>
 <p>and finally</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_test</span>(so, <span class="dt">which_beta =</span> <span class="st">'conditionscramble'</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_wt</span>(so, <span class="st">'conditionscramble'</span>)</code></pre></div>
 <p>In general, one can see the possible tests that could be performed using the <code>which_beta</code> parameter in <code>sleuth_test</code> and examining the coefficients:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">models</span>(so)</code></pre></div>
 <pre><code>## [  full  ]
 ## formula:  ~condition 
 ## coefficients:
 ##  (Intercept)
-##      conditionscramble
-## tests:
-##  conditionscramble</code></pre>
+##      conditionscramble</code></pre>
 <p>At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the <strong>kallisto</strong> estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. There is, however, one piece of information that can be useful to add in, but that is optional. In reading the kallisto output <strong>sleuth</strong> has no information about <em>genes</em>, but this can be added allowing for searching and analysis by gene instead of transcript.</p>
 <p>Since the example was constructed with the ENSEMBL human transcriptome, we will add gene names from ENSEMBL using biomaRt (there are other ways to do this as well):</p>
 <p>First, install biomaRt with</p>
@@ -203,7 +200,6 @@ s2c</code></pre></div>
 <span class="kw">biocLite</span>(<span class="st">&quot;biomaRt&quot;</span>)</code></pre></div>
 <p>Then collect gene names with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mart &lt;-<span class="st"> </span>biomaRt::<span class="kw">useMart</span>(<span class="dt">biomart =</span> <span class="st">&quot;ensembl&quot;</span>, <span class="dt">dataset =</span> <span class="st">&quot;hsapiens_gene_ensembl&quot;</span>)</code></pre></div>
-<pre><code>## Creating a generic function for 'nchar' from package 'base' in package 'S4Vectors'</code></pre>
 <p>and add them into the <strong>sleuth</strong> table with</p>
 <pre><code>t2g &lt;- biomaRt::getBM(attributes = c(&quot;ensembl_transcript_id&quot;, &quot;ensembl_gene_id&quot;,
     &quot;external_gene_name&quot;), mart = mart)
