@@ -309,21 +309,21 @@ sleuth_live <- function(obj, ...) {
       tabPanel('loadings',
       fluidRow(
         column(12,
-          p(h3('loadings'), "observe principal component and gene contributions")
+          p(h3('loadings'), "observe principal component and sample contributions")
           ),
           offset = 1),
         fluidRow(
           column(3,
-            selectInput('gene', label = 'gene: ', choices = '',
+            textInput('sample', label = 'sample: ', value = '',
+              )
+            ),
+          column(3,
+            selectInput('PC', label = 'principal component: ', choices = 1:5,
               selected = 1)
             ),
           column(3,
-            selectInput('principal component', label = 'PC: ', choices = 1:5,
-              selected = 1)
-            ),
-          column(3,
-            selectInput('pc_count', label = 'number of principal components: ', choices = 1:5,
-              selected = 2))
+            selectInput('pc_count', label = 'number of principal components: ', choices = 1:10,
+              selected = 5))
           ),
         fluidRow(
           column(2,
@@ -686,7 +686,7 @@ sleuth_live <- function(obj, ...) {
         use_filtered = input$pc_filt,
         pc_count = as.integer(input$pc_count),
         bool = as.logical(input$bool),
-        gene = "SRR1812759",
+        sample = input$sample,
         units = input$pca_units,
         PC = as.integer(input$PC),
         absolute = input$absl

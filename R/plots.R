@@ -128,12 +128,12 @@ plot_pca <- function(obj,
 
 #' Plot Loadings and Interpretations 
 #' 
-#' give a principal component, tells you which contribute the most or give a gene, tells you which PC's it contributes to the most
+#' give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
 #' 
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param gene user input on which gene and which PC's contribute the most
-#' @param PC  principal component to view genes contribution to that PC
+#' @param sample user input on which sample and which PC's contribute the most
+#' @param PC  principal component to view sample's contribution to that PC
 #' @param units either 'est_counts' or 'tpm'
 #' @param pc_count # of PC's
 #' @param bool scale or not
@@ -142,14 +142,14 @@ plot_pca <- function(obj,
 #' @export
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
-  gene = NULL, #string please
+  sample = NULL, #string please
   PC = NULL, #apparently if u type in a string or an integer (corresponding to the PC), they're both ok
   units = 'est_counts',
   pc_count = NULL,
   bool = FALSE,
   absolute = TRUE, 
   ...) {
-  stopifnot( !is.null(gene) && !is.null(PC) )# make sure proper arguments are given
+
   stopifnot( is(obj, 'sleuth') )
 
   # mat <- NULL
@@ -161,12 +161,25 @@ plot_loadings <- function(obj,
   mat <- spread_abundance_by(obj$obs_norm, units)
   
   pca_calc <- prcomp(mat, scale = bool)
-  #transpose
-  loadings <- pca_calc
 
-  #given a gene
-  if (!is.null(gene)) {
-    loadings <- pca_calc$x[gene,]
+  #sort of hack-y, may wish to fix
+  if (sample == '') {
+    sample <- NULL
+  }
+
+  #debugging
+  print(sample)
+  print(head(pca_calc$x))
+  print(head(pca_calc$rotation))
+  print(pc_count)
+  print("pc")
+  print(PC)
+
+  executed <- FALSE
+  #given a sample
+  if (!is.null(sample)) {
+    executed <- TRUE
+    loadings <- pca_calc$rotation[sample,]
     if (absolute) {
       loadings <- abs(loadings)
     }
@@ -175,14 +188,17 @@ plot_loadings <- function(obj,
   }
 
   #given a PC, which samples contribute the most?
-  if (!is.null(PC)) {
-    loadings <- pca_calc$x[,PC]
+  if (!executed) {
+    loadings <- pca_calc$rotation[,PC]
+    print('reached here')
+    print(loadings)
     if (absolute) {
       loadings <- abs(loadings)
     }
     loadings <- sort(loadings, decreasing = TRUE)
     names <- names(loadings)
   }
+
 
   if (!is.null(pc_count)) {
       loadings <- loadings[1:pc_count]
@@ -205,8 +221,8 @@ plot_loadings <- function(obj,
     PC <- paste0("PC ", PC)
   }
 
-  if (!is.null(gene)) {
-    p <- p + ggtitle(gene)
+  if (!is.null(sample)) {
+    p <- p + ggtitle(sample)
   } else {
     p <- p + ggtitle(PC)
   }
