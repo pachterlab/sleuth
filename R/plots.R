@@ -152,7 +152,7 @@ plot_loadings <- function(obj,
 
   stopifnot( is(obj, 'sleuth') )
   #filtering?? doesn't work right now
-  
+
   # mat <- NULL
   # if (use_filtered) {
   #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
@@ -218,7 +218,7 @@ plot_loadings <- function(obj,
   p <- p + geom_bar(stat = "identity")
   p <- p + xlab("Principal Components") + ylab("Contribution Scores")
   if (!executed) {
-    p <- p + xlab("Genes")
+    p <- p + xlab("Transcripts")
   }
 
   #logistics of graph
