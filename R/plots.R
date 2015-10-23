@@ -134,6 +134,7 @@ plot_pca <- function(obj,
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param gene user input on which gene and which PC's contribute the most
 #' @param PC  principal component to view genes contribution to that PC
+#' @param units either 'est_counts' or 'tpm'
 #' @param pc_count # of PC's
 #' @param bool scale or not
 #' @param absolute default true, to see all PC's magnitude (recommended)
@@ -143,6 +144,7 @@ plot_loadings <- function(obj,
   use_filtered = TRUE,
   gene = NULL, #string please
   PC = NULL, #apparently if u type in a string or an integer (corresponding to the PC), they're both ok
+  units = 'est_counts',
   pc_count = NULL,
   bool = FALSE,
   absolute = TRUE, 
@@ -150,12 +152,13 @@ plot_loadings <- function(obj,
   stopifnot( !is.null(gene) && !is.null(PC) )# make sure proper arguments are given
   stopifnot( is(obj, 'sleuth') )
 
-  mat <- NULL
-  if (use_filtered) {
-    mat <- spread_abundance_by(obj$obs_norm_filt, units)
-  } else {
-    mat <- spread_abundance_by(obj$obs_norm, units)
-  }
+  # mat <- NULL
+  # if (use_filtered) {
+  #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  # } else {
+  #   mat <- spread_abundance_by(obj$obs_norm, units)
+  # }
+  mat <- spread_abundance_by(obj$obs_norm, units)
   
   pca_calc <- prcomp(mat, scale = bool)
   #transpose
@@ -218,6 +221,7 @@ plot_loadings <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param units either 'est_counts' or 'tpm'
 #' @param pca_number user input on how many PC to display, otherwise default is 5
 #' @param bool determines scaling
 #' @param PC_relative gives the option to compare subsequent principal components and their contributions
@@ -225,17 +229,19 @@ plot_loadings <- function(obj,
 #' @export
 plot_pc_variance <- function(obj, 
   use_filtered = TRUE,
+  units = 'est_counts',
   pca_number = NULL,
   bool = FALSE,
   PC_relative = NULL, #this is an integer
   ...) {
 
-  mat <- NULL
-  if (use_filtered) {
-    mat <- spread_abundance_by(obj$obs_norm_filt, units)
-  } else {
-    mat <- spread_abundance_by(obj$obs_norm, units)
-  }
+  # mat <- NULL
+  # if (use_filtered) {
+  #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  # } else {
+  #   mat <- spread_abundance_by(obj$obs_norm, units)
+  # }
+mat <- spread_abundance_by(obj$obs_norm, units)
 
   pca_calc <- prcomp(mat, scale = bool) #PCA calculations 
 

@@ -292,13 +292,17 @@ sleuth_live <- function(obj, ...) {
           ),
         fluidRow(
           column(2,
+            selectInput('pca_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(2,
             checkboxInput('pca_filt', label = 'filter',
               value = TRUE),
             checkboxInput('bool', label = 'scale',
               value = FALSE)
             )
           ),
-        fluidRow(plotOutput('pca_pc_var'))
+        fluidRow(plotOutput('plt_pc_var'))
         ),
 
       ####
@@ -323,6 +327,10 @@ sleuth_live <- function(obj, ...) {
           ),
         fluidRow(
           column(2,
+            selectInput('pca_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(2,
             checkboxInput('pca_filt', label = 'filter',
               value = TRUE),
             checkboxInput('absl', label = 'absolute value',
@@ -331,7 +339,7 @@ sleuth_live <- function(obj, ...) {
               value = FALSE)
             )
           ),
-        fluidRow(plotOutput('pca_plt'))
+        fluidRow(plotOutput('plt_pc_loadings'))
         ),
 
 
@@ -671,11 +679,6 @@ sleuth_live <- function(obj, ...) {
 
     })
 
-    ### MV plot
-    output$mv_plt <- renderPlot({
-      plot_mean_var(obj)
-    })
-
     ### Plot pc loadings
     output$plt_pc_loadings <- renderPlot({
 
@@ -683,7 +686,8 @@ sleuth_live <- function(obj, ...) {
         use_filtered = input$pc_filt,
         pc_count = as.integer(input$pc_count),
         bool = as.logical(input$bool),
-        gene = input$gene,
+        gene = "SRR1812759",
+        units = input$pca_units,
         PC = as.integer(input$PC),
         absolute = input$absl
         )
@@ -694,10 +698,17 @@ sleuth_live <- function(obj, ...) {
 
       plot_pc_variance(obj,
         use_filtered = input$pc_filt,
-        pca_number = input$pca_number,
+        pca_number = as.integer(input$pca_number),
         bool = input$bool,
-        PC_relative = input$PC_relative
+        units = input$pca_units,
+        PC_relative = as.integer(input$PC_relative)
         )
+    })
+
+
+    ### MV plot
+    output$mv_plt <- renderPlot({
+      plot_mean_var(obj)
     })
 
     ### MA
