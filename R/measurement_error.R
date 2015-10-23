@@ -62,10 +62,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   # TODO: check if model matrix is full rank
   X <- model.matrix(formula, obj$sample_to_covariates)
+  rownames(X) <- obj$sample_to_covariates$sample
   A <- solve( t(X) %*% X )
-
-
-
 
   mes <- me_model_by_row(obj, X, obj$bs_summary)
   tid <- names(mes)

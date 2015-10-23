@@ -169,7 +169,8 @@ sleuth_prep <- function(
   kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
-
+  design_matrix <- model.matrix(full_model, sample_to_covariates)
+  rownames(design_matrix) <- sample_to_covariates$sample
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
   ret <- list(
       kal = kal_list,
@@ -178,7 +179,7 @@ sleuth_prep <- function(
       sample_to_covariates = sample_to_covariates,
       bootstrap_summary = NA,
       full_formula = full_model,
-      design_matrix = model.matrix(full_model, sample_to_covariates),
+      design_matrix = design_matrix,
       target_mapping = target_mapping
     )
 
@@ -456,6 +457,7 @@ obs_to_matrix <- function(obj, value_name) {
   rownames(obs_counts) <- obs_counts$target_id
   obs_counts$target_id <- NULL
   obs_counts <- as.matrix(obs_counts)
+  obs_counts <- obs_counts[, obj$sample_to_covariates$sample]
 
   obs_counts
 }
