@@ -81,6 +81,8 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param max_bootstrap maximum number of bootstrap values to read for each
 #' transcript.
 #' @param ... additional arguments passed to the filter function
+#' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
+#' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
@@ -92,6 +94,8 @@ sleuth_prep <- function(
   filter_fun = basic_filter,
   target_mapping = NULL,
   max_bootstrap = NULL,
+  norm_fun_counts = norm_factors,
+  norm_fun_tpm = norm_factors,
   ...) {
 
   ##############################
@@ -133,6 +137,14 @@ sleuth_prep <- function(
 
   if ( any(is.na(sample_to_covariates)) ) {
     warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
+  }
+
+  if ( !is(norm_fun_counts, 'function') ) {
+    stop("norm_fun_counts must be a function")
+  }
+
+  if ( !is(norm_fun_tpm, 'function') ) {
+    stop("norm_fun_tpm must be a function")
   }
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
@@ -192,7 +204,7 @@ sleuth_prep <- function(
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
-    est_counts_sf <- norm_factors(est_counts_spread[filter_bool,])
+    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool,])
 
     filter_df <- adf(target_id = names(filter_true))
 
@@ -209,7 +221,7 @@ sleuth_prep <- function(
     # deal w/ TPM
     msg("normalizing tpm")
     tpm_spread <- spread_abundance_by(obs_raw, "tpm")
-    tpm_sf <- norm_factors(tpm_spread[filter_bool,])
+    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool,])
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
     tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
@@ -310,7 +322,7 @@ norm_factors <- function(mat) {
 
   sf <- apply(s, 2, median)
   scaling <- exp( (-1/p) * sum(log(sf)))
-  
+
   sf * scaling
 }
 
