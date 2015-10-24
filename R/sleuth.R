@@ -199,7 +199,8 @@ sleuth_prep <- function(
   normalize <- TRUE
   if ( normalize ) {
     msg("normalizing est_counts")
-    est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
+    est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
+      sample_to_covariates$sample)
     filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
     filter_true <- filter_bool[filter_bool]
 
@@ -220,7 +221,8 @@ sleuth_prep <- function(
 
     # deal w/ TPM
     msg("normalizing tpm")
-    tpm_spread <- spread_abundance_by(obs_raw, "tpm")
+    tpm_spread <- spread_abundance_by(obs_raw, "tpm",
+      sample_to_covariates$sample)
     tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool,])
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
@@ -386,7 +388,7 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
 # @param abund the abundance \code{data.frame} from a \code{sleuth} object
 # @param var a character array of length one. The variable for which to get "spread" on (e.g. "est_counts").
 # @export
-spread_abundance_by <- function(abund, var) {
+spread_abundance_by <- function(abund, var, which_order) {
   # var <- lazyeval::lazy(var)
   var_spread <- abund %>%
     select_("target_id", "sample", var) %>%
@@ -396,7 +398,9 @@ spread_abundance_by <- function(abund, var) {
   rownames(var_spread) <- var_spread$target_id
   var_spread["target_id"] <- NULL
 
-  as.matrix(var_spread)
+  result <- as.matrix(var_spread)
+
+  result[, which_order]
 }
 
 #' @export

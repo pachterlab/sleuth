@@ -92,9 +92,11 @@ plot_pca <- function(obj,
 
   mat <- NULL
   if (use_filtered) {
-    mat <- spread_abundance_by(obj$obs_norm_filt, units)
+    mat <- spread_abundance_by(obj$obs_norm_filt, units,
+      obj$sample_to_covariates$sample)
   } else {
-    mat <- spread_abundance_by(obj$obs_norm, units)
+    mat <- spread_abundance_by(obj$obs_norm, units,
+      obj$sample_to_covariates$sample)
   }
 
   pca_res <- prcomp(mat)
@@ -258,9 +260,11 @@ plot_scatter <- function(obj,
 
   abund <- NULL
   if (use_filtered) {
-    abund <- spread_abundance_by(obj$obs_norm_filt, units)
+    abund <- spread_abundance_by(obj$obs_norm_filt, units,
+      obj$sample_to_covariates$sample)
   } else {
-    abund <- spread_abundance_by(obj$obs_norm, units)
+    abund <- spread_abundance_by(obj$obs_norm, units,
+      obj$sample_to_covariates$sample)
   }
   abund <- abund + offset
   abund <- as_df(abund)
@@ -476,9 +480,11 @@ plot_sample_heatmap <- function(obj,
   ) {
   abund <- NULL
   if (use_filtered) {
-    abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm')
+    abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm',
+      obj$sample_to_covariates$sample)
   } else {
-    abund <- spread_abundance_by(obj$obs_norm, 'tpm')
+    abund <- spread_abundance_by(obj$obs_norm, 'tpm',
+      obj$sample_to_covariates$sample)
   }
   all_pairs <- apply_all_pairs(abund, jsd)
 
