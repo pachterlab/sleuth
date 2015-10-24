@@ -4,12 +4,15 @@
 \alias{transcripts_from_gene}
 \title{Get the names of the transcripts associated to a gene}
 \usage{
-transcripts_from_gene(obj, which_beta, which_model, gene_colname, gene_name)
+transcripts_from_gene(obj, test, test_type, which_model, gene_colname,
+  gene_name)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_beta}{a character string denoting which beta to use}
+\item{test}{a character string denoting which beta to use}
+
+\item{test_type}{either 'wt' for wald test or 'lrt' for likelihood ratio test}
 
 \item{which_model}{a character string denoting which model to use}
 

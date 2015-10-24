@@ -1,0 +1,9 @@
+{
+	"n_targets": 15,
+	"n_bootstraps": 30,
+	"n_processed": 10000,
+	"kallisto_version": "0.42.3",
+	"index_version": 10,
+	"start_time": "Sat Oct  3 17:58:37 2015",
+	"call": "kallisto quant -i transcripts.kidx -b 30 -o kallisto_out reads_1.fastq.gz reads_2.fastq.gz"
+}
