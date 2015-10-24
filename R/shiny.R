@@ -284,11 +284,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
           offset = 1),
         fluidRow(
-          column(3,
+          column(2,
             selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
               selected = 1)
             ),
-          column(3,
+          column(2,
             selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
               selected = 2)
             ),
@@ -297,12 +297,28 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               choices = c(NULL, poss_covars), selected = NULL)
             ),
           column(2,
-            numericInput('pca_point_size', label = 'size: ', value = 3))
+            numericInput('pca_point_size', label = 'size: ', value = 3)),
+          column(2,
+            selectInput('pca_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts'))
+        ),
+        fluidRow(
+          column(2,
+            checkboxInput('pca_filt', label = 'filter',
+              value = TRUE)
+              ),
+          column(2,
+            checkboxInput('text_labels', label = 'text labels',
+              value = TRUE)
+            )
           ),
+
+        fluidRow(plotOutput('pca_plt')),
 
         fluidRow(
         column(12,
-          p(h3('loadings'), "observe principal component and sample contributions")
+          p(h3('loadings'), "observe contributions of samples or transcripts to the principal component")
           ),
           offset = 1),
         fluidRow(
@@ -310,36 +326,23 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             textInput('sample', label = 'transcript: ', value = '',
               )
             ),
-          column(3,
-            selectInput('PC', label = 'principal component: ', choices = 1:5,
+          column(2,
+            selectInput('PC', label = 'PC: ', choices = 1:5,
               selected = 1)
             ),
           column(3,
-            selectInput('pc_count', label = 'number of principal components or genes: ', choices = 1:10,
-              selected = 5))
-          ),
-        fluidRow(
+            selectInput('pc_count', label = '# of PCs or transcripts: ', choices = 1:10,
+              selected = 5)),
           column(2,
-            selectInput('pca_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
-          column(3,
-            checkboxInput('pca_filt', label = 'filter',
-              value = TRUE),
-            checkboxInput('text_labels', label = 'text labels',
-              value = TRUE),
-            checkboxInput('absl', label = 'absolute value (loadings)',
-              value = TRUE),
+            checkboxInput('absl', label = 'absolute value',
+              value = TRUE)
+            ),
+          column(2,
             checkboxInput('bool', label = 'scale',
               value = FALSE)
             )
           ),
-        fluidRow(
-          column(12,
-            p(h3('principal component analysis'))
-            ),
-            offset = 1),
-        fluidRow(plotOutput('pca_plt')),
+
         fluidRow(
           column(12,
             p(h3('variance explained'))
