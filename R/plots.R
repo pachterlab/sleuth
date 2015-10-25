@@ -292,6 +292,7 @@ plot_pc_variance <- function(obj,
 }
 
 
+
 #' Plot density
 #'
 #' Plot the density of a some grouping
@@ -343,6 +344,8 @@ plot_group_density <- function(obj,
 
   p
 }
+
+
 
 #' Plot sample density
 #'
