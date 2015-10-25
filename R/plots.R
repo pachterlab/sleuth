@@ -180,7 +180,6 @@ plot_loadings <- function(obj,
       loadings <- sort(loadings, decreasing = TRUE)
     } else {
       loadings <- loadings[order(abs(loadings), decreasing = TRUE)]
-      print(head(loadings))
     }
   }
 
