@@ -135,10 +135,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         ),
         tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
         fluidRow(plotOutput('hm_plot')),
-        fluidRow(
-                div(align = "right", style = "margin-right:15px",
-                    downloadButton("download_hm_plt", "Download Plot")))
-
+        fluidRow(uiOutput("download_hm_plt_button"))
     ),
 
 
@@ -335,7 +332,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
         fluidRow(plotOutput('pca_plt')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
                     downloadButton("download_pca_plt", "Download Plot")))
         ),
 
@@ -349,7 +346,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
         fluidRow(plotOutput('samp_heat_plt')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
                     downloadButton("download_samp_heat_plt", "Download Map")))
         )
 
@@ -394,7 +391,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               selected = samp_names[1]))),
         fluidRow(plotOutput('sample_density')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
                     downloadButton("download_samp_dens_plt", "Download Plot")))
 
         ),
@@ -437,7 +434,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
         fluidRow(dataTableOutput('summary_dt')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
                     downloadButton("download_summary_table", "Download Table")))
         ),
 
@@ -464,7 +461,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
         fluidRow(dataTableOutput('kallisto_table')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
                     downloadButton("download_kallisto_table", "Download Table")))
 
         )
@@ -482,7 +479,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           offset = 1),
         fluidRow(plotOutput('mv_plt')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
                     downloadButton("download_mv_plt", "Download Plot")))
 
         ),
@@ -529,7 +526,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                     downloadButton("download_scatter_plt", "Download Plot"))),
         fluidRow(plotOutput('scatter_vars')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
                     downloadButton("download_scatter_var_plt", "Download Plot"))),
         fluidRow(dataTableOutput('scatter_brush_table')),
         fluidRow(uiOutput("download_scatter_table_button"))
@@ -564,7 +561,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           plotOutput('qqplot')
           ),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
+                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
                     downloadButton("download_qq_plt", "Download Plot")))
         )
 
@@ -812,7 +809,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       if (!is.null(res)) {
             saved_plots_and_tables$scatter_table <- res
             output$download_scatter_table_button <- renderUI({
-            div(align = "right", style = "margin-right:15px; margin-top:10px",
+            div(align = "right", style = "margin-right:15px; margin-top:10px; margin-bottom:10px",
                     downloadButton("download_scatter_table", "Download Table"))
             })
       }
@@ -970,7 +967,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       if (!is.null(res)) {
         saved_plots_and_tables$ma_table <- res
         output$download_ma_table_button <- renderUI({
-            div(align = "right", style = "margin-right:15px; margin-top:10px",
+            div(align = "right", style = "margin-right:15px; margin-top:10px; margin-bottom:10px",
                     downloadButton("download_ma_table", "Download Table"))
         })
       }
@@ -1176,12 +1173,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             unlist(strsplit(input$hm_transcripts, " +"))
     })
 
+    default_hm_plot_height <- 400
+
     hm_plot_height <- function() {
         if(length(hm_transcripts()) > 5) {
             length(hm_transcripts()) * 60
         } else {
-            400
-        }
+            default_hm_plot_height
+        } 
     }
 
     hm_func <- eventReactive(input$hm_go, {
@@ -1193,8 +1192,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           hm_transcripts(),
           input$hm_units, hm_func(),
           offset = input$hm_offset)
-        saved_plots_and_tables$hm_plt
-    }, height = hm_plot_height)
+       
+        output$download_hm_plt_button <- renderUI({
+          div(align = "right", style = paste("margin-right:15px; margin-top:", (hm_plot_height() - default_hm_plot_height + 15), "px; margin-bottom:10px", sep = ""),
+                  downloadButton("download_hm_plt", "Download Plot"))
+          })
+         saved_plots_and_tables$hm_plt
+        
+    }, height = hm_plot_height) 
+
 
     output$download_hm_plt <- downloadHandler(
       filename = function() { "heat_map.pdf" },
