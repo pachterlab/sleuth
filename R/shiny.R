@@ -275,7 +275,7 @@ sleuth_live <- function(obj, ...) {
               selected = 1)
             ),
           column(3,
-            selectInput('pc_count', label = 'number of principal components: ', choices = 1:10,
+            selectInput('pc_count', label = 'number of principal components or transcripts: ', choices = 1:10,
               selected = 5))
           ),
         fluidRow(

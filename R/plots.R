@@ -159,7 +159,7 @@ plot_loadings <- function(obj,
   # } else {
   #   mat <- spread_abundance_by(obj$obs_norm, units)
   # }
-  mat <- spread_abundance_by(obj$obs_norm, units)
+  mat <- spread_abundance_by(obj$obs_norm_filt, units)
   
   pca_calc <- prcomp(mat, scale = scale)
 
@@ -177,9 +177,11 @@ plot_loadings <- function(obj,
     loadings <- pca_calc$x[sample,]
     if (pca_loading_abs) {
       loadings <- abs(loadings)
+      loadings <- sort(loadings, decreasing = TRUE)
+    } else {
+      loadings <- loadings[order(abs(loadings), decreasing = TRUE)]
+      print(head(loadings))
     }
-    loadings <- sort(loadings, decreasing = TRUE)
-    label_names <- names(loadings)
   }
 
   #given a PC, which samples contribute the most?
@@ -187,12 +189,14 @@ plot_loadings <- function(obj,
     loadings <- pca_calc$x[,pc_input]
     if (pca_loading_abs) {
       loadings <- abs(loadings)
+      loadings <- sort(loadings, decreasing = TRUE)
+    } else {
+      loadings <-  loadings[order(abs(loadings), decreasing = TRUE)]
     }
-    loadings <- sort(loadings, decreasing = TRUE)
-    label_names <- names(loadings)
   }
 
-
+  label_names <- names(loadings)
+  
   if (!is.null(pc_count)) {
       loadings <- loadings[1:pc_count]
       label_names <- label_names[1:pc_count]
@@ -251,7 +255,7 @@ plot_pc_variance <- function(obj,
   # } else {
   #   mat <- spread_abundance_by(obj$obs_norm, units)
   # }
-  mat <- spread_abundance_by(obj$obs_norm, units)
+  mat <- spread_abundance_by(obj$obs_norm_filt, units)
 
   pca_calc <- prcomp(mat, scale = scale) #PCA calculations 
 
