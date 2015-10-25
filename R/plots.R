@@ -137,17 +137,17 @@ plot_pca <- function(obj,
 #' @param units either 'est_counts' or 'tpm'
 #' @param pc_count # of PC's
 #' @param scale scale or not
-#' @param absolute default true, to see all PC's magnitude (recommended)
+#' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
 #' @return a ggplot object
 #' @export
 plot_loadings <- function(obj, 
   use_filtered = TRUE,
-  sample = NULL, #string please
-  PC = NULL, #apparently if u type in a string or an integer (corresponding to the PC), they're both ok
+  sample = NULL, 
+  pc_input = NULL, 
   units = 'est_counts',
   pc_count = NULL,
   scale = FALSE,
-  absolute = TRUE, 
+  pca_loading_abs = TRUE, 
   ...) {
 
   stopifnot( is(obj, 'sleuth') )
@@ -170,58 +170,55 @@ plot_loadings <- function(obj,
 
   loadings <- t(pca_calc$x)
 
-  executed <- FALSE #toggle switch for determining if user wants to 
-                    #search by gene or principal components
-
+  toggle <- FALSE
   #given a sample
   if (!is.null(sample)) {
-    executed <- TRUE
+    toggle <- TRUE
     loadings <- pca_calc$x[sample,]
-    if (absolute) {
+    if (pca_loading_abs) {
       loadings <- abs(loadings)
     }
     loadings <- sort(loadings, decreasing = TRUE)
-    names <- names(loadings)
+    label_names <- names(loadings)
   }
 
   #given a PC, which samples contribute the most?
-  if (!executed) {
-    loadings <- pca_calc$x[,PC]
-
-    if (absolute) {
+  if (!toggle) {
+    loadings <- pca_calc$x[,pc_input]
+    if (pca_loading_abs) {
       loadings <- abs(loadings)
     }
     loadings <- sort(loadings, decreasing = TRUE)
-    names <- names(loadings)
+    label_names <- names(loadings)
   }
 
 
   if (!is.null(pc_count)) {
       loadings <- loadings[1:pc_count]
-      names <- names[1:pc_count]
+      label_names <- label_names[1:pc_count]
     } else {
       loadings <- loadings[1:5]
-      names <- names[1:5]
+      label_names <- label_names[1:5]
     }
 
-  dat <- data.frame(pc = names, loadings = loadings)
+  dat <- data.frame(pc = label_names, loadings = loadings)
   dat$pc <- factor(dat$pc, levels = unique(dat$pc))
 
   p <- ggplot(dat, aes(x = pc, y = loadings)) 
   p <- p + geom_bar(stat = "identity")
-  p <- p + xlab("Principal Components") + ylab("Contribution Scores")
-  if (!executed) {
-    p <- p + xlab("Transcripts")
+  p <- p + xlab("principal components") + ylab("contribution scores")
+  if (!toggle) {
+    p <- p + xlab("transcripts")
   }
 
-  if (is.numeric(PC)) {
-    PC <- paste0("PC ", PC)
+  if (is.numeric(pc_input)) {
+    pc_input <- paste0("PC ", pc_input)
   }
 
   if (!is.null(sample)) {
     p <- p + ggtitle(sample)
   } else {
-    p <- p + ggtitle(PC)
+    p <- p + ggtitle(pc_input)
   }
 
   p
@@ -263,7 +260,6 @@ plot_pc_variance <- function(obj,
   var_explained <- eigenvalues*100/sum(eigenvalues)
   var_explained2 <- var_explained
   
-
   if (!is.null(pca_number)) {
     colsize <- pca_number
     var_explained <- var_explained[1:pca_number]
@@ -271,21 +267,20 @@ plot_pc_variance <- function(obj,
     colsize <- 5 #default 5
     var_explained <- var_explained[1:5] #default 5
   }
-  pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) 
+  pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) #order here matters
 
-  
   if(!is.null(PC_relative)) {
     pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2) 
-    pc_df <- pc_df[PC_relative:nrow(pc_df),] #new data frame
+    pc_df <- pc_df[PC_relative:nrow(pc_df),] 
 
-    if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) { 
+    if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) {
       pc_df <- pc_df[1:pca_number,] 
     } else if (PC_relative + 5 >= length(eigenvalues)) {
       pc_df <- pc_df[1:nrow(pc_df),] 
     }
   } 
 
-  p <- ggplot(pc_df, aes(x = PC_count, y = var_explained)) + geom_bar(stat = "identity")
+  p <- ggplot(pc_df, aes(x = PC_count, y = var)) + geom_bar(stat = "identity")
   p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
   p <- p + ylab("% of variance") + xlab("principal components")
 
