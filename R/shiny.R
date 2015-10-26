@@ -276,7 +276,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     navbarMenu('maps',
 
-      ####
+    ####
       tabPanel('PCA',
       fluidRow(
         column(12,
@@ -284,11 +284,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
           offset = 1),
         fluidRow(
-          column(2,
+          column(3,
             selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
               selected = 1)
             ),
-          column(2,
+          column(3,
             selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
               selected = 2)
             ),
@@ -297,28 +297,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               choices = c(NULL, poss_covars), selected = NULL)
             ),
           column(2,
-            numericInput('pca_point_size', label = 'size: ', value = 3)),
-          column(2,
-            selectInput('pca_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts'))
-        ),
-        fluidRow(
-          column(2,
-            checkboxInput('pca_filt', label = 'filter',
-              value = TRUE)
-              ),
-          column(2,
-            checkboxInput('text_labels', label = 'text labels',
-              value = TRUE)
-            )
+            numericInput('pca_point_size', label = 'size: ', value = 3))
           ),
-
-        fluidRow(plotOutput('pca_plt')),
-
+      
         fluidRow(
         column(12,
-          p(h3('loadings'), "observe contributions of samples or transcripts to the principal component")
+          p(h3('loadings'), "observe principal component and sample contributions")
           ),
           offset = 1),
         fluidRow(
@@ -326,23 +310,36 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             textInput('sample', label = 'transcript: ', value = '',
               )
             ),
-          column(2,
-            selectInput('PC', label = 'PC: ', choices = 1:5,
+          column(3,
+            selectInput('pc_input', label = 'principal component: ', choices = 1:5,
               selected = 1)
             ),
           column(3,
-            selectInput('pc_count', label = '# of PCs or transcripts: ', choices = 1:10,
-              selected = 5)),
+            selectInput('pc_count', label = 'number of principal components or transcript: ', choices = 1:10,
+              selected = 5))
+          ),
+        fluidRow(
           column(2,
-            checkboxInput('absl', label = 'absolute value',
-              value = TRUE)
-            ),
-          column(2,
-            checkboxInput('bool', label = 'scale',
+            selectInput('pca_units', label = 'units: ',
+              choices = c('est_counts', 'tpm'),
+              selected = 'est_counts')),
+          column(3,
+            checkboxInput('pca_filt', label = 'filter',
+              value = TRUE),
+            checkboxInput('text_labels', label = 'text labels',
+              value = TRUE),
+            checkboxInput('pca_loading_abs', label = 'absolute value (loadings)',
+              value = TRUE),
+            checkboxInput('scale', label = 'scale',
               value = FALSE)
             )
           ),
-
+        fluidRow(
+          column(12,
+            p(h3('principal component analysis'))
+            ),
+            offset = 1),
+        fluidRow(plotOutput('pca_plt')),
         fluidRow(
           column(12,
             p(h3('variance explained'))
@@ -356,76 +353,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             offset = 1),
         fluidRow(plotOutput('plt_pc_loadings'))
         ),
-
-      ####
-      # tabPanel('PC variance',
-      # fluidRow(
-      #   column(12,
-      #     p(h3('principal component variance'), "plot variances retained by each principal component")
-      #     ),
-      #     offset = 1),
-      #   fluidRow(
-      #     column(3,
-      #       selectInput('PC_relative', label = 'starting PC: ', choices = 1:5,
-      #         selected = 1)
-      #       ),
-      #     column(3,
-      #       selectInput('pca_number', label = 'number of principal components ', choices = 3:10,
-      #         selected = 2))
-      #     ),
-      #   fluidRow(
-      #     column(2,
-      #       selectInput('pca_units', label = 'units: ',
-      #         choices = c('est_counts', 'tpm'),
-      #         selected = 'est_counts')),
-      #     column(2,
-      #       checkboxInput('pca_filt', label = 'filter',
-      #         value = TRUE),
-      #       checkboxInput('bool', label = 'scale',
-      #         value = FALSE)
-      #       )
-      #     ),
-      #   fluidRow(plotOutput('plt_pc_var'))
-      #   ),
-
-      ####
-      # tabPanel('loadings',
-      # fluidRow(
-      #   column(12,
-      #     p(h3('loadings'), "observe principal component and sample contributions")
-      #     ),
-      #     offset = 1),
-      #   fluidRow(
-      #     column(3,
-      #       textInput('sample', label = 'sample: ', value = '',
-      #         )
-      #       ),
-      #     column(3,
-      #       selectInput('PC', label = 'principal component: ', choices = 1:5,
-      #         selected = 1)
-      #       ),
-      #     column(3,
-      #       selectInput('pc_count', label = 'number of principal components: ', choices = 1:10,
-      #         selected = 5))
-      #     ),
-      #   fluidRow(
-      #     column(2,
-      #       selectInput('pca_units', label = 'units: ',
-      #         choices = c('est_counts', 'tpm'),
-      #         selected = 'est_counts')),
-      #     column(2,
-      #       checkboxInput('pca_filt', label = 'filter',
-      #         value = TRUE),
-      #       checkboxInput('absl', label = 'absolute value',
-      #         value = TRUE),
-      #       checkboxInput('bool', label = 'scale',
-      #         value = FALSE)
-      #       )
-      #     ),
-      #   fluidRow(plotOutput('plt_pc_loadings'))
-      #   ),
-
-
+ 
       ###
       tabPanel('sample heatmap',
       fluidRow(
@@ -819,17 +747,17 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     })
 
-    ### Plot pc loadings
+   ### Plot pc loadings
     output$plt_pc_loadings <- renderPlot({
 
       plot_loadings(obj,
         use_filtered = input$pc_filt,
         pc_count = as.integer(input$pc_count),
-        bool = as.logical(input$bool),
+        scale = as.logical(input$scale),
         sample = input$sample,
         units = input$pca_units,
-        PC = as.integer(input$PC),
-        absolute = input$absl
+        pc_input = as.integer(input$pc_input),
+        pca_loading_abs = input$pca_loading_abs
         )
     })
 
@@ -839,7 +767,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       plot_pc_variance(obj,
         use_filtered = input$pc_filt,
         pca_number = 5,
-        bool = input$bool,
+        scale = input$scale,
         units = input$pca_units,
         PC_relative = 1
         )
