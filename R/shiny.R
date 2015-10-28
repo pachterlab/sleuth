@@ -335,11 +335,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         fluidRow(plotOutput('pca_plt')),
         fluidRow(
                 div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                    downloadButton("download_pca_plt", "Download Plot")))
-        ),
-
-        fluidRow(plotOutput('pca_plt')),
-
+                    downloadButton("download_pca_plt", "Download Plot"))),
         fluidRow(
         column(12,
           p(h3('loadings'), "observe contributions of samples or transcripts to the principal component")
@@ -394,7 +390,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                 div(align = "right", style = "margin-right:15px; margin-bottom:10px",
                     downloadButton("download_samp_heat_plt", "Download Map")))
         )
-
       ),
 
     navbarMenu('summaries',
