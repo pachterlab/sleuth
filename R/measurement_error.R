@@ -30,7 +30,7 @@
 #' \code{\link{models}} helpful.
 #'
 #' @param obj a \code{sleuth} object
-#' @param formula a formula specifying the design to fit
+#' @param formula a formula specifying the design to fit OR a design matrix
 #' @param fit_name the name to store the fit in the sleuth
 #' object
 #' @param ... additional arguments passed to \code{sliding_window_grouping} and
@@ -45,8 +45,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   if ( is.null(formula) ) {
     formula <- obj$full_formula
-  } else if ( !is(formula, 'formula') ) {
-    stop("'", substitute(formula), "' is not a valid 'formula'")
+  } else if ( !is(formula, 'formula') && !is(formula, 'matrix') ) {
+    stop("'", substitute(formula), "' is not a valid 'formula' or 'matrix'")
   }
 
   if ( is.null(fit_name) ) {
@@ -61,7 +61,15 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   }
 
   # TODO: check if model matrix is full rank
-  X <- model.matrix(formula, obj$sample_to_covariates)
+  X <- NULL
+  if ( is(formula, 'formula') ) {
+    X <- model.matrix(formula, obj$sample_to_covariates)
+  } else {
+    if ( is.null(colnames(formula)) ) {
+      stop("If matrix is supplied, column names must also be supplied.")
+    }
+    X <- formula
+  }
   rownames(X) <- obj$sample_to_covariates$sample
   A <- solve( t(X) %*% X )
 

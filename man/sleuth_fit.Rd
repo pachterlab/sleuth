@@ -9,7 +9,7 @@ sleuth_fit(obj, formula = NULL, fit_name = NULL, ...)
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{formula}{a formula specifying the design to fit}
+\item{formula}{a formula specifying the design to fit OR a design matrix}
 
 \item{fit_name}{the name to store the fit in the sleuth
 object}

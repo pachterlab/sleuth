@@ -20,3 +20,13 @@ test_that("normalization factors", {
   temp_result <- rep.int(1, nrow(study_mapping))
   expect_equivalent(result$est_counts_sf, temp_result)
 })
+
+test_that("give a design matrix", {
+  design_matrix <- matrix(c(0, 0, 0, 1, 1, 1), ncol = 1)
+  result <- sleuth_prep(study_mapping, design_matrix)
+
+  expect_equal(result$design_matrix, design_matrix)
+  expect_equal(result$design_matrix, result$full_formula)
+
+  expect_error(sleuth_prep(study_mapping, design_matrix[1:5,]))
+})

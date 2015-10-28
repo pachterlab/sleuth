@@ -17,8 +17,8 @@ vector where each element points to the corresponding kallisto output directory.
 \code{path}.}
 
 \item{full_model}{is a \code{formula} which explains the full model (design)
-of the experiment. It must be consistent with the data.frame supplied in
-\code{sample_to_covariates}}
+of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
+\code{sample_to_covariates}.}
 
 \item{filter_fun}{the function to use when filtering.}
 
