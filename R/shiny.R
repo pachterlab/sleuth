@@ -74,6 +74,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
           p(strong('sleuth live features:')),
              tags$ul(
+                    tags$li(strong('v0.28.0'), ': Download buttons for plots and tables by Alex Tseng. PCA variance explained and loadings by Daniel Li. Fragment length distribution, bias, and integration of likelihood ratio test by Harold Pimentel.'),
                      tags$li(strong('v0.27.3'),': gene table, gene viewer, transcript heatmap, and volcano plot by Pascal Sturmfels.'),
                      tags$li(strong('v0.27.2'),': design matrix, kallisto table, transcript view, and QQplot by Harold Pimentel.'),
                      tags$li(strong('v0.27.1'),': densities, MA plot, mean-variance plot, PCA,  processed data, sample heatmap, scatter plots, and test table by Harold Pimentel.')
