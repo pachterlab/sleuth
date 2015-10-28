@@ -10,7 +10,7 @@
 
 <meta name="author" content="Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter" />
 
-<meta name="date" content="2015-10-22" />
+<meta name="date" content="2015-10-27" />
 
 <title>Introduction to sleuth</title>
 
@@ -72,7 +72,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="header">
 <h1 class="title">Introduction to sleuth</h1>
 <h4 class="author"><em>Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter</em></h4>
-<h4 class="date"><em>2015-10-22</em></h4>
+<h4 class="date"><em>2015-10-27</em></h4>
 </div>
 
 
@@ -89,7 +89,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p><span class="math display">\[ y_{t,i} = \beta_{t,0} + \beta_{t,1} x_{t,i} + \epsilon_{t,i} \]</span></p>
 <p>where <span class="math inline">\(x_{t,i}\)</span> is an indicator variable describing the condition, <span class="math inline">\(\beta_{t,0}\)</span> and <span class="math inline">\(\beta_{t,1}\)</span> are parameters of the model and <span class="math inline">\(\epsilon_{t,i}\)</span> is biological “noise”. However, conditioned on <span class="math inline">\(x_i\)</span> and <span class="math inline">\(y_i\)</span> the estimated number of counts from the observations in the experiment is given by</p>
 <p><span class="math display">\[ d_{t,i} = y_{t,i} + \zeta_{t,i} \]</span></p>
-<p>where <span class="math inline">\(\zeta_{t,i}\)</span> represents technical “noise”, i.e. uncertainty in the measurement due to effects other than biological variability. The <strong>sleuth</strong> model incorporates the assumptions that the expectation <span class="math inline">\(E(\zeta_{t,i}|y_{t,i}) = 0\)</span>, that <span class="math inline">\(E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}\)</span> and that the response error is <em>additive</em>, i.e. if the variance <span class="math inline">\(V(\epsilon_{t,i}) = \sigma_t^2\)</span> and the variance <span class="math inline">\(V(\zeta_{t,i}|y_{t,i}) = \sigma_t^2\)</span> then the variance <span class="math inline">\(V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2\)</span>. <strong>sleuth</strong> makes use of the boostraps from <strong>kallisto</strong> to estimate the <span class="math inline">\(\tau_t^2\)</span>, and after subtracting the estimated technical variance the <span class="math inline">\(\sigma_t^2\)</span> are estimated via a shrinkage procedure similar to that used in <a href="http://www.genomebiology.com/2014/15/2/R29">Limma Voom</a>.</p>
+<p>where <span class="math inline">\(\zeta_{t,i}\)</span> represents technical “noise”, i.e. uncertainty in the measurement due to effects other than biological variability. The <strong>sleuth</strong> model incorporates the assumptions that the expectation <span class="math inline">\(E(\zeta_{t,i}|y_{t,i}) = 0\)</span>, that <span class="math inline">\(E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}\)</span> and that the response error is <em>additive</em>, i.e. if the variance <span class="math inline">\(V(\epsilon_{t,i}) = \sigma_t^2\)</span> and the variance <span class="math inline">\(V(\zeta_{t,i}|y_{t,i}) = \tau_t^2\)</span> then the variance <span class="math inline">\(V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2\)</span>. <strong>sleuth</strong> makes use of the boostraps from <strong>kallisto</strong> to estimate the <span class="math inline">\(\tau_t^2\)</span>, and after subtracting the estimated technical variance the <span class="math inline">\(\sigma_t^2\)</span> are estimated via a shrinkage procedure similar to that used in <a href="http://www.genomebiology.com/2014/15/2/R29">Limma Voom</a>.</p>
 <p>More generally, <strong>sleuth</strong> can be used to analyze multiple conditions organized in complex experimental designs. In the general case the unobserved model is given by</p>
 <p><span class="math display">\[ Y_t = X_t \beta_t + \epsilon_t \]</span></p>
 <p>where <span class="math inline">\(t\)</span> is a transcript, <span class="math inline">\(Y_t\)</span> is a vector of length <span class="math inline">\(n\)</span> where <span class="math inline">\(n\)</span> is the number of samples, <span class="math inline">\(X_t\)</span> is an <span class="math inline">\(n \times p\)</span> matrix where <span class="math inline">\(p\)</span> is the number of covariates, <span class="math inline">\(\beta_t\)</span> represents the effect sizes and is a vector of length <span class="math inline">\(p\)</span>, and <span class="math inline">\(\epsilon_t\)</span> is a vector of length <span class="math inline">\(n\)</span>. The observed response is described by</p>
@@ -200,6 +200,7 @@ s2c</code></pre></div>
 <span class="kw">biocLite</span>(<span class="st">&quot;biomaRt&quot;</span>)</code></pre></div>
 <p>Then collect gene names with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mart &lt;-<span class="st"> </span>biomaRt::<span class="kw">useMart</span>(<span class="dt">biomart =</span> <span class="st">&quot;ensembl&quot;</span>, <span class="dt">dataset =</span> <span class="st">&quot;hsapiens_gene_ensembl&quot;</span>)</code></pre></div>
+<pre><code>## Creating a generic function for 'nchar' from package 'base' in package 'S4Vectors'</code></pre>
 <p>and add them into the <strong>sleuth</strong> table with</p>
 <pre><code>t2g &lt;- biomaRt::getBM(attributes = c(&quot;ensembl_transcript_id&quot;, &quot;ensembl_gene_id&quot;,
     &quot;external_gene_name&quot;), mart = mart)

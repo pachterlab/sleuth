@@ -5,7 +5,8 @@
 \title{Constructor for a 'sleuth' object}
 \usage{
 sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
-  target_mapping = NULL, max_bootstrap = NULL, ...)
+  target_mapping = NULL, max_bootstrap = NULL,
+  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors, ...)
 }
 \arguments{
 \item{sample_to_covariates}{is a \code{data.frame} which contains a mapping
@@ -30,6 +31,10 @@ mappings.}
 
 \item{max_bootstrap}{maximum number of bootstrap values to read for each
 transcript.}
+
+\item{norm_fun_counts}{a function to perform between sample normalization on the estimated counts.}
+
+\item{norm_fun_tpm}{a function to perform between sample normalization on the TPM}
 
 \item{...}{additional arguments passed to the filter function}
 }

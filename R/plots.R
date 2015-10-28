@@ -92,9 +92,11 @@ plot_pca <- function(obj,
 
   mat <- NULL
   if (use_filtered) {
-    mat <- spread_abundance_by(obj$obs_norm_filt, units)
+    mat <- spread_abundance_by(obj$obs_norm_filt, units,
+      obj$sample_to_covariates$sample)
   } else {
-    mat <- spread_abundance_by(obj$obs_norm, units)
+    mat <- spread_abundance_by(obj$obs_norm, units,
+      obj$sample_to_covariates$sample)
   }
 
   pca_res <- prcomp(mat)
@@ -425,9 +427,11 @@ plot_scatter <- function(obj,
 
   abund <- NULL
   if (use_filtered) {
-    abund <- spread_abundance_by(obj$obs_norm_filt, units)
+    abund <- spread_abundance_by(obj$obs_norm_filt, units,
+      obj$sample_to_covariates$sample)
   } else {
-    abund <- spread_abundance_by(obj$obs_norm, units)
+    abund <- spread_abundance_by(obj$obs_norm, units,
+      obj$sample_to_covariates$sample)
   }
   abund <- abund + offset
   abund <- as_df(abund)
@@ -624,6 +628,57 @@ plot_bootstrap <- function(obj,
   p
 }
 
+#' @export
+plot_fld <- function(x, ...) {
+  UseMethod('plot_fld')
+}
+
+#' Plot fragment length distribution
+#'
+#' Plot the fragment link the distribution of a specific kallisto run.
+#'
+#' @param obj a sleuth object
+#' @param sample either the sample index (an integer or numeric), or the sample id (a character of length 1)
+#' @return a \code{ggplot2} object
+#' @export
+plot_fld.sleuth <- function(obj, sample) {
+  stopifnot( length(sample) == 1 )
+
+  if ( is(sample, 'numeric') || is(sample, 'integer') ) {
+    sample <- as.integer(sample)
+  } else {
+    sample <- which( obj$sample_to_covariates$sample == sample )
+    if ( length(sample) == 0 ) {
+      stop('Could not find: "', sample, '"')
+    }
+  }
+
+  plot_fld(obj$kal[[sample]])
+}
+
+#' Plot fragment length distribution
+#'
+#' Plot the fragment link the distribution of a specific kallisto run.
+#'
+#' @param obj a kallisto object
+#' @return a \code{ggplot2} object
+#' @export
+plot_fld.kallisto <- function(obj) {
+  if ( length(obj$fld) == 1 && all(is.na(obj$fld)) ) {
+    stop("kallisto object does not contain the fragment length distribution. Please rerun with a new version of kallisto.")
+  }
+  df <- adf(len = 1:length(obj$fld), fld = obj$fld)
+  df <- dplyr::mutate(df, fld = fld / sum(fld))
+
+  p <- ggplot(df, aes(len, fld))
+  p <- p + geom_bar(stat = 'identity')
+  p <- p + xlab('length of fragment')
+  p <- p + ylab('density')
+
+  p
+}
+
+
 #' Plot sample heatmap
 #'
 #' Plot sample heatmap using the Jensen-Shannon divergence
@@ -643,9 +698,11 @@ plot_sample_heatmap <- function(obj,
   ) {
   abund <- NULL
   if (use_filtered) {
-    abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm')
+    abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm',
+      obj$sample_to_covariates$sample)
   } else {
-    abund <- spread_abundance_by(obj$obs_norm, 'tpm')
+    abund <- spread_abundance_by(obj$obs_norm, 'tpm',
+      obj$sample_to_covariates$sample)
   }
   all_pairs <- apply_all_pairs(abund, jsd)
 

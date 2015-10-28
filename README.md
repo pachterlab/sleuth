@@ -51,9 +51,12 @@ any other function in R:
 
 # Further help
 
-Please visit the [sleuth website](https://pachterlab.github.io/sleuth) for more information about the program. The [kallisto-sleuth
-users](https://groups.google.com/forum/#!forum/sleuth-sleuth-users) Google
-group is a useful public forum for asking quesitons and searching for help. Please post bug reports [on GitHub](https://github.com/pachterlab/sleuth/issues).
+Please visit the [sleuth website](https://pachterlab.github.io/sleuth) for
+ways to get help. In particular, you might find the [kallisto-sleuth
+users](https://groups.google.com/forum/#!forum/kallisto-sleuth-users) Google
+group helpful.
+
+Please post bug reports [on GitHub](https://github.com/pachterlab/sleuth/issues).
 
 # Copyright
 
