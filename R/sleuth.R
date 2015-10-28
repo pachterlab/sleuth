@@ -69,8 +69,8 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' \code{sample} should be in the same order as the corresponding entry in
 #' \code{path}.
 #' @param full_model is a \code{formula} which explains the full model (design)
-#' of the experiment. It must be consistent with the data.frame supplied in
-#' \code{sample_to_covariates}
+#' of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
+#' \code{sample_to_covariates}.
 #' @param filter_fun the function to use when filtering.
 #' @param target_mapping a \code{data.frame} that has at least one column
 #' 'target_id' and others that denote the mapping for each target. if it is not
@@ -107,8 +107,8 @@ sleuth_prep <- function(
     stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
-  if (!is(full_model, "formula")) {
-    stop(paste0("'",substitute(full_model), "' (full_model) must be a formula"))
+  if (!is(full_model, "formula") && !is(full_model, "matrix")) {
+    stop(paste0("'",substitute(full_model), "' (full_model) must be a formula or a matrix"))
   }
 
   if (!("sample" %in% colnames(sample_to_covariates))) {
@@ -137,6 +137,11 @@ sleuth_prep <- function(
 
   if ( any(is.na(sample_to_covariates)) ) {
     warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
+  }
+
+  if ( is(full_model, "matrix") &&
+      nrow(full_model) != nrow(sample_to_covariates) ) {
+    stop("The design matrix number of rows are not equal to the number of rows in the sample_to_covariates argument.")
   }
 
   if ( !is(norm_fun_counts, 'function') ) {
@@ -181,8 +186,15 @@ sleuth_prep <- function(
   kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
-  design_matrix <- model.matrix(full_model, sample_to_covariates)
-  rownames(design_matrix) <- sample_to_covariates$sample
+
+  design_matrix <- NULL
+  if ( is(full_model, 'formula') ) {
+    design_matrix <- model.matrix(full_model, sample_to_covariates)
+    rownames(design_matrix) <- sample_to_covariates$sample
+  } else {
+    design_matrix <- full_model
+  }
+
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
   ret <- list(
       kal = kal_list,

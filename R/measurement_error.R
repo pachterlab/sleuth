@@ -45,8 +45,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   if ( is.null(formula) ) {
     formula <- obj$full_formula
-  } else if ( !is(formula, 'formula') ) {
-    stop("'", substitute(formula), "' is not a valid 'formula'")
+  } else if ( !is(formula, 'formula') && !is(formula, 'matrix') ) {
+    stop("'", substitute(formula), "' is not a valid 'formula' or 'matrix'")
   }
 
   if ( is.null(fit_name) ) {
@@ -61,8 +61,13 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   }
 
   # TODO: check if model matrix is full rank
-  X <- model.matrix(formula, obj$sample_to_covariates)
-  rownames(X) <- obj$sample_to_covariates$sample
+  X <- NULL
+  if ( is(formula, 'formula') ) {
+    X <- model.matrix(formula, obj$sample_to_covariates)
+    rownames(X) <- obj$sample_to_covariates$sample
+  } else {
+    X <- formula
+  }
   A <- solve( t(X) %*% X )
 
   mes <- me_model_by_row(obj, X, obj$bs_summary)
