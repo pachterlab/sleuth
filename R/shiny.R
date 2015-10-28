@@ -471,6 +471,26 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       navbarMenu('diagnostics',
 
       ####
+      tabPanel('fragment length distribution',
+        fluidRow(
+          column(12,
+            p(h3('fragment length distribution plot'), "Plot fragment length distribution used by kallisto in a particular sample")
+            )
+        ),
+        fluidRow(
+          column(4,
+            selectInput('fld_sample', label = 'sample: ',
+              choices = samp_names,
+              selected = samp_names[1]
+            )
+          )
+        ),
+        fluidRow(
+          plotOutput('fld_plt')
+          )
+      ),
+
+      ####
       tabPanel('mean-variance plot',
       fluidRow(
         column(12,
@@ -861,6 +881,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
          ggsave(file, saved_plots_and_tables$pca_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
     })
 
+    output$fld_plt <- renderPlot({
+      plot_fld(obj, input$fld_sample)
+    })
+
     ### MV plot
     output$mv_plt <- renderPlot({
       mv_plt <- plot_mean_var(obj)
@@ -1180,7 +1204,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             length(hm_transcripts()) * 60
         } else {
             default_hm_plot_height
-        } 
+        }
     }
 
     hm_func <- eventReactive(input$hm_go, {
@@ -1192,14 +1216,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           hm_transcripts(),
           input$hm_units, hm_func(),
           offset = input$hm_offset)
-       
+
         output$download_hm_plt_button <- renderUI({
           div(align = "right", style = paste("margin-right:15px; margin-top:", (hm_plot_height() - default_hm_plot_height + 15), "px; margin-bottom:10px", sep = ""),
                   downloadButton("download_hm_plt", "Download Plot"))
           })
          saved_plots_and_tables$hm_plt
-        
-    }, height = hm_plot_height) 
+
+    }, height = hm_plot_height)
 
 
     output$download_hm_plt <- downloadHandler(

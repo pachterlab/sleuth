@@ -9,7 +9,7 @@
 \arguments{
 \item{obj}{a sleuth object}
 
-\item{sample}{either the sample index (an integer or numeric), or the sample id}
+\item{sample}{either the sample index (an integer or numeric), or the sample id (a character of length 1)}
 }
 \value{
 a \code{ggplot2} object
