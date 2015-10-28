@@ -190,10 +190,13 @@ sleuth_prep <- function(
   design_matrix <- NULL
   if ( is(full_model, 'formula') ) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
-    rownames(design_matrix) <- sample_to_covariates$sample
   } else {
+    if ( is.null(colnames(full_model)) ) {
+      stop("If matrix is supplied, column names must also be supplied.")
+    }
     design_matrix <- full_model
   }
+  rownames(design_matrix) <- sample_to_covariates$sample
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
   ret <- list(

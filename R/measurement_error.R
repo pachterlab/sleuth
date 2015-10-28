@@ -30,7 +30,7 @@
 #' \code{\link{models}} helpful.
 #'
 #' @param obj a \code{sleuth} object
-#' @param formula a formula specifying the design to fit
+#' @param formula a formula specifying the design to fit OR a design matrix
 #' @param fit_name the name to store the fit in the sleuth
 #' object
 #' @param ... additional arguments passed to \code{sliding_window_grouping} and
@@ -64,10 +64,13 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   X <- NULL
   if ( is(formula, 'formula') ) {
     X <- model.matrix(formula, obj$sample_to_covariates)
-    rownames(X) <- obj$sample_to_covariates$sample
   } else {
+    if ( is.null(colnames(formula)) ) {
+      stop("If matrix is supplied, column names must also be supplied.")
+    }
     X <- formula
   }
+  rownames(X) <- obj$sample_to_covariates$sample
   A <- solve( t(X) %*% X )
 
   mes <- me_model_by_row(obj, X, obj$bs_summary)
