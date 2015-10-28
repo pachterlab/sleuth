@@ -421,6 +421,26 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         ),
 
       ####
+      tabPanel('fragment length distribution',
+        fluidRow(
+          column(12,
+            p(h3('fragment length distribution plot'), "Plot fragment length distribution used by kallisto in a particular sample")
+            )
+        ),
+        fluidRow(
+          column(4,
+            selectInput('fld_sample', label = 'sample: ',
+              choices = samp_names,
+              selected = samp_names[1]
+            )
+          )
+        ),
+        fluidRow(
+          plotOutput('fld_plt')
+          )
+      ),
+
+      ####
       tabPanel('processed data',
       fluidRow(
         column(12,
@@ -469,26 +489,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       ),
 
       navbarMenu('diagnostics',
-
-      ####
-      tabPanel('fragment length distribution',
-        fluidRow(
-          column(12,
-            p(h3('fragment length distribution plot'), "Plot fragment length distribution used by kallisto in a particular sample")
-            )
-        ),
-        fluidRow(
-          column(4,
-            selectInput('fld_sample', label = 'sample: ',
-              choices = samp_names,
-              selected = samp_names[1]
-            )
-          )
-        ),
-        fluidRow(
-          plotOutput('fld_plt')
-          )
-      ),
 
       ####
       tabPanel('mean-variance plot',
