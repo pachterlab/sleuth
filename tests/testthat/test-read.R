@@ -65,3 +65,7 @@ test_that("generalized read", {
 
 
 })
+
+test_that("reading bias and fragment length distribution", {
+  # TODO: write me!
+})

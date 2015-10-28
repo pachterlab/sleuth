@@ -125,6 +125,8 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 
   res <- list(
     abundance = abund,
+    bias_normalized = bias_normalized,
+    bias_observed = bias_observed,
     bootstrap = bs_samples,
     fld = fld
     )
