@@ -32,3 +32,43 @@ print.kallisto <- function(obj) {
 head.kallisto <- function(obj) {
   print(obj)
 }
+
+# ' extract the bias table
+# '
+# ' Extract bias table from either a sleuth or kallisto object
+# ' @param obj either a sleuth or kallisto object
+# ' @return a \code{data.frame} of bias weights
+#' @export
+bias_table <- function(obj, ...) {
+  UseMethod('bias_table')
+}
+
+#' @export
+bias_table.sleuth <- function(obj, sample) {
+  stopifnot( length(sample) == 1 )
+
+  if ( is(sample, 'numeric') || is(sample, 'integer') ) {
+    sample <- as.integer(sample)
+  } else {
+    sample <- which( obj$sample_to_covariates$sample == sample )
+    if ( length(sample) == 0 ) {
+      stop('Could not find: "', sample, '"')
+    }
+  }
+
+  bias_table(obj$kal[[sample]])
+}
+
+#' @export
+bias_table.kallisto <- function(obj) {
+  if ( length(obj$fld) == 1 && all(is.na(obj$fld)) ) {
+    stop("kallisto object does not contain the fragment length distribution. Please rerun with a new version of kallisto.")
+  }
+
+  adf(
+    hexamer = hexamers,
+    expected_counts = obj$bias_normalized,
+    observed_counts = obj$bias_observed,
+    bias_weights = obj$bias_observed / obj$bias_normalized
+    )
+}

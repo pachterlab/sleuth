@@ -1,8 +1,8 @@
 # sleuth: inspect your RNA-Seq
 
-Investigate transcript abundance from
-[kallisto](https://github.com/pimentel/kallisto) and differential expression
-analysis from RNA-Seq data.
+Investigate RNA-Seq transcript abundance from
+[kallisto](https://github.com/pimentel/kallisto) and perform differential expression
+analysis.
 
 # Installation
 
@@ -23,13 +23,13 @@ library('sleuth')
 
 # Documentation
 
-We recommend going through the vignette, first though:
+We recommend starting with the vignette:
 
 ```{r}
 vignette('intro', package = 'sleuth')
 ```
 
-Detailed documentation can be accessed inside of R using the `help()` command:
+Detailed documentation can be retrieved within R using the `help()` command:
 
 ```{r}
 help(package = 'sleuth')
@@ -55,6 +55,8 @@ Please visit the [sleuth website](https://pachterlab.github.io/sleuth) for
 ways to get help. In particular, you might find the [kallisto-sleuth
 users](https://groups.google.com/forum/#!forum/kallisto-sleuth-users) Google
 group helpful.
+
+Please post bug reports [on GitHub](https://github.com/pachterlab/sleuth/issues).
 
 # Copyright
 

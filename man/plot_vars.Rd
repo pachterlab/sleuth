@@ -4,12 +4,16 @@
 \alias{plot_vars}
 \title{Plot technical variance versus observed variance}
 \usage{
-plot_vars(obj, which_beta = NULL, which_model = "full", sig_level = 0.1,
-  point_alpha = 0.2, sig_color = "red", xy_line = TRUE,
+plot_vars(obj, test = NULL, test_type = "wt", which_model = "full",
+  sig_level = 0.1, point_alpha = 0.2, sig_color = "red", xy_line = TRUE,
   xy_line_color = "red", highlight = NULL, highlight_color = "green")
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
+
+\item{test}{the name of the test to highlight significant transcripts for}
+
+\item{test_type}{either 'wt' for wald test or 'lrt' for likelihood ratio test}
 
 \item{which_model}{a character string denoting which model to use for the
 test}

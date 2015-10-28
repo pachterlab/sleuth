@@ -4,11 +4,16 @@
 \alias{sleuth_live}
 \title{Interactive sleuth visualization with Shiny}
 \usage{
-sleuth_live(obj, ...)
+sleuth_live(obj, settings = sleuth_live_settings(), options = list(port =
+  42427), ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object already processed and has run
 \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}}
+
+\item{settings}{see the function \code{\link{sleuth_alive_settings}} for options}
+
+\item{options}{additional options which are sent to shiny}
 
 \item{...}{additional parameters sent to plotting functions}
 }
@@ -19,6 +24,6 @@ a \code{\link{shinyApp}} result
 Interactive sleuth visualization with Shiny. To exit, type \code{ESC} in R.
 }
 \seealso{
-\code{\link{sleuth_fit}}, \code{\link{sleuth_test}}
+\code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}
 }
 

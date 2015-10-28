@@ -62,15 +62,15 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' accounting for covariates, sequencing depth, technical and biological
 #' variance.
 #'
-#' @param kal_dirs a character vector of length greater than one where each
-#' string points to a kallisto output directory
 #' @param sample_to_covariates is a \code{data.frame} which contains a mapping
 #' from \code{sample} (a column) to some set of experimental conditions or
-#' covariates. The column \code{sample} should be in the same order as the
-#' corresponding entry in \code{kal_dirs}
+#' covariates. The column \code{path} is also required, which is a character
+#' vector where each element points to the corresponding kallisto output directory. The column
+#' \code{sample} should be in the same order as the corresponding entry in
+#' \code{path}.
 #' @param full_model is a \code{formula} which explains the full model (design)
-#' of the experiment. It must be consistent with the data.frame supplied in
-#' \code{sample_to_covariates}
+#' of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
+#' \code{sample_to_covariates}.
 #' @param filter_fun the function to use when filtering.
 #' @param target_mapping a \code{data.frame} that has at least one column
 #' 'target_id' and others that denote the mapping for each target. if it is not
@@ -81,46 +81,44 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param max_bootstrap maximum number of bootstrap values to read for each
 #' transcript.
 #' @param ... additional arguments passed to the filter function
+#' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
+#' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-#' test whether a coeffient is zero
+#' test whether a coeffient in the model is zero
 #' @export
 sleuth_prep <- function(
-  kal_dirs,
   sample_to_covariates,
   full_model,
   filter_fun = basic_filter,
   target_mapping = NULL,
   max_bootstrap = NULL,
+  norm_fun_counts = norm_factors,
+  norm_fun_tpm = norm_factors,
   ...) {
 
   ##############################
   # check inputs
 
   # data types
-  if( !is(kal_dirs, 'character') ) {
-    stop(paste0('"', substitute(kal_dirs),
-        '" (kal_dirs) is must be a character vector.'))
-  }
 
   if ( !is(sample_to_covariates, "data.frame") ) {
-    stop(paste0("'", substitute(sample_to_covariates), "' must be a data.frame"))
+    stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
-  if (!is(full_model, "formula")) {
-    stop(paste0("'",substitute(full_model), "' (full_model) must be a formula"))
-  }
-
-  if (length(kal_dirs) != nrow(sample_to_covariates)) {
-    stop(paste0("'", substitute(kal_dirs),
-        "' must have the same length as the number of rows in '",
-        substitute(sample_to_covariates), "'"))
+  if (!is(full_model, "formula") && !is(full_model, "matrix")) {
+    stop(paste0("'",substitute(full_model), "' (full_model) must be a formula or a matrix"))
   }
 
   if (!("sample" %in% colnames(sample_to_covariates))) {
     stop(paste0("'", substitute(sample_to_covariates),
         "' (sample_to_covariates) must contain a column named 'sample'"))
+  }
+
+  if (!("path" %in% colnames(sample_to_covariates))) {
+    stop(paste0("'", substitute(sample_to_covariates)),
+      "' (sample_to_covariates) must contain a column named 'path'")
   }
 
   if ( !is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
@@ -137,9 +135,25 @@ sleuth_prep <- function(
     stop("max_bootstrap must be > 0")
   }
 
-  # TODO: ensure all kallisto have same number of transcripts
+  if ( any(is.na(sample_to_covariates)) ) {
+    warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
+  }
+
+  if ( is(full_model, "matrix") &&
+      nrow(full_model) != nrow(sample_to_covariates) ) {
+    stop("The design matrix number of rows are not equal to the number of rows in the sample_to_covariates argument.")
+  }
+
+  if ( !is(norm_fun_counts, 'function') ) {
+    stop("norm_fun_counts must be a function")
+  }
+
+  if ( !is(norm_fun_tpm, 'function') ) {
+    stop("norm_fun_tpm must be a function")
+  }
+
   # TODO: ensure transcripts are in same order -- if not, report warning that
-  # kallisto index might be correct
+  # kallisto index might be incorrect
 
   # done
   ##############################
@@ -147,19 +161,15 @@ sleuth_prep <- function(
   msg('reading in kallisto results')
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
+  kal_dirs <- sample_to_covariates$path
+  sample_to_covariates$path <- NULL
   nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
     function(i) {
-      fname <- file.path(kal_dirs[i], 'abundance.h5')
-
       nsamp <- dot(nsamp)
-
-      if ( !file.exists(fname) ) {
-        stop(paste0('Could not find HDF5 file: ', fname))
-      }
-
-      suppressMessages({kal <- read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
+      path <- kal_dirs[i]
+      suppressMessages({kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
 
@@ -167,9 +177,26 @@ sleuth_prep <- function(
     })
   msg('')
 
-  kal_versions <- check_kal_pack(kal_list)
+  check_result <- check_kal_pack(kal_list)
+  if ( length(check_result$no_bootstrap) > 0 ) {
+    stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
+      paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
+  }
+
+  kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
+
+  design_matrix <- NULL
+  if ( is(full_model, 'formula') ) {
+    design_matrix <- model.matrix(full_model, sample_to_covariates)
+  } else {
+    if ( is.null(colnames(full_model)) ) {
+      stop("If matrix is supplied, column names must also be supplied.")
+    }
+    design_matrix <- full_model
+  }
+  rownames(design_matrix) <- sample_to_covariates$sample
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
   ret <- list(
@@ -179,7 +206,7 @@ sleuth_prep <- function(
       sample_to_covariates = sample_to_covariates,
       bootstrap_summary = NA,
       full_formula = full_model,
-      design_matrix = model.matrix(full_model, sample_to_covariates),
+      design_matrix = design_matrix,
       target_mapping = target_mapping
     )
 
@@ -187,12 +214,13 @@ sleuth_prep <- function(
   normalize <- TRUE
   if ( normalize ) {
     msg("normalizing est_counts")
-    est_counts_spread <- spread_abundance_by(obs_raw, "est_counts")
+    est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
+      sample_to_covariates$sample)
     filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
-    est_counts_sf <- norm_factors(est_counts_spread[filter_bool,])
+    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool,])
 
     filter_df <- adf(target_id = names(filter_true))
 
@@ -208,8 +236,9 @@ sleuth_prep <- function(
 
     # deal w/ TPM
     msg("normalizing tpm")
-    tpm_spread <- spread_abundance_by(obs_raw, "tpm")
-    tpm_sf <- norm_factors(tpm_spread[filter_bool,])
+    tpm_spread <- spread_abundance_by(obs_raw, "tpm",
+      sample_to_covariates$sample)
+    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool,])
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
     tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
@@ -234,22 +263,10 @@ sleuth_prep <- function(
       obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
     })
 
-
-
     # add in eff_len and len
     obs_norm <- dplyr::mutate(obs_norm,
       eff_len = obs_raw$eff_len,
       len = obs_raw$len)
-
-    # suppressWarnings({
-    #   obs_norm <- dplyr::inner_join(
-    #     data.table::as.data.table(obs_norm),
-    #     data.table::as.data.table(
-    #       dplyr::select(obs_raw, target_id, sample, len, eff_len)
-    #       ),
-    #     by = c('target_id', 'sample')
-    #     )
-    # })
 
     msg("normalizing bootstrap samples")
     ret$kal <- lapply(seq_along(ret$kal), function(i) {
@@ -258,6 +275,7 @@ sleuth_prep <- function(
         est_counts_size_factor = est_counts_sf[i])
       })
 
+
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
     ret$est_counts_sf <- est_counts_sf
@@ -265,6 +283,17 @@ sleuth_prep <- function(
     ret$filter_df <- filter_df
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
+
+    msg('summarizing bootstraps')
+    # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
+    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
+    # TODO: check if normalized. if not, normalize
+    # TODO: in normalization step, take out all things that don't pass filter so
+    # don't have to filter out here
+    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
+    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+
+    ret$bs_summary <- bs_summary
   }
 
   class(ret) <- 'sleuth'
@@ -288,7 +317,9 @@ check_kal_pack <- function(kal_list) {
     stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
   }
 
-  u_versions
+  no_bootstrap <- which(sapply(kal_list, function(x) length(x$bootstrap) == 0))
+
+  list(versions = u_versions, no_bootstrap = no_bootstrap)
 }
 
 #' Normalization factors
@@ -303,10 +334,13 @@ norm_factors <- function(mat) {
   nz <- apply(mat, 1, function(row) !any(round(row) == 0))
   mat_nz <- mat[nz,]
   p <- ncol(mat)
-  geo_means <- exp(apply(mat_nz, 1, function(row) (1/p) * sum(log(row)) ))
+  geo_means <- exp(apply(mat_nz, 1, function(row) mean(log(row)) ))
   s <- sweep(mat_nz, 1, geo_means, `/`)
 
-  apply(s, 2, median)
+  sf <- apply(s, 2, median)
+  scaling <- exp( (-1/p) * sum(log(sf)))
+
+  sf * scaling
 }
 
 # Summarize many bootstrap objects
@@ -369,7 +403,7 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
 # @param abund the abundance \code{data.frame} from a \code{sleuth} object
 # @param var a character array of length one. The variable for which to get "spread" on (e.g. "est_counts").
 # @export
-spread_abundance_by <- function(abund, var) {
+spread_abundance_by <- function(abund, var, which_order) {
   # var <- lazyeval::lazy(var)
   var_spread <- abund %>%
     select_("target_id", "sample", var) %>%
@@ -379,7 +413,9 @@ spread_abundance_by <- function(abund, var) {
   rownames(var_spread) <- var_spread$target_id
   var_spread["target_id"] <- NULL
 
-  as.matrix(var_spread)
+  result <- as.matrix(var_spread)
+
+  result[, which_order]
 }
 
 #' @export
@@ -455,6 +491,7 @@ obs_to_matrix <- function(obj, value_name) {
   rownames(obs_counts) <- obs_counts$target_id
   obs_counts$target_id <- NULL
   obs_counts <- as.matrix(obs_counts)
+  obs_counts <- obs_counts[, obj$sample_to_covariates$sample]
 
   obs_counts
 }
@@ -511,31 +548,34 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' list the most significant transcript mapping to themselves
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use
+#' @param test a character string denoting which beta to use
+#' @param test_type either 'wt' for Wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param which_group a character string denoting which gene group to use
 #' @return a \code{data.frame} containing gene names, transcript names, and significance
 #' @export
+sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full', which_group = 'ens_gene') {
 
+  if(is.null(obj$target_mapping)) {
+    stop("This sleuth object doesn't have added gene names.")
+  }
+  popped_gene_table = sleuth_results(obj, test, test_type, which_model)
 
-sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group = 'ens_gene') {
-  
-    if(is.null(obj$target_mapping))
-    {
-        stop("This sleuth object doesn't have added gene names.")
-    }
-    popped_gene_table = sleuth_results(obj, which_beta, which_model)
+  popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
+  popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
 
-    
-    popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
-    popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
+  popped_gene_table = dplyr::summarise_(popped_gene_table,
+    most_sig_transcript = ~target_id[1],
+    pval = ~min(pval, na.rm  = TRUE),
+    qval = ~min(qval, na.rm = TRUE),
+    num_transcripts = ~n(),
+    list_of_transcripts = ~toString(target_id[1:length(target_id)])
+    )
 
-    popped_gene_table = dplyr::summarise_(popped_gene_table, most_sig_transcript = ~target_id[1], pval = ~min(pval, na.rm  = TRUE), qval = ~min(qval, na.rm = TRUE), num_transcripts = ~n(), list_of_transcripts = ~toString(target_id[1:length(target_id)]))
-    
-    popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
-    popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
-    popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
-    popped_gene_table
+  popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
+  popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
+  popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+  popped_gene_table
 }
 
 
@@ -544,7 +584,8 @@ sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group
 #' Get the names of the transcripts associated to a gene, assuming genes are added to the input \code{sleuth} object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use
+#' @param test a character string denoting which beta to use
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
 #' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
@@ -552,16 +593,14 @@ sleuth_gene_table <- function(obj, which_beta, which_model = 'full', which_group
 #' @param gene_name a string containing the name of the gene you are interested in
 #' @return a vector of strings containing the names of the transcripts that map to a gene
 #' @export
-
-
-transcripts_from_gene <- function(obj, which_beta, which_model, gene_colname, gene_name)
+transcripts_from_gene <- function(obj, test, test_type,
+  which_model, gene_colname, gene_name)
 {
-    table = sleuth_results(obj, which_beta, which_model)
-    table = dplyr::select_(table, ~target_id, gene_colname, ~qval)
-    table = dplyr::arrange_(table, gene_colname, ~qval)
-    if(!(gene_name %in% table[,2]))
-    {
-        stop("Couldn't find gene ", gene_name)
-    }
-    table$target_id[table[,2] == gene_name]
+  table <- sleuth_results(obj, test, test_type, which_model)
+  table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
+  table <- dplyr::arrange_(table, gene_colname, ~qval)
+  if(!(gene_name %in% table[,2])) {
+      stop("Couldn't find gene ", gene_name)
+  }
+  table$target_id[table[,2] == gene_name]
 }

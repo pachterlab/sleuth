@@ -30,7 +30,7 @@
 #' \code{\link{models}} helpful.
 #'
 #' @param obj a \code{sleuth} object
-#' @param formula a formula specifying the design to fit
+#' @param formula a formula specifying the design to fit OR a design matrix
 #' @param fit_name the name to store the fit in the sleuth
 #' object
 #' @param ... additional arguments passed to \code{sliding_window_grouping} and
@@ -45,8 +45,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   if ( is.null(formula) ) {
     formula <- obj$full_formula
-  } else if ( !is(formula, 'formula') ) {
-    stop("'", substitute(formula), "' is not a valid 'formula'")
+  } else if ( !is(formula, 'formula') && !is(formula, 'matrix') ) {
+    stop("'", substitute(formula), "' is not a valid 'formula' or 'matrix'")
   }
 
   if ( is.null(fit_name) ) {
@@ -61,23 +61,19 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   }
 
   # TODO: check if model matrix is full rank
-  X <- model.matrix(formula, obj$sample_to_covariates)
+  X <- NULL
+  if ( is(formula, 'formula') ) {
+    X <- model.matrix(formula, obj$sample_to_covariates)
+  } else {
+    if ( is.null(colnames(formula)) ) {
+      stop("If matrix is supplied, column names must also be supplied.")
+    }
+    X <- formula
+  }
+  rownames(X) <- obj$sample_to_covariates$sample
   A <- solve( t(X) %*% X )
 
-  # TODO: check if normalized. if not, normalize
-
-  msg('summarizing bootstraps')
-  # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
-  bs_summary <- bs_sigma_summary(obj, function(x) log(x + 0.5))
-
-  # TODO: in normalization step, take out all things that don't pass filter so
-  # don't have to filter out here
-  bs_summary$obs_counts <- bs_summary$obs_counts[obj$filter_df$target_id, ]
-  bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[obj$filter_df$target_id]
-
-  msg('fitting measurement error models')
-
-  mes <- me_model_by_row(obj, obj$design_matrix, bs_summary)
+  mes <- me_model_by_row(obj, X, obj$bs_summary)
   tid <- names(mes)
 
   mes_df <- dplyr::bind_rows(lapply(mes,
@@ -91,6 +87,9 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
 
+  # FIXME: sometimes when sigma is negative the shrinkage estimation becomes NA
+  # this is for the few set of transcripts, but should be able to just do some
+  # simple fix
   msg('shrinkage estimation')
   swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
     ignore_zeroes = TRUE, ...)
@@ -130,12 +129,19 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   obj
 }
 
-model_exists <- function(obj, which_model) {
+# if 'fail' is set to TRUE, and fail if the model is not found and give an
+# error message
+model_exists <- function(obj, which_model, fail = TRUE) {
   stopifnot( is(obj, 'sleuth') )
   stopifnot( is(which_model, 'character') )
   stopifnot( length(which_model) == 1 )
 
-  which_model %in% names(obj$fits)
+  result <- which_model %in% names(obj$fits)
+  if (fail && !result) {
+    stop("model '", which_model, "' not found")
+  }
+
+  result
 }
 
 #' Wald test for a sleuth model
@@ -150,10 +156,10 @@ model_exists <- function(obj, which_model) {
 #' use
 #' @return an updated sleuth object
 #' @seealso \code{\link{models}} to view which models have been fit and which
-#' coefficients can be tested, \code{\link{wald_results}} to get back
+#' coefficients can be tested, \code{\link{sleuth_results}} to get back
 #' a data.frame of the results
 #' @export
-sleuth_test <- function(obj, which_beta, which_model = 'full') {
+sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
 
   if ( !model_exists(obj, which_model) ) {
@@ -206,11 +212,7 @@ sleuth_test <- function(obj, which_beta, which_model = 'full') {
 
   res <- dplyr::select(res, -x_group)
 
-  if (is.null(obj$fits[[which_model]]$wald)) {
-    obj$fits[[which_model]]$wald <- list()
-  }
-
-  obj$fits[[which_model]]$wald[[which_beta]] <- res
+  obj <- add_test(obj, res, which_beta, 'wt', which_model)
 
   obj
 }
@@ -241,7 +243,7 @@ covar_beta <- function(sigma, X, A) {
 # @param bs_summary a list from \code{bs_sigma_summary}
 # @return a list with a bunch of objects that are useful for shrinking
 me_model_by_row <- function(obj, design, bs_summary) {
-  stopifnot( is(obj, "sleuth") )
+  # stopifnot( is(obj, "sleuth") )
 
   stopifnot( all.equal(names(bs_summary$sigma_q_sq), rownames(bs_summary$obs_counts)) )
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))

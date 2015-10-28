@@ -92,9 +92,11 @@ plot_pca <- function(obj,
 
   mat <- NULL
   if (use_filtered) {
-    mat <- spread_abundance_by(obj$obs_norm_filt, units)
+    mat <- spread_abundance_by(obj$obs_norm_filt, units,
+      obj$sample_to_covariates$sample)
   } else {
-    mat <- spread_abundance_by(obj$obs_norm, units)
+    mat <- spread_abundance_by(obj$obs_norm, units,
+      obj$sample_to_covariates$sample)
   }
 
   pca_res <- prcomp(mat)
@@ -124,6 +126,173 @@ plot_pca <- function(obj,
 
   p
 }
+
+
+#' Plot Loadings and Interpretations 
+#' 
+#' give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
+#' 
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param sample user input on which sample and which PC's contribute the most
+#' @param PC  principal component to view sample's contribution to that PC
+#' @param units either 'est_counts' or 'tpm'
+#' @param pc_count # of PC's
+#' @param scale scale or not
+#' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
+#' @return a ggplot object
+#' @export
+plot_loadings <- function(obj, 
+  use_filtered = TRUE,
+  sample = NULL, 
+  pc_input = NULL, 
+  units = 'est_counts',
+  pc_count = NULL,
+  scale = FALSE,
+  pca_loading_abs = TRUE, 
+  ...) {
+
+  stopifnot( is(obj, 'sleuth') )
+  #filtering?? doesn't work right now
+
+  # mat <- NULL
+  # if (use_filtered) {
+  #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  # } else {
+  #   mat <- spread_abundance_by(obj$obs_norm, units)
+  # }
+  mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  
+  pca_calc <- prcomp(mat, scale = scale)
+
+  #sort of hack-y, may wish to fix
+  if (sample == '') {
+    sample <- NULL
+  }
+
+  loadings <- t(pca_calc$x)
+
+  toggle <- FALSE
+  #given a sample
+  if (!is.null(sample)) {
+    toggle <- TRUE
+    loadings <- pca_calc$x[sample,]
+    if (pca_loading_abs) {
+      loadings <- abs(loadings)
+      loadings <- sort(loadings, decreasing = TRUE)
+    } else {
+      loadings <- loadings[order(abs(loadings), decreasing = TRUE)]
+    }
+  }
+
+  #given a PC, which samples contribute the most?
+  if (!toggle) {
+    loadings <- pca_calc$x[,pc_input]
+    if (pca_loading_abs) {
+      loadings <- abs(loadings)
+      loadings <- sort(loadings, decreasing = TRUE)
+    } else {
+      loadings <-  loadings[order(abs(loadings), decreasing = TRUE)]
+    }
+  }
+
+  label_names <- names(loadings)
+  
+  if (!is.null(pc_count)) {
+      loadings <- loadings[1:pc_count]
+      label_names <- label_names[1:pc_count]
+    } else {
+      loadings <- loadings[1:5]
+      label_names <- label_names[1:5]
+    }
+
+  dat <- data.frame(pc = label_names, loadings = loadings)
+  dat$pc <- factor(dat$pc, levels = unique(dat$pc))
+
+  p <- ggplot(dat, aes(x = pc, y = loadings)) 
+  p <- p + geom_bar(stat = "identity")
+  p <- p + xlab("principal components") + ylab("contribution scores")
+  if (!toggle) {
+    p <- p + xlab("transcripts")
+  }
+
+  if (is.numeric(pc_input)) {
+    pc_input <- paste0("PC ", pc_input)
+  }
+
+  if (!is.null(sample)) {
+    p <- p + ggtitle(sample)
+  } else {
+    p <- p + ggtitle(pc_input)
+  }
+
+  p
+
+}
+
+#' Plot PC Variance
+#'
+#' Plot PC variances retained by percentage with option to compare specified PC
+#'
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param units either 'est_counts' or 'tpm'
+#' @param pca_number user input on how many PC to display, otherwise default is 5
+#' @param scale determines scaling
+#' @param PC_relative gives the option to compare subsequent principal components and their contributions
+#' @return a ggplot object
+#' @export
+plot_pc_variance <- function(obj, 
+  use_filtered = TRUE,
+  units = 'est_counts',
+  pca_number = NULL,
+  scale = FALSE,
+  PC_relative = NULL, 
+  ...) {
+
+  # mat <- NULL
+  # if (use_filtered) {
+  #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  # } else {
+  #   mat <- spread_abundance_by(obj$obs_norm, units)
+  # }
+  mat <- spread_abundance_by(obj$obs_norm_filt, units)
+
+  pca_calc <- prcomp(mat, scale = scale) #PCA calculations 
+
+  #computation
+  eigenvalues <- (pca_calc$sdev)^2  
+  var_explained <- eigenvalues*100/sum(eigenvalues)
+  var_explained2 <- var_explained
+  
+  if (!is.null(pca_number)) {
+    colsize <- pca_number
+    var_explained <- var_explained[1:pca_number]
+  } else {
+    colsize <- 5 #default 5
+    var_explained <- var_explained[1:5] #default 5
+  }
+  pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) #order here matters
+
+  if(!is.null(PC_relative)) {
+    pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2) 
+    pc_df <- pc_df[PC_relative:nrow(pc_df),] 
+
+    if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) {
+      pc_df <- pc_df[1:pca_number,] 
+    } else if (PC_relative + 5 >= length(eigenvalues)) {
+      pc_df <- pc_df[1:nrow(pc_df),] 
+    }
+  } 
+
+  p <- ggplot(pc_df, aes(x = PC_count, y = var)) + geom_bar(stat = "identity")
+  p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
+  p <- p + ylab("% of variance") + xlab("principal components")
+
+  p
+  
+}
+
 
 #' Plot density
 #'
@@ -258,9 +427,11 @@ plot_scatter <- function(obj,
 
   abund <- NULL
   if (use_filtered) {
-    abund <- spread_abundance_by(obj$obs_norm_filt, units)
+    abund <- spread_abundance_by(obj$obs_norm_filt, units,
+      obj$sample_to_covariates$sample)
   } else {
-    abund <- spread_abundance_by(obj$obs_norm, units)
+    abund <- spread_abundance_by(obj$obs_norm, units,
+      obj$sample_to_covariates$sample)
   }
   abund <- abund + offset
   abund <- as_df(abund)
@@ -306,6 +477,8 @@ plot_scatter <- function(obj,
 #' Plot technical variance versus observed variance
 #'
 #' @param obj a \code{sleuth} object
+#' @param test the name of the test to highlight significant transcripts for
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param point_alpha the alpha for the points
@@ -317,7 +490,8 @@ plot_scatter <- function(obj,
 #' @return a \code{ggplot2} object
 #' @export
 plot_vars <- function(obj,
-  which_beta = NULL,
+  test = NULL,
+  test_type = 'wt',
   which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
@@ -331,12 +505,12 @@ plot_vars <- function(obj,
 
   cur_summary <- NULL
 
-  if (is.null(which_beta)) {
+  if (is.null(test)) {
     cur_summary <- obj$fits[[which_model]][['summary']]
     cur_summary <- dplyr::mutate(cur_summary,
       obs_var = sigma_sq + sigma_q_sq)
   } else {
-    cur_summary <- sleuth_results(obj, which_beta, which_model,
+    cur_summary <- sleuth_results(obj, test, test_type, which_model,
       rename_cols = FALSE, show_all = FALSE)
     cur_summary <- dplyr::mutate(cur_summary,
       obs_var = sigma_sq + sigma_q_sq,
@@ -345,7 +519,7 @@ plot_vars <- function(obj,
 
   p <- ggplot(cur_summary, aes(sqrt(obs_var), sqrt(sigma_q_sq)))
 
-  if (is.null(which_beta)) {
+  if (is.null(test)) {
     p <- p + geom_point(alpha = point_alpha)
   } else {
     p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
@@ -384,14 +558,14 @@ plot_vars <- function(obj,
 #' x-axis and fold change on the y-axis.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use for
-#' highlighting the transcript
+#' @param test the name of the test to highlight significant transcripts for
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param point_alpha the alpha for the points
 #' @return a \code{ggplot2} object
 #' @export
-plot_ma <- function(obj, which_beta, which_model = 'full',
+plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
   sig_color = 'red',
@@ -400,7 +574,11 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   ) {
   stopifnot( is(obj, 'sleuth') )
 
-  res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+  if ( test_type == 'lrt' ) {
+    stop('Currently only works for the Wald test. Eventually we will do something for the likelihood ratio test. Suggestions? Email us.')
+  }
+
+  res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
     show_all = FALSE)
   res <- dplyr::mutate(res, significant = qval < sig_level)
 
@@ -408,7 +586,7 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
   p <- p + scale_colour_manual(values = c('black', sig_color))
   p <- p + xlab('mean( log( counts + 0.5 ) )')
-  p <- p + ylab(paste0('beta: ', which_beta))
+  p <- p + ylab(paste0('beta: ', test))
 
   if (!is.null(highlight)) {
     suppressWarnings({
@@ -423,7 +601,6 @@ plot_ma <- function(obj, which_beta, which_model = 'full',
 
   p
 }
-
 
 #' Plot bootstrap summary
 #'
@@ -451,6 +628,57 @@ plot_bootstrap <- function(obj,
   p
 }
 
+#' @export
+plot_fld <- function(x, ...) {
+  UseMethod('plot_fld')
+}
+
+#' Plot fragment length distribution
+#'
+#' Plot the fragment link the distribution of a specific kallisto run.
+#'
+#' @param obj a sleuth object
+#' @param sample either the sample index (an integer or numeric), or the sample id (a character of length 1)
+#' @return a \code{ggplot2} object
+#' @export
+plot_fld.sleuth <- function(obj, sample) {
+  stopifnot( length(sample) == 1 )
+
+  if ( is(sample, 'numeric') || is(sample, 'integer') ) {
+    sample <- as.integer(sample)
+  } else {
+    sample <- which( obj$sample_to_covariates$sample == sample )
+    if ( length(sample) == 0 ) {
+      stop('Could not find: "', sample, '"')
+    }
+  }
+
+  plot_fld(obj$kal[[sample]])
+}
+
+#' Plot fragment length distribution
+#'
+#' Plot the fragment link the distribution of a specific kallisto run.
+#'
+#' @param obj a kallisto object
+#' @return a \code{ggplot2} object
+#' @export
+plot_fld.kallisto <- function(obj) {
+  if ( length(obj$fld) == 1 && all(is.na(obj$fld)) ) {
+    stop("kallisto object does not contain the fragment length distribution. Please rerun with a new version of kallisto.")
+  }
+  df <- adf(len = 1:length(obj$fld), fld = obj$fld)
+  df <- dplyr::mutate(df, fld = fld / sum(fld))
+
+  p <- ggplot(df, aes(len, fld))
+  p <- p + geom_bar(stat = 'identity')
+  p <- p + xlab('length of fragment')
+  p <- p + ylab('density')
+
+  p
+}
+
+
 #' Plot sample heatmap
 #'
 #' Plot sample heatmap using the Jensen-Shannon divergence
@@ -470,9 +698,11 @@ plot_sample_heatmap <- function(obj,
   ) {
   abund <- NULL
   if (use_filtered) {
-    abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm')
+    abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm',
+      obj$sample_to_covariates$sample)
   } else {
-    abund <- spread_abundance_by(obj$obs_norm, 'tpm')
+    abund <- spread_abundance_by(obj$obs_norm, 'tpm',
+      obj$sample_to_covariates$sample)
   }
   all_pairs <- apply_all_pairs(abund, jsd)
 
@@ -496,8 +726,9 @@ plot_sample_heatmap <- function(obj,
 #' vs. log(significance). Ideally, it looks like a volcano; more significance typically
 #' results in higher beta
 #' @param obj a  \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use for
+#' @param test a character string denoting which beta to use for
 #' highlighting the transcript
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param sig_level the significance level for Fdr
@@ -507,42 +738,44 @@ plot_sample_heatmap <- function(obj,
 #' These points will be displayed below in a table.
 #' @return a \code{ggplot} object
 #' @export
-
-
-plot_volcano = function(obj, which_beta, which_model = 'full',
+plot_volcano = function(obj, test, test_type = 'wt', which_model = 'full',
     sig_level = 0.10,
     point_alpha = 0.2,
     sig_color = 'red',
     highlight = NULL
     ) {
-    stopifnot( is(obj, 'sleuth') )
-    
-    res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
-        show_all = FALSE)
-    res <- dplyr::mutate(res, significant = qval < sig_level)
-    
-   
-        p = ggplot(res, aes(b, -log10(qval)))
-        p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
-        p <- p + scale_colour_manual(values = c('black', sig_color))
-        p <- p + xlab('beta_value')
-        p <- p + ylab('-log10(qval)')
-        p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
-    
-    
-    p
+  stopifnot( is(obj, 'sleuth') )
+
+  if ( test_type == 'lrt' ) {
+    stop('Currently only works for the Wald test. Eventually we will do something for the likelihood ratio test. Suggestions? Email us.')
+  }
+
+  res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
+      show_all = FALSE)
+  res <- dplyr::mutate(res, significant = qval < sig_level)
+
+  p <- ggplot(res, aes(b, -log10(qval)))
+  p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
+  p <- p + scale_colour_manual(values = c('black', sig_color))
+  p <- p + xlab('beta_value')
+  p <- p + ylab('-log10(qval)')
+  p <- p + geom_vline(xintercept = 0, colour = 'black', linetype = 'longdash')
+
+
+  p
 }
 
-#' QQ norm plot
+#' QQ plot
 #'
-#' Create a Q-Q norm plot of the Wald statistics. The x-axis has the
+#' Create a Q-Q plot of the test statistics. The x-axis has the
 #' theoretical quantile you would expect from a standard normal distribution.
-#' The y-axis has the observed quantiles. It is a \code{ggplot2} version of
+#' The y-axis has the observed quantiles. In the Wald case, it is a \code{ggplot2} version of
 #' what you would get from \code{\link{qqnorm}} and \code{\link{qqline}}.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string denoting which beta to use for
+#' @param test a character string denoting which beta to use for
 #' highlighting the transcript
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test.
 #' @param which_model a character string denoting which model to use for the
 #' test
 #' @param sig_level the significance level for Fdr
@@ -555,7 +788,7 @@ plot_volcano = function(obj, which_beta, which_model = 'full',
 #' @param line_color what color to make the QQ line
 #' @return a \code{ggplot2} object
 #' @export
-plot_qqnorm <- function(obj, which_beta, which_model = 'full',
+plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
   sig_level = 0.10,
   point_alpha = 0.2,
   sig_color = 'red',
@@ -565,26 +798,46 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
   ) {
   stopifnot( is(obj, 'sleuth') )
 
-  res <- sleuth_results(obj, which_beta, which_model, rename_cols = FALSE,
+  # if ( test_type == 'lrt' ) {
+  #   stop('Currently only works for the Wald test. We will fix this in the next version.')
+  # }
+
+  res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
     show_all = FALSE)
-  res <- dplyr::mutate(res, wald_stat = b / se_b)
-  res <- dplyr::filter(res, !is.na(wald_stat))
+
+  if ( test_type == 'wt' ) {
+    res <- dplyr::mutate(res, test_stat = b / se_b)
+    res <- dplyr::filter(res, !is.na(test_stat))
+  }
+
   res <- dplyr::mutate(res, significant = qval < sig_level)
-  pnts <- stats::qqnorm(res$wald_stat, plot.it = FALSE)
-  res <- dplyr::mutate(res, theoretical = pnts[['x']], observed = pnts[['y']])
 
-  y <- quantile(res$observed, c(0.25, 0.75))
-  x <- qnorm(c(0.25, 0.75))
+  if ( test_type == 'wt' ) {
+    pnts <- stats::qqnorm(res$test_stat, plot.it = FALSE)
+    res <- dplyr::mutate(res, theoretical = pnts[['x']], observed = pnts[['y']])
 
-  slope <- diff(y) / diff(x)
-  intercept <- y[1L] - slope * x[1L]
+    y <- quantile(res$observed, c(0.25, 0.75))
+    x <- qnorm(c(0.25, 0.75))
+
+    slope <- diff(y) / diff(x)
+    intercept <- y[1L] - slope * x[1L]
+  } else {
+    # TODO: deal with the chisq case
+    pnts <- stats::ppoints(nrow(res))
+    df <- res$degrees_free[1]
+    x <- qchisq(pnts, df = df)
+    res <- dplyr::arrange(res, test_stat)
+    res <- dplyr::mutate(res, theoretical = x, observed = test_stat)
+  }
 
   p <- ggplot(res, aes(theoretical, observed))
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
   p <- p + scale_colour_manual(values = c('black', sig_color))
   p <- p + xlab('theoretical quantile')
-  p <- p + ylab(paste0('observed quantile: ', which_beta))
-  p <- p + geom_abline(intercept = intercept, slope = slope, color = line_color)
+  p <- p + ylab(paste0('observed quantile: ', test))
+  if (test_type == 'wt') {
+    p <- p + geom_abline(intercept = intercept, slope = slope, color = line_color)
+  }
 
   if (!is.null(highlight)) {
     suppressWarnings({
@@ -611,49 +864,42 @@ plot_qqnorm <- function(obj, which_beta, which_model = 'full',
 #' @param trans a string specifying a function to transform the data by
 #' @return a \code{ggplot} object
 #' @export
-
-
-plot_transcript_heatmap <- function(transcripts, obj, units = 'tpm', trans = 'log')
+plot_transcript_heatmap <- function(obj,
+  transcripts,
+  units = 'tpm',
+  trans = 'log',
+  offset = 1)
 {
-    if(!all(transcripts %in% obj$obs_norm$target_id))
-    {
-        stop("Couldn't find the following transcripts: ", paste(transcripts[!(transcripts %in% so$obs_norm$target_id)], collapse = ", "))
-    }
-    
-    
-    tabd_df = obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
-    
-    if(units == 'tpm')
-    {
-        tabd_df = dplyr::select(tabd_df, target_id, sample, tpm)
-        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
-    }
-    else if (units == 'est_counts')
-    {
-        tabd_df = dplyr::select(tabd_df, target_id, sample, est_counts)
-        tabd_df = reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
-    }
-    else
-    {
-        stop("Didn't recognize the following unit: ", units)
-    }
-    
-    rownames(tabd_df) = tabd_df$target_id
-    tabd_df$target_id = NULL
-        
-    if(nchar(trans) > 0 && !is.null(trans)) {
-        tFunc = eval(parse(text = trans))
-        
-        ggPlotExpression(as.matrix(tFunc(tabd_df)), clustRows = FALSE)
-        #gplots::heatmap.2(as.matrix(tFunc(tabd_df)), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
-    }
-    else {
-        
-        ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
-        #Change the following to not rely on gplots:
-        #gplots::heatmap.2(as.matrix(tabd_df), Colv = FALSE, dendrogram='row', trace='none', key.xlab ='abundance', margins = c(10,30), keysize = hm_keysize, lwid = c(1,4), col = heat.colors(15))
-    }
+  if(!all(transcripts %in% obj$obs_norm$target_id)) {
+    stop("Couldn't find the following transcripts: ",
+      paste(transcripts[!(transcripts %in% obj$obs_norm$target_id)], collapse = ", "),
+      "\n\tIt is highly likely that some of them were filtered out.")
+  }
 
+  tabd_df <- obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
+
+  if(units == 'tpm') {
+    tabd_df <- dplyr::select(tabd_df, target_id, sample, tpm)
+    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
+  } else if (units == 'est_counts') {
+    tabd_df <- dplyr::select(tabd_df, target_id, sample, est_counts)
+    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
+  } else {
+    stop("Didn't recognize the following unit: ", units)
+  }
+
+  rownames(tabd_df) <- tabd_df$target_id
+  tabd_df$target_id <- NULL
+
+  p <- NULL
+  if (nchar(trans) > 0 && !is.null(trans)) {
+    tFunc = eval(parse(text = trans))
+    p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)), clustRows = FALSE)
+  } else {
+    p <- ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
+  }
+
+  p
 }
 
 
@@ -683,7 +929,7 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
         colOrder <- orderByDendrogram(t(exMat))
     exMat <- exMat[rowOrder, colOrder]
     meltMat <- reshape2::melt(exMat, varnames = c("x", "y"))
-    breaksM <- round(seq(min(meltMat$value, na.rm = T), max(meltMat$value, na.rm = T), 
+    breaksM <- round(seq(min(meltMat$value, na.rm = T), max(meltMat$value, na.rm = T),
                          length.out = 10), 3)
                          #print(rownames(exMat))
     if (is.null(colnames(exMat)))
@@ -693,7 +939,7 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
     p <- ggplot(meltMat, aes(x, y, fill = value))
     p <- p + geom_tile() + scale_fill_gradientn(colours = heat.colors(20),
                                                 guide = guide_legend(title = "Expression: ",
-                                                                     reverse = T, size = 14)) 
+                                                                     reverse = T, size = 14))
     p <- p + theme_bw() + theme(legend.text = element_text(size = 14),
                                                                    legend.title = element_text(size = 14),
                                                            legend.direction = 'vertical',

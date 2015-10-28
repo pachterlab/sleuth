@@ -4,22 +4,21 @@
 \alias{sleuth_prep}
 \title{Constructor for a 'sleuth' object}
 \usage{
-sleuth_prep(kal_dirs, sample_to_covariates, full_model,
-  filter_fun = basic_filter, target_mapping = NULL, max_bootstrap = NULL,
-  ...)
+sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
+  target_mapping = NULL, max_bootstrap = NULL,
+  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors, ...)
 }
 \arguments{
-\item{kal_dirs}{a character vector of length greater than one where each
-string points to a kallisto output directory}
-
 \item{sample_to_covariates}{is a \code{data.frame} which contains a mapping
 from \code{sample} (a column) to some set of experimental conditions or
-covariates. The column \code{sample} should be in the same order as the
-corresponding entry in \code{kal_dirs}}
+covariates. The column \code{path} is also required, which is a character
+vector where each element points to the corresponding kallisto output directory. The column
+\code{sample} should be in the same order as the corresponding entry in
+\code{path}.}
 
 \item{full_model}{is a \code{formula} which explains the full model (design)
-of the experiment. It must be consistent with the data.frame supplied in
-\code{sample_to_covariates}}
+of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
+\code{sample_to_covariates}.}
 
 \item{filter_fun}{the function to use when filtering.}
 
@@ -32,6 +31,10 @@ mappings.}
 
 \item{max_bootstrap}{maximum number of bootstrap values to read for each
 transcript.}
+
+\item{norm_fun_counts}{a function to perform between sample normalization on the estimated counts.}
+
+\item{norm_fun_tpm}{a function to perform between sample normalization on the TPM}
 
 \item{...}{additional arguments passed to the filter function}
 }
@@ -47,6 +50,6 @@ variance.
 }
 \seealso{
 \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-test whether a coeffient is zero
+test whether a coeffient in the model is zero
 }
 

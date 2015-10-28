@@ -24,11 +24,11 @@ The model __sleuth__ uses for performing differential analysis is a general line
 
 $$ y_{t,i} = \beta_{t,0} + \beta_{t,1} x_{t,i} + \epsilon_{t,i} $$
 
-where $x_{t,i}$ is an indicator variable describing the condition, $\beta_{t,0}$ and $\beta_{t,1}$ are parameters of the model and $\epsilon_{t,i}$ is biological "noise". However, conditioned on $x_i$ and $y_i$ the estimated number of counts from the observations in the experiment is given by 
+where $x_{t,i}$ is an indicator variable describing the condition, $\beta_{t,0}$ and $\beta_{t,1}$ are parameters of the model and $\epsilon_{t,i}$ is biological "noise". However, conditioned on $x_i$ and $y_i$ the estimated number of counts from the observations in the experiment is given by
 
 $$ d_{t,i} = y_{t,i} + \zeta_{t,i} $$
 
-where $\zeta_{t,i}$ represents technical "noise", i.e. uncertainty in the measurement due to effects other than biological variability. The __sleuth__ model incorporates the assumptions that the expectation $E(\zeta_{t,i}|y_{t,i}) = 0$, that $E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}$  and that the response error is _additive_, i.e. if $ the variance V(\epsilon_{t,i}) = \sigma_t^2$ and the variance $V(\zeta_{t,i}|y_{t,i}) = \sigma_t^2$ then the variance $V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2$. __sleuth__ makes use of the boostraps from __kallisto__ to estimate the $\tau_t^2$, and after subtracting the estimated technical variance the $\sigma_t^2$ are estimated via a shrinkage procedure similar to that used in [Limma Voom](http://www.genomebiology.com/2014/15/2/R29).
+where $\zeta_{t,i}$ represents technical "noise", i.e. uncertainty in the measurement due to effects other than biological variability. The __sleuth__ model incorporates the assumptions that the expectation $E(\zeta_{t,i}|y_{t,i}) = 0$, that $E(d_{t,i}) = \beta_{t,0} + \beta_{t,1} x_{t,i}$  and that the response error is _additive_, i.e. if the variance $V(\epsilon_{t,i}) = \sigma_t^2$ and the variance $V(\zeta_{t,i}|y_{t,i}) = \tau_t^2$ then the variance $V(d_{t,i}) = \sigma_{t}^2 + \tau_{t}^2$. __sleuth__ makes use of the boostraps from __kallisto__ to estimate the $\tau_t^2$, and after subtracting the estimated technical variance the $\sigma_t^2$ are estimated via a shrinkage procedure similar to that used in [Limma Voom](http://www.genomebiology.com/2014/15/2/R29).
 
 More generally, __sleuth__ can be used to analyze multiple conditions organized in complex experimental designs. In the general case the unobserved model is given by
 
@@ -36,15 +36,15 @@ $$ Y_t = X_t \beta_t + \epsilon_t $$
 
 where $t$ is a transcript, $Y_t$ is a vector of length $n$ where $n$ is the number of samples, $X_t$ is an $n \times p$ matrix where $p$ is the number of covariates, $\beta_t$ represents the effect sizes and is a vector of length $p$, and $\epsilon_t$ is a vector of length $n$. The observed response is described by
 
-$$ D_t = Y_t + \zeta_t $$ 
+$$ D_t = Y_t + \zeta_t $$
 
 where $\zeta_t$ and $D_t$ are vectors of length $n$.
 
-__sleuth__ has been designed to facilitate the exploration of RNA-Seq data by utilizing the [Shiny](http://shiny.rstudio.com) web application framework by RStudio. The worked example below illustrates how to load data into __sleuth__ and how to open Shiny plots for exploratory data analysis. The code underlying all plots is available via the Shiny interface so that analyses can be fully "open source". 
+__sleuth__ has been designed to facilitate the exploration of RNA-Seq data by utilizing the [Shiny](http://shiny.rstudio.com) web application framework by RStudio. The worked example below illustrates how to load data into __sleuth__ and how to open Shiny plots for exploratory data analysis. The code underlying all plots is available via the Shiny interface so that analyses can be fully "open source".
 
 ## Installation
 
-To install __sleuth__ start [R](https://www.r-project.org) and first install `rhdf5` by typing: 
+To install __sleuth__ start [R](https://www.r-project.org) and first install `rhdf5` by typing:
 
 ```{r eval=FALSE}
 source("http://bioconductor.org/biocLite.R")
@@ -73,9 +73,9 @@ To explain how to use __sleuth__ we provide an example based on the data in the 
 
 * [Differential analysis of gene regulation at transcript resolution with RNA-seq](http://www.nature.com/nbt/journal/v31/n1/full/nbt.2450.html)	by Cole Trapnell, David G Henderickson, Martin Savageau, Loyal Goff, John L Rinn and Lior Pachter, Nature Biotechnology __31__, 46--53 (2013).
 
-The human fibroblast RNA-Seq data for the paper is available on GEO at accession [GSE37704](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704). The samples to be analyzed are the six samples LFB_scramble_hiseq_repA, LFB_scramble_hiseq_repB, LFB_scramble_hiseq_repC, LFB_HOXA1KD_hiseq_repA, LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions (scramble and HoxA1 knockdown) that will be compared with __sleuth__. 
+The human fibroblast RNA-Seq data for the paper is available on GEO at accession [GSE37704](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE37704). The samples to be analyzed are the six samples LFB_scramble_hiseq_repA, LFB_scramble_hiseq_repB, LFB_scramble_hiseq_repC, LFB_HOXA1KD_hiseq_repA, LFB_HOXA1KD_hiseq_repA, and LFB_HOXA1KD_hiseq_repC. These are three biological replicates in each of two conditions (scramble and HoxA1 knockdown) that will be compared with __sleuth__.
 
-To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described [here](http://pachterlab.github.io/kallisto/starting.html). This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processsed data directly by clicking [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/cuffdiff2_data_kallisto_results.zip).
+To analyze the data, first download the raw reads, install __kallisto__ and then quantify the data with boostraps as described [here](http://pachterlab.github.io/kallisto/starting.html). This step can be skipped for the purposes of the vignette, by downloading the __kallisto__ processed data directly by clicking [here](http://bio.math.berkeley.edu/sleuth/cuffdiff2/cuffdiff2_data_kallisto_results.zip).
 
 The first step in a __sleuth__ analysis is to specify where the __kallisto__ results are stored. Begin by storing the base directory of the results in a variable,
 ```{r}
@@ -85,7 +85,7 @@ Next get the list of sample IDs with
 ```{r}
 sample_id <- dir(file.path(base_dir,"results"))
 ```
-The result can be displayed by typing 
+The result can be displayed by typing
 ```{r}
 sample_id
 ```
@@ -99,9 +99,24 @@ kal_dirs
 
 The next step is to load an auxillary table that describes the experimental design and the relationship between the kallisto directories and the samples:
 ```{r}
-s2c <- read.table(file.path(base_dir,"hiseq_info.txt"), header = TRUE, stringsAsFactors=FALSE)
+s2c <- read.table(file.path(base_dir, "hiseq_info.txt"), header = TRUE, stringsAsFactors=FALSE)
 s2c <- dplyr::select(s2c, sample = run_accession, condition)
 s2c
+```
+
+Now, we must enter the directories into a column in the table describing the experiment.
+This column must be labeled `path`, otherwise sleuth will throw an error.
+This is to ensure that the user can check which samples correspond to which kallisto runs.
+
+```{r}
+s2c <- dplyr::mutate(s2c, path = kal_dirs)
+```
+
+The user should check whether or not the order is correct.
+In this case, the kallisto output is correctly matched with the sample identifiers.
+
+```{r}
+print(s2c)
 ```
 
 Now the "sleuth object" can be constructed. This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the __sleuth__ response error measurement model and (3) perform differential analyis (testing). On a laptop the three steps should take about 2 minutes altogether.
@@ -109,19 +124,19 @@ Now the "sleuth object" can be constructed. This requires three commands that (1
 First type
 
 ```{r eval=TRUE}
-so <- sleuth_prep(kal_dirs, s2c, ~ condition)
+so <- sleuth_prep(s2c, ~ condition)
 ```
 
 then
 
 ```{r eval=TRUE}
 so <- sleuth_fit(so)
-``` 
+```
 
-and finally 
+and finally
 
 ```{r eval=TRUE}
-so <- sleuth_test(so, which_beta = 'conditionscramble')
+so <- sleuth_wt(so, 'conditionscramble')
 ```
 
 In general, one can see the possible tests that could be performed using the `which_beta` parameter in `sleuth_test` and examining the coefficients:
@@ -130,7 +145,7 @@ In general, one can see the possible tests that could be performed using the `wh
 models(so)
 ```
 
-At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the __kallisto__ estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. There is, however, one piece of information that can be useful to add in, but that is optional. In reading the kallisto output __sleuth__ has no information about _genes_, but this can be added allowing for searching and analysis by gene instead of transcript. 
+At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the __kallisto__ estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. There is, however, one piece of information that can be useful to add in, but that is optional. In reading the kallisto output __sleuth__ has no information about _genes_, but this can be added allowing for searching and analysis by gene instead of transcript.
 
 Since the example was constructed with the ENSEMBL human transcriptome, we will add gene names from ENSEMBL using biomaRt (there are other ways to do this as well):
 
@@ -169,12 +184,5 @@ sleuth_live(so)
 
 To generate a table of results for analysis within R type
 ```{r}
-results_table <- sleuth_results(so, 'conditionscramble') 
+results_table <- sleuth_results(so, 'conditionscramble')
 ```
-
-
-
-
-
-
-
