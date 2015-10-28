@@ -90,6 +90,19 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     NA_integer_
   }
 
+  fld <- if ( h5check(fname, '/aux', 'fld') ) {
+    as.integer(rhdf5::h5read(fname, 'aux/fld'))
+  } else {
+    NA_integer_
+  }
+
+  bias_observed <- NA
+  bias_normalized <- NA
+  if ( h5check(fname, '/aux', 'bias_observed') ) {
+    bias_observed <- rhdf5::h5read(fname, 'aux/bias_observed')
+    bias_normalized <- rhdf5::h5read(fname, 'aux/bias_normalized')
+  }
+
   bs_samples <- list()
   if (read_bootstrap) {
     num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
@@ -110,7 +123,13 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 
   abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
-  res <- list(abundance = abund, bootstrap = bs_samples)
+  res <- list(
+    abundance = abund,
+    bias_normalized = bias_normalized,
+    bias_observed = bias_observed,
+    bootstrap = bs_samples,
+    fld = fld
+    )
   class(res) <- 'kallisto'
 
   attr(res, 'index_version') <- rhdf5::h5read(fname, 'aux/index_version')
