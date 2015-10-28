@@ -127,6 +127,173 @@ plot_pca <- function(obj,
   p
 }
 
+
+#' Plot Loadings and Interpretations 
+#' 
+#' give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
+#' 
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param sample user input on which sample and which PC's contribute the most
+#' @param PC  principal component to view sample's contribution to that PC
+#' @param units either 'est_counts' or 'tpm'
+#' @param pc_count # of PC's
+#' @param scale scale or not
+#' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
+#' @return a ggplot object
+#' @export
+plot_loadings <- function(obj, 
+  use_filtered = TRUE,
+  sample = NULL, 
+  pc_input = NULL, 
+  units = 'est_counts',
+  pc_count = NULL,
+  scale = FALSE,
+  pca_loading_abs = TRUE, 
+  ...) {
+
+  stopifnot( is(obj, 'sleuth') )
+  #filtering?? doesn't work right now
+
+  # mat <- NULL
+  # if (use_filtered) {
+  #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  # } else {
+  #   mat <- spread_abundance_by(obj$obs_norm, units)
+  # }
+  mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  
+  pca_calc <- prcomp(mat, scale = scale)
+
+  #sort of hack-y, may wish to fix
+  if (sample == '') {
+    sample <- NULL
+  }
+
+  loadings <- t(pca_calc$x)
+
+  toggle <- FALSE
+  #given a sample
+  if (!is.null(sample)) {
+    toggle <- TRUE
+    loadings <- pca_calc$x[sample,]
+    if (pca_loading_abs) {
+      loadings <- abs(loadings)
+      loadings <- sort(loadings, decreasing = TRUE)
+    } else {
+      loadings <- loadings[order(abs(loadings), decreasing = TRUE)]
+    }
+  }
+
+  #given a PC, which samples contribute the most?
+  if (!toggle) {
+    loadings <- pca_calc$x[,pc_input]
+    if (pca_loading_abs) {
+      loadings <- abs(loadings)
+      loadings <- sort(loadings, decreasing = TRUE)
+    } else {
+      loadings <-  loadings[order(abs(loadings), decreasing = TRUE)]
+    }
+  }
+
+  label_names <- names(loadings)
+  
+  if (!is.null(pc_count)) {
+      loadings <- loadings[1:pc_count]
+      label_names <- label_names[1:pc_count]
+    } else {
+      loadings <- loadings[1:5]
+      label_names <- label_names[1:5]
+    }
+
+  dat <- data.frame(pc = label_names, loadings = loadings)
+  dat$pc <- factor(dat$pc, levels = unique(dat$pc))
+
+  p <- ggplot(dat, aes(x = pc, y = loadings)) 
+  p <- p + geom_bar(stat = "identity")
+  p <- p + xlab("principal components") + ylab("contribution scores")
+  if (!toggle) {
+    p <- p + xlab("transcripts")
+  }
+
+  if (is.numeric(pc_input)) {
+    pc_input <- paste0("PC ", pc_input)
+  }
+
+  if (!is.null(sample)) {
+    p <- p + ggtitle(sample)
+  } else {
+    p <- p + ggtitle(pc_input)
+  }
+
+  p
+
+}
+
+#' Plot PC Variance
+#'
+#' Plot PC variances retained by percentage with option to compare specified PC
+#'
+#' @param obj a \code{sleuth} object
+#' @param use_filtered if TRUE, use filtered data. otherwise, use all data
+#' @param units either 'est_counts' or 'tpm'
+#' @param pca_number user input on how many PC to display, otherwise default is 5
+#' @param scale determines scaling
+#' @param PC_relative gives the option to compare subsequent principal components and their contributions
+#' @return a ggplot object
+#' @export
+plot_pc_variance <- function(obj, 
+  use_filtered = TRUE,
+  units = 'est_counts',
+  pca_number = NULL,
+  scale = FALSE,
+  PC_relative = NULL, 
+  ...) {
+
+  # mat <- NULL
+  # if (use_filtered) {
+  #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
+  # } else {
+  #   mat <- spread_abundance_by(obj$obs_norm, units)
+  # }
+  mat <- spread_abundance_by(obj$obs_norm_filt, units)
+
+  pca_calc <- prcomp(mat, scale = scale) #PCA calculations 
+
+  #computation
+  eigenvalues <- (pca_calc$sdev)^2  
+  var_explained <- eigenvalues*100/sum(eigenvalues)
+  var_explained2 <- var_explained
+  
+  if (!is.null(pca_number)) {
+    colsize <- pca_number
+    var_explained <- var_explained[1:pca_number]
+  } else {
+    colsize <- 5 #default 5
+    var_explained <- var_explained[1:5] #default 5
+  }
+  pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) #order here matters
+
+  if(!is.null(PC_relative)) {
+    pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2) 
+    pc_df <- pc_df[PC_relative:nrow(pc_df),] 
+
+    if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) {
+      pc_df <- pc_df[1:pca_number,] 
+    } else if (PC_relative + 5 >= length(eigenvalues)) {
+      pc_df <- pc_df[1:nrow(pc_df),] 
+    }
+  } 
+
+  p <- ggplot(pc_df, aes(x = PC_count, y = var)) + geom_bar(stat = "identity")
+  p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
+  p <- p + ylab("% of variance") + xlab("principal components")
+
+  p
+  
+}
+
+
 #' Plot density
 #'
 #' Plot the density of a some grouping

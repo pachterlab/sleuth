@@ -295,7 +295,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     navbarMenu('maps',
 
-      ####
+    ####
       tabPanel('PCA',
       fluidRow(
         column(12,
@@ -303,11 +303,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
           offset = 1),
         fluidRow(
-          column(3,
+          column(2,
             selectInput('pc_x', label = 'x-axis PC: ', choices = 1:5,
               selected = 1)
             ),
-          column(3,
+          column(2,
             selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
               selected = 2)
             ),
@@ -316,16 +316,18 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               choices = c(NULL, poss_covars), selected = NULL)
             ),
           column(2,
-            numericInput('pca_point_size', label = 'size: ', value = 3))
-          ),
-        fluidRow(
+            numericInput('pca_point_size', label = 'size: ', value = 3)),
           column(2,
             selectInput('pca_units', label = 'units: ',
               choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
-          column(3,
+              selected = 'est_counts'))
+        ),
+        fluidRow(
+          column(2,
             checkboxInput('pca_filt', label = 'filter',
-              value = TRUE),
+              value = TRUE)
+              ),
+          column(2,
             checkboxInput('text_labels', label = 'text labels',
               value = TRUE)
             )
@@ -333,7 +335,46 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         fluidRow(plotOutput('pca_plt')),
         fluidRow(
                 div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                    downloadButton("download_pca_plt", "Download Plot")))
+                    downloadButton("download_pca_plt", "Download Plot"))),
+        fluidRow(
+        column(12,
+          p(h3('loadings'), "observe contributions of samples or transcripts to the principal component")
+          ),
+          offset = 1),
+        fluidRow(
+          column(3,
+            textInput('sample', label = 'transcript: ', value = '',
+              )
+            ),
+          column(2,
+            selectInput('pc_input', label = 'principal component: ', choices = 1:5,
+              selected = 1)
+            ),
+          column(3,
+            selectInput('pc_count', label = 'number of PCs or transcripts: ', choices = 1:10,
+              selected = 5)),
+          column(2,
+            checkboxInput('pca_loading_abs', label = 'absolute value',
+              value = TRUE)
+            ),
+          column(2,
+            checkboxInput('scale', label = 'scale',
+              value = FALSE)
+            )
+          ),
+
+        fluidRow(
+          column(12,
+            p(h3('variance explained'))
+            ),
+            offset = 1),
+        fluidRow(plotOutput('plt_pc_var')),
+        fluidRow(
+          column(12,
+            p(h3('loadings'))
+            ),
+            offset = 1),
+        fluidRow(plotOutput('plt_pc_loadings'))
         ),
 
       ###
@@ -349,7 +390,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                 div(align = "right", style = "margin-right:15px; margin-bottom:10px",
                     downloadButton("download_samp_heat_plt", "Download Map")))
         )
-
       ),
 
     navbarMenu('summaries',
@@ -884,6 +924,33 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$fld_plt <- renderPlot({
       plot_fld(obj, input$fld_sample)
     })
+
+   ### Plot pc loadings
+    output$plt_pc_loadings <- renderPlot({
+
+      plot_loadings(obj,
+        use_filtered = input$pc_filt,
+        pc_count = as.integer(input$pc_count),
+        scale = as.logical(input$scale),
+        sample = input$sample,
+        units = input$pca_units,
+        pc_input = as.integer(input$pc_input),
+        pca_loading_abs = input$pca_loading_abs
+        )
+    })
+
+    ###plot pc variance
+    output$plt_pc_var <- renderPlot({
+
+      plot_pc_variance(obj,
+        use_filtered = input$pc_filt,
+        pca_number = 5,
+        scale = input$scale,
+        units = input$pca_units,
+        PC_relative = 1
+        )
+    })
+
 
     ### MV plot
     output$mv_plt <- renderPlot({
