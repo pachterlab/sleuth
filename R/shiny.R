@@ -531,6 +531,28 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       navbarMenu('diagnostics',
 
       ####
+      tabPanel('bias weights',
+        fluidRow(
+          column(12,
+            p(h3('bias weights'), "View the bias parameters modeled by kallisto.")
+            )
+          ),
+
+        fluidRow(
+          column(4,
+            selectInput('bias_sample', label = 'sample: ',
+              choices = samp_names,
+              selected = samp_names[1]
+            )
+          )
+        ),
+
+        fluidRow(
+          dataTableOutput('bias_weights_table')
+          )
+      ),
+
+      ####
       tabPanel('mean-variance plot',
       fluidRow(
         column(12,
@@ -924,6 +946,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$fld_plt <- renderPlot({
       plot_fld(obj, input$fld_sample)
     })
+
+    output$bias_weights_table <- renderDataTable({
+      bias_table(obj, input$bias_sample)
+      })
 
    ### Plot pc loadings
     output$plt_pc_loadings <- renderPlot({
