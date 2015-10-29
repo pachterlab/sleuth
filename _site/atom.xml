@@ -4,7 +4,7 @@
  <title>sleuth</title>
  <link href="http://pachterlab.github.io/sleuth/" rel="self"/>
  <link href="http://pachterlab.github.io/sleuth"/>
- <updated>2015-08-25T12:30:50-07:00</updated>
+ <updated>2015-10-29T06:38:19-04:00</updated>
  <id>http://pachterlab.github.io/sleuth</id>
  <author>
    <name>Pachter Lab</name>
@@ -15,7 +15,7 @@
  <entry>
    <title></title>
    <link href="http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1"/>
-   <updated>2015-07-06T00:00:00-07:00</updated>
+   <updated>2015-07-06T00:00:00-04:00</updated>
    <id>http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1</id>
    <content type="html">&lt;p&gt;A few bugfixes to v0.42.2 are included here:&lt;/p&gt;
 
@@ -33,7 +33,7 @@
  <entry>
    <title></title>
    <link href="http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2"/>
-   <updated>2015-06-09T00:00:00-07:00</updated>
+   <updated>2015-06-09T00:00:00-04:00</updated>
    <id>http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2</id>
    <content type="html">&lt;p&gt;This is version 0.42.2 of Kallisto.&lt;/p&gt;
 
@@ -64,7 +64,7 @@
  <entry>
    <title></title>
    <link href="http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1"/>
-   <updated>2015-05-12T00:00:00-07:00</updated>
+   <updated>2015-05-12T00:00:00-04:00</updated>
    <id>http://pachterlab.github.io/sleuth/releases/2015/05/12/v0.42.1</id>
    <content type="html">&lt;p&gt;This is version 0.42.1 of Kallisto. We recommend that users upgrade to this version.&lt;/p&gt;
 
@@ -94,7 +94,7 @@
  <entry>
    <title></title>
    <link href="http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42"/>
-   <updated>2015-05-06T00:00:00-07:00</updated>
+   <updated>2015-05-06T00:00:00-04:00</updated>
    <id>http://pachterlab.github.io/sleuth/releases/2015/05/06/v0.42</id>
    <content type="html">&lt;p&gt;This is the initial public release of Kallisto.&lt;/p&gt;
 

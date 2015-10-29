@@ -2,7 +2,6 @@
 layout: page
 title: "Getting Started"
 description: ""
-group: navigation
 ---
 {% include JB/setup %}
 
@@ -62,17 +61,17 @@ typing `vignette('intro', package = 'sleuth')`
 <p>A list of paths to the <strong>kallisto</strong> results indexed by the sample IDs is collated with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">kal_dirs &lt;-<span class="st"> </span><span class="kw">sapply</span>(sample_id, function(id) <span class="kw">file.path</span>(base_dir, <span class="st">&quot;results&quot;</span>, id, <span class="st">&quot;kallisto&quot;</span>))
 kal_dirs</code></pre></div>
-<pre><code>##                                                                SRR493366 
-## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493366/kallisto&quot; 
-##                                                                SRR493367 
-## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493367/kallisto&quot; 
-##                                                                SRR493368 
-## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493368/kallisto&quot; 
-##                                                                SRR493369 
-## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493369/kallisto&quot; 
-##                                                                SRR493370 
-## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493370/kallisto&quot; 
-##                                                                SRR493371 
+<pre><code>##                                                                SRR493366
+## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493366/kallisto&quot;
+##                                                                SRR493367
+## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493367/kallisto&quot;
+##                                                                SRR493368
+## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493368/kallisto&quot;
+##                                                                SRR493369
+## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493369/kallisto&quot;
+##                                                                SRR493370
+## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493370/kallisto&quot;
+##                                                                SRR493371
 ## &quot;~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493371/kallisto&quot;</code></pre>
 <p>The next step is to load an auxillary table that describes the experimental design and the relationship between the kallisto directories and the samples:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">s2c &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="kw">file.path</span>(base_dir,<span class="st">&quot;hiseq_info.txt&quot;</span>), <span class="dt">header =</span> <span class="ot">TRUE</span>, <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)
@@ -105,7 +104,7 @@ s2c</code></pre></div>
 <p>In general, one can see the possible tests that could be performed using the <code>which_beta</code> parameter in <code>sleuth_test</code> and examining the coefficients:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">models</span>(so)</code></pre></div>
 <pre><code>## [  full  ]
-## formula:  ~condition 
+## formula:  ~condition
 ## coefficients:
 ##  (Intercept)
 ##      conditionscramble
