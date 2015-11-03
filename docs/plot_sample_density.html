@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Plot sample density</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_sample_density"><tr><td>plot_sample_density</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Plot sample density</h2>
+
+<h3>Description</h3>
+
+<p>Plot the density of one particular sample
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_sample_density(obj, which_sample = obj$sample_to_covariates$sample[1],
+  use_filtered = TRUE, units = "est_counts", trans = "log", offset = 1)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>which_sample</code></td>
+<td>
+<p>a character string matching a sample in
+<code>obj$sample_to_covariates</code></p>
+</td></tr>
+<tr valign="top"><td><code>use_filtered</code></td>
+<td>
+<p>if TRUE, use filtered data. Otherwise use all data</p>
+</td></tr>
+<tr valign="top"><td><code>units</code></td>
+<td>
+<p>either <code>'est_counts'</code> or <code>'tpm'</code></p>
+</td></tr>
+<tr valign="top"><td><code>trans</code></td>
+<td>
+<p>a string pointing to a function to use for the transformation.</p>
+</td></tr>
+<tr valign="top"><td><code>offset</code></td>
+<td>
+<p>the offset so that transformations such as log don't compute
+-Inf. If NULL, then will not add an offset</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>ggplot2</code> object
+</p>
+
+
+</body></html>

@@ -18,7 +18,7 @@
 <pre>
 plot_pca(obj, pc_x = 1L, pc_y = 2L, use_filtered = TRUE,
   units = "est_counts", text_labels = FALSE, color_by = NULL,
-  center = TRUE, scale = FALSE, ...)
+  point_size = 3, point_alpha = 0.8, ...)
 </pre>
 
 
@@ -52,11 +52,6 @@ plot_pca(obj, pc_x = 1L, pc_y = 2L, use_filtered = TRUE,
 <tr valign="top"><td><code>color_by</code></td>
 <td>
 <p>a variable to color by. if NA, then will leave all as 'black'</p>
-</td></tr>
-<tr valign="top"><td><code>...</code></td>
-<td>
-<p>additional arguments passed to <code>geom_point</code> or
-<code>geom_text</code></p>
 </td></tr>
 </table>
 

@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Get the names of the transcripts associated to a gene</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for transcripts_from_gene"><tr><td>transcripts_from_gene</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Get the names of the transcripts associated to a gene</h2>
+
+<h3>Description</h3>
+
+<p>Get the names of the transcripts associated to a gene, assuming genes are added to the input <code>sleuth</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+transcripts_from_gene(obj, test, test_type, which_model, gene_colname,
+  gene_name)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>test</code></td>
+<td>
+<p>a character string denoting which beta to use</p>
+</td></tr>
+<tr valign="top"><td><code>test_type</code></td>
+<td>
+<p>either 'wt' for wald test or 'lrt' for likelihood ratio test</p>
+</td></tr>
+<tr valign="top"><td><code>which_model</code></td>
+<td>
+<p>a character string denoting which model to use</p>
+</td></tr>
+<tr valign="top"><td><code>gene_colname</code></td>
+<td>
+<p>the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
+object, you can inspect the genes names present in your sleuth object via <code>obj$target_mapping</code>, assuming 'obj' is the name of your sleuth object.
+This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using <code>names(obj$target_mapping)</code></p>
+</td></tr>
+<tr valign="top"><td><code>gene_name</code></td>
+<td>
+<p>a string containing the name of the gene you are interested in</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a vector of strings containing the names of the transcripts that map to a gene
+</p>
+
+
+</body></html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Plot Loadings and Interpretations</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_loadings"><tr><td>plot_loadings</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Plot Loadings and Interpretations</h2>
+
+<h3>Description</h3>
+
+<p>give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_loadings(obj, use_filtered = TRUE, sample = NULL, pc_input = NULL,
+  units = "est_counts", pc_count = NULL, scale = FALSE,
+  pca_loading_abs = TRUE, ...)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>use_filtered</code></td>
+<td>
+<p>if TRUE, use filtered data. otherwise, use all data</p>
+</td></tr>
+<tr valign="top"><td><code>sample</code></td>
+<td>
+<p>user input on which sample and which PC's contribute the most</p>
+</td></tr>
+<tr valign="top"><td><code>units</code></td>
+<td>
+<p>either 'est_counts' or 'tpm'</p>
+</td></tr>
+<tr valign="top"><td><code>pc_count</code></td>
+<td>
+<p># of PC's</p>
+</td></tr>
+<tr valign="top"><td><code>scale</code></td>
+<td>
+<p>scale or not</p>
+</td></tr>
+<tr valign="top"><td><code>pca_loading_abs</code></td>
+<td>
+<p>default true, to see all PC's magnitude (recommended)</p>
+</td></tr>
+<tr valign="top"><td><code>PC</code></td>
+<td>
+<p>principal component to view sample's contribution to that PC</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a ggplot object
+</p>
+
+
+</body></html>

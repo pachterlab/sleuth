@@ -16,8 +16,8 @@
 <h3>Usage</h3>
 
 <pre>
-plot_vars(obj, which_beta = NULL, which_model = "full", sig_level = 0.1,
-  point_alpha = 0.2, sig_color = "red", xy_line = TRUE,
+plot_vars(obj, test = NULL, test_type = "wt", which_model = "full",
+  sig_level = 0.1, point_alpha = 0.2, sig_color = "red", xy_line = TRUE,
   xy_line_color = "red", highlight = NULL, highlight_color = "green")
 </pre>
 
@@ -28,6 +28,14 @@ plot_vars(obj, which_beta = NULL, which_model = "full", sig_level = 0.1,
 <tr valign="top"><td><code>obj</code></td>
 <td>
 <p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>test</code></td>
+<td>
+<p>the name of the test to highlight significant transcripts for</p>
+</td></tr>
+<tr valign="top"><td><code>test_type</code></td>
+<td>
+<p>either 'wt' for wald test or 'lrt' for likelihood ratio test</p>
 </td></tr>
 <tr valign="top"><td><code>which_model</code></td>
 <td>

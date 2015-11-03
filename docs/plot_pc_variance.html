@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Plot PC Variance</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_pc_variance"><tr><td>plot_pc_variance</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Plot PC Variance</h2>
+
+<h3>Description</h3>
+
+<p>Plot PC variances retained by percentage with option to compare specified PC
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_pc_variance(obj, use_filtered = TRUE, units = "est_counts",
+  pca_number = NULL, scale = FALSE, PC_relative = NULL, ...)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>use_filtered</code></td>
+<td>
+<p>if TRUE, use filtered data. otherwise, use all data</p>
+</td></tr>
+<tr valign="top"><td><code>units</code></td>
+<td>
+<p>either 'est_counts' or 'tpm'</p>
+</td></tr>
+<tr valign="top"><td><code>pca_number</code></td>
+<td>
+<p>user input on how many PC to display, otherwise default is 5</p>
+</td></tr>
+<tr valign="top"><td><code>scale</code></td>
+<td>
+<p>determines scaling</p>
+</td></tr>
+<tr valign="top"><td><code>PC_relative</code></td>
+<td>
+<p>gives the option to compare subsequent principal components and their contributions</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a ggplot object
+</p>
+
+
+</body></html>

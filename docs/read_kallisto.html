@@ -1,42 +1,48 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Read a kallisto data set</title>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Read kallisto output</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="R.css" />
 </head><body>
 
 <table width="100%" summary="page for read_kallisto"><tr><td>read_kallisto</td><td style="text-align: right;">R Documentation</td></tr></table>
 
-<h2>Read a kallisto data set</h2>
+<h2>Read kallisto output</h2>
 
 <h3>Description</h3>
 
-<p>Read a kallisto data set
+<p>This is a general driver function to read kallisto output. It can read either
+H5 or tsv.
 </p>
 
 
 <h3>Usage</h3>
 
 <pre>
-read_kallisto(output_dir, read_bootstrap = TRUE)
+read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = NULL)
 </pre>
 
 
 <h3>Arguments</h3>
 
 <table summary="R argblock">
-<tr valign="top"><td><code>output_dir</code></td>
-<td>
-<p>the directory of the output data</p>
-</td></tr>
 <tr valign="top"><td><code>read_bootstrap</code></td>
 <td>
-<p>if TRUE, then searches for bootstrap data, else doesn't read it.</p>
+<p>if <code>TRUE</code>, bootstraps will be read (h5 only)</p>
+</td></tr>
+<tr valign="top"><td><code>max_bootstrap</code></td>
+<td>
+<p>an integer denoting the number of bootstraps to read.
+if <code>NULL</code> read everything available (h5 only)</p>
+</td></tr>
+<tr valign="top"><td><code>either</code></td>
+<td>
+<p>the kallisto directory name or the file name of a h5 or tsv output from kallisto</p>
 </td></tr>
 </table>
 
 
 <h3>Value</h3>
 
-<p>a S3 <code>kallisto</code> object with the following members:
+<p>a <code>kallisto</code> object
 </p>
 
 

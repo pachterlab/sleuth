@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Get kallisto abundance table from a sleuth object</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for kallisto_table"><tr><td>kallisto_table</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Get kallisto abundance table from a sleuth object</h2>
+
+<h3>Description</h3>
+
+<p>Get back the kallisto abundance table from a sleuth object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+kallisto_table(obj, use_filtered = FALSE, normalized = TRUE,
+  include_covariates = TRUE)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>use_filtered</code></td>
+<td>
+<p>if TRUE, return the filtered data</p>
+</td></tr>
+<tr valign="top"><td><code>normalized</code></td>
+<td>
+<p>if TRUE, return the normalized data. Otherwise, return
+the raw data</p>
+</td></tr>
+<tr valign="top"><td><code>include_covariates</code></td>
+<td>
+<p>if TRUE, join the covariates</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>data.frame</code> with at least columns
+</p>
+
+
+</body></html>

@@ -17,9 +17,9 @@ x-axis and fold change on the y-axis.
 <h3>Usage</h3>
 
 <pre>
-plot_ma(obj, which_beta, which_model = "full", sig_level = 0.1,
-  point_alpha = 0.2, sig_color = "red", highlight = NULL,
-  highlight_color = "green")
+plot_ma(obj, test, test_type = "wt", which_model = "full",
+  sig_level = 0.1, point_alpha = 0.2, sig_color = "red",
+  highlight = NULL, highlight_color = "green")
 </pre>
 
 
@@ -30,10 +30,13 @@ plot_ma(obj, which_beta, which_model = "full", sig_level = 0.1,
 <td>
 <p>a <code>sleuth</code> object</p>
 </td></tr>
-<tr valign="top"><td><code>which_beta</code></td>
+<tr valign="top"><td><code>test</code></td>
 <td>
-<p>a character string denoting which beta to use for
-highlighting the transcript</p>
+<p>the name of the test to highlight significant transcripts for</p>
+</td></tr>
+<tr valign="top"><td><code>test_type</code></td>
+<td>
+<p>either 'wt' for wald test or 'lrt' for likelihood ratio test. NB: Currently only the wald test is supported.</p>
 </td></tr>
 <tr valign="top"><td><code>which_model</code></td>
 <td>

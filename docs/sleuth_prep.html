@@ -19,39 +19,59 @@ variance.
 <h3>Usage</h3>
 
 <pre>
-sleuth_prep(kal_dirs, sample_to_covariates, full_model,
-  filter_fun = basic_filter, ...)
+sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
+  target_mapping = NULL, max_bootstrap = NULL,
+  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors, ...)
 </pre>
 
 
 <h3>Arguments</h3>
 
 <table summary="R argblock">
-<tr valign="top"><td><code>kal_dirs</code></td>
-<td>
-<p>a character vector of length greater than one where each
-string points to a kallisto output directory</p>
-</td></tr>
 <tr valign="top"><td><code>sample_to_covariates</code></td>
 <td>
 <p>is a <code>data.frame</code> which contains a mapping
 from <code>sample</code> (a column) to some set of experimental conditions or
-covariates. The column <code>sample</code> should be in the same order as the
-corresponding entry in <code>kal_dirs</code></p>
+covariates. The column <code>path</code> is also required, which is a character
+vector where each element points to the corresponding kallisto output directory. The column
+<code>sample</code> should be in the same order as the corresponding entry in
+<code>path</code>.</p>
 </td></tr>
 <tr valign="top"><td><code>full_model</code></td>
 <td>
 <p>is a <code>formula</code> which explains the full model (design)
-of the experiment. It must be consistent with the data.frame supplied in
-<code>sample_to_covariates</code></p>
+of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
+<code>sample_to_covariates</code>.</p>
 </td></tr>
 <tr valign="top"><td><code>filter_fun</code></td>
 <td>
 <p>the function to use when filtering.</p>
 </td></tr>
+<tr valign="top"><td><code>target_mapping</code></td>
+<td>
+<p>a <code>data.frame</code> that has at least one column
+'target_id' and others that denote the mapping for each target. if it is not
+<code>NULL</code>, <code>target_mapping</code> is joined with many outputs where it
+might be useful. For example, you might have columns 'target_id',
+'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
+mappings.</p>
+</td></tr>
+<tr valign="top"><td><code>max_bootstrap</code></td>
+<td>
+<p>maximum number of bootstrap values to read for each
+transcript.</p>
+</td></tr>
+<tr valign="top"><td><code>norm_fun_counts</code></td>
+<td>
+<p>a function to perform between sample normalization on the estimated counts.</p>
+</td></tr>
+<tr valign="top"><td><code>norm_fun_tpm</code></td>
+<td>
+<p>a function to perform between sample normalization on the TPM</p>
+</td></tr>
 <tr valign="top"><td><code>...</code></td>
 <td>
-<p>additional arguments passed to other functions</p>
+<p>additional arguments passed to the filter function</p>
 </td></tr>
 </table>
 
@@ -65,8 +85,8 @@ and summary statistics
 
 <h3>See Also</h3>
 
-<p><code>sleuth_fit</code> to fit a model, <code>wald_test</code> to
-test whether a coeffient is zero
+<p><code>sleuth_fit</code> to fit a model, <code>sleuth_test</code> to
+test whether a coeffient in the model is zero
 </p>
 
 

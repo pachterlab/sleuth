@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: sleuth likelihood ratio test</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for sleuth_lrt"><tr><td>sleuth_lrt</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>sleuth likelihood ratio test</h2>
+
+<h3>Description</h3>
+
+<p>compute the likelihood ratio test for 2 models. this requires that the null
+model be nested in the alternate model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+sleuth_lrt(obj, null_model, alt_model)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a sleuth object</p>
+</td></tr>
+<tr valign="top"><td><code>null_model</code></td>
+<td>
+<p>the null (or &quot;reduced&quot;) model</p>
+</td></tr>
+<tr valign="top"><td><code>alt_model</code></td>
+<td>
+<p>the alternate (or &quot;full&quot;) model</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>an updated sleuth object with a likelihood ratio test computation
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>models</code> to view which models have been fit and which
+coefficients can be tested, <code>sleuth_results</code> to get back
+a data.frame of the results
+</p>
+
+
+</body></html>
