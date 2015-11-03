@@ -16,7 +16,8 @@
 <h3>Usage</h3>
 
 <pre>
-sleuth_results(obj, which_beta, which_model = "full")
+sleuth_results(obj, test, test_type = "wt", which_model = "full",
+  rename_cols = TRUE, show_all = TRUE)
 </pre>
 
 
@@ -27,14 +28,24 @@ sleuth_results(obj, which_beta, which_model = "full")
 <td>
 <p>a <code>sleuth</code> object</p>
 </td></tr>
-<tr valign="top"><td><code>which_beta</code></td>
+<tr valign="top"><td><code>test</code></td>
 <td>
-<p>a character string denoting which coefficient test to
-extract</p>
+<p>a character denoting the test to extract</p>
 </td></tr>
 <tr valign="top"><td><code>which_model</code></td>
 <td>
-<p>a character string denoting which model to extract</p>
+<p>a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.</p>
+</td></tr>
+<tr valign="top"><td><code>rename_cols</code></td>
+<td>
+<p>if <code>TRUE</code> will rename some columns to be shorter and
+consistent with vignette</p>
+</td></tr>
+<tr valign="top"><td><code>show_all</code></td>
+<td>
+<p>if <code>TRUE</code> will show all transcripts (not only the ones
+passing filters). The transcripts that do not pass filters will have
+<code>NA</code> values in most columns.</p>
 </td></tr>
 </table>
 
@@ -47,8 +58,8 @@ extract</p>
 
 <h3>See Also</h3>
 
-<p><code>wald_test</code> to compute tests, <code>models</code> to
-view which models and betas have been tested
+<p><code>sleuth_test</code> to compute tests, <code>models</code> to
+view which models, <code>tests</code> to view which tests were performed (and can be extracted)
 </p>
 
 

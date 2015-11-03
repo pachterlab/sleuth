@@ -13,3 +13,8 @@ ls sleuth/man/*.Rd |\
 mv sleuth/man/*.html .
 
 rm -rf sleuth
+
+ls *.html |\
+  sed 's/\.html//' |\
+  xargs -n 1 -I % sh -c 'echo "<p> <a href=\"doc/%.html\">%</a> </p>"' >\
+  ../_includes/docs/links.html

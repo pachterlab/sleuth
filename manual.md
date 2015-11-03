@@ -8,6 +8,8 @@ group: navigation
 
 The __sleuth__ package consists of the commands listed below. Click to see the help or type `help(package="sleuth")` in R.
 
+{% include docs/links.html %}
+<!--
 <a href="docs/basic_filter.html">basic_filter</a>
 
 <a href="docs/get_col.html">get_col</a>
@@ -42,4 +44,4 @@ The __sleuth__ package consists of the commands listed below. Click to see the h
 
 <a href="docs/sleuth_test.html">sleuth_test</a>
 
-<a href="docs/sleuth_to_matrix.html">sleuth_to_matrix</a>
+<a href="docs/sleuth_to_matrix.html">sleuth_to_matrix</a> -->
