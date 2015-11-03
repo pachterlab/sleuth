@@ -16,5 +16,5 @@ rm -rf sleuth
 
 ls *.html |\
   sed 's/\.html//' |\
-  xargs -n 1 -I % sh -c 'echo "<p> <a href=\"doc/%.html\">%</a> </p>"' >\
+  xargs -n 1 -I % sh -c 'echo "<p> <a href=\"docs/%.html\">%</a> </p>"' >\
   ../_includes/docs/links.html
