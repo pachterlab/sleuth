@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: QQ plot</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_qq"><tr><td>plot_qq</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>QQ plot</h2>
+
+<h3>Description</h3>
+
+<p>Create a Q-Q plot of the test statistics. The x-axis has the
+theoretical quantile you would expect from a standard normal distribution.
+The y-axis has the observed quantiles. In the Wald case, it is a <code>ggplot2</code> version of
+what you would get from <code>qqnorm</code> and <code>qqline</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_qq(obj, test, test_type = "wt", which_model = "full",
+  sig_level = 0.1, point_alpha = 0.2, sig_color = "red",
+  highlight = NULL, highlight_color = "green", line_color = "blue")
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>test</code></td>
+<td>
+<p>a character string denoting which beta to use for
+highlighting the transcript</p>
+</td></tr>
+<tr valign="top"><td><code>test_type</code></td>
+<td>
+<p>either 'wt' for wald test or 'lrt' for likelihood ratio test.</p>
+</td></tr>
+<tr valign="top"><td><code>which_model</code></td>
+<td>
+<p>a character string denoting which model to use for the
+test</p>
+</td></tr>
+<tr valign="top"><td><code>sig_level</code></td>
+<td>
+<p>the significance level for Fdr</p>
+</td></tr>
+<tr valign="top"><td><code>point_alpha</code></td>
+<td>
+<p>the alpha for the points</p>
+</td></tr>
+<tr valign="top"><td><code>sig_color</code></td>
+<td>
+<p>what color to make the 'significant' transcripts</p>
+</td></tr>
+<tr valign="top"><td><code>highlight</code></td>
+<td>
+<p>a <code>data.frame</code> with one column, <code>target_id</code>.
+These points will be highlighted in the plot. if <code>NULL</code>, no points will
+be highlighted.</p>
+</td></tr>
+<tr valign="top"><td><code>highlight_color</code></td>
+<td>
+<p>the color to highlight points.</p>
+</td></tr>
+<tr valign="top"><td><code>line_color</code></td>
+<td>
+<p>what color to make the QQ line</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>ggplot2</code> object
+</p>
+
+
+</body></html>

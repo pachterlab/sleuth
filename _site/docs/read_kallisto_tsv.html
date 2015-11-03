@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Read kallisto plaintext output</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for read_kallisto_tsv"><tr><td>read_kallisto_tsv</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Read kallisto plaintext output</h2>
+
+<h3>Description</h3>
+
+<p>This function reads kallisto plaintext output. Note, it cannot be used with
+sleuth. It also does not read bootstraps since reading plaintext bootstraps
+is quite slow.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+read_kallisto_tsv(fname)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>fname</code></td>
+<td>
+<p>the filename for the tsv file</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>kallisto</code> object (currently missing attributes and
+bootstraps)
+</p>
+
+
+</body></html>

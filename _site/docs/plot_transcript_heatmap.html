@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Plot clustered heatmap</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for plot_transcript_heatmap"><tr><td>plot_transcript_heatmap</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Plot clustered heatmap</h2>
+
+<h3>Description</h3>
+
+<p>Plot a clustered heatmap. The clustering is done by the hclust function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+plot_transcript_heatmap(obj, transcripts, units = "tpm", trans = "log",
+  offset = 1)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>transcripts</code></td>
+<td>
+<p>a vector of strings containing a list of transcripts to be plotted in a heatmap</p>
+</td></tr>
+<tr valign="top"><td><code>units</code></td>
+<td>
+<p>a string specifying which units to use, either tpm or est_counts</p>
+</td></tr>
+<tr valign="top"><td><code>trans</code></td>
+<td>
+<p>a string specifying a function to transform the data by</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>ggplot</code> object
+</p>
+
+
+</body></html>

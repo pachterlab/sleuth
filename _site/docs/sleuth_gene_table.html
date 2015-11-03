@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Create a gene table from a sleuth object</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for sleuth_gene_table"><tr><td>sleuth_gene_table</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Create a gene table from a sleuth object</h2>
+
+<h3>Description</h3>
+
+<p>Take in a sleuth object with added genes, and return a data table in which genes
+list the most significant transcript mapping to themselves
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+sleuth_gene_table(obj, test, test_type = "lrt", which_model = "full",
+  which_group = "ens_gene")
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>test</code></td>
+<td>
+<p>a character string denoting which beta to use</p>
+</td></tr>
+<tr valign="top"><td><code>test_type</code></td>
+<td>
+<p>either 'wt' for Wald test or 'lrt' for likelihood ratio test</p>
+</td></tr>
+<tr valign="top"><td><code>which_model</code></td>
+<td>
+<p>a character string denoting which model to use</p>
+</td></tr>
+<tr valign="top"><td><code>which_group</code></td>
+<td>
+<p>a character string denoting which gene group to use</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>data.frame</code> containing gene names, transcript names, and significance
+</p>
+
+
+</body></html>

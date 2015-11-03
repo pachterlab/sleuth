@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Read a kallisto object from an HDF5 file</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for read_kallisto_h5"><tr><td>read_kallisto_h5</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Read a kallisto object from an HDF5 file</h2>
+
+<h3>Description</h3>
+
+<p>Read a kallisto object from an HDF5 file.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+read_kallisto_h5(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>fname</code></td>
+<td>
+<p>the file name for the HDF5 file</p>
+</td></tr>
+<tr valign="top"><td><code>read_bootstrap</code></td>
+<td>
+<p>if <code>TRUE</code> load bootstraps, otherwise do not</p>
+</td></tr>
+<tr valign="top"><td><code>max_bootstrap</code></td>
+<td>
+<p>an integer denoting the number of bootstraps to read.
+if <code>NULL</code> read everything available</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a <code>kallisto</code> object
+</p>
+
+
+</body></html>
