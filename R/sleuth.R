@@ -559,12 +559,12 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
   if(is.null(obj$target_mapping)) {
     stop("This sleuth object doesn't have added gene names.")
   }
-  popped_gene_table = sleuth_results(obj, test, test_type, which_model)
+  popped_gene_table <- sleuth_results(obj, test, test_type, which_model)
 
-  popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
-  popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
+  popped_gene_table <- dplyr::arrange_(popped_gene_table, which_group, ~qval)
+  popped_gene_table <- dplyr::group_by_(popped_gene_table, which_group)
 
-  popped_gene_table = dplyr::summarise_(popped_gene_table,
+  popped_gene_table <- dplyr::summarise_(popped_gene_table,
     most_sig_transcript = ~target_id[1],
     pval = ~min(pval, na.rm  = TRUE),
     qval = ~min(qval, na.rm = TRUE),
@@ -572,9 +572,16 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
     list_of_transcripts = ~toString(target_id[1:length(target_id)])
     )
 
-  popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
-  popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
-  popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+  filter_empty <- nchar(popped_gene_table[[which_group]]) == 0 | # empty transcript name
+    is.na(popped_gene_table[[which_group]]) | # empty gene name
+    is.na(popped_gene_table$qval) # missing q-value
+  filter_empty <- !filter_empty
+  popped_gene_table <- popped_gene_table[filter_empty, ]
+
+  # popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
+  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
+  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+
   popped_gene_table
 }
 
