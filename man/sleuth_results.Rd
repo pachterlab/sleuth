@@ -28,7 +28,7 @@ a \code{data.frame}
 This function extracts Wald test results from a sleuth object.
 }
 \seealso{
-\code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
+\code{\link{sleuth_wt}}/\code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 }
 

@@ -85,8 +85,8 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
-#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-#' test whether a coeffient in the model is zero
+#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
+#' test whether a coeffient in the model is zero or \code{\link{sleuth_lrt}} to compare different models
 #' @export
 sleuth_prep <- function(
   sample_to_covariates,

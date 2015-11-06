@@ -236,7 +236,7 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
 #' @return a \code{data.frame}
-#' @seealso \code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
+#' @seealso \code{\link{sleuth_wt}}/\code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',

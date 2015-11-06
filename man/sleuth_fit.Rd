@@ -36,6 +36,7 @@ To see which models have been fit, users will likely find the function
 \seealso{
 \code{\link{models}} for seeing which models have been fit,
 \code{\link{sleuth_prep}} for creating a sleuth object,
-\code{\link{sleuth_test}} to test whether a coefficient is zero
+\code{\link{sleuth_wt}} to test whether a coefficient is zero or
+\code{\link{sleuth_lrt}} to compare two different models
 }
 
