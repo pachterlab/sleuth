@@ -128,10 +128,10 @@ plot_pca <- function(obj,
 }
 
 
-#' Plot Loadings and Interpretations 
-#' 
+#' Plot Loadings and Interpretations
+#'
 #' give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
-#' 
+#'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param sample user input on which sample and which PC's contribute the most
@@ -142,14 +142,14 @@ plot_pca <- function(obj,
 #' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
 #' @return a ggplot object
 #' @export
-plot_loadings <- function(obj, 
+plot_loadings <- function(obj,
   use_filtered = TRUE,
-  sample = NULL, 
-  pc_input = NULL, 
+  sample = NULL,
+  pc_input = NULL,
   units = 'est_counts',
   pc_count = NULL,
   scale = FALSE,
-  pca_loading_abs = TRUE, 
+  pca_loading_abs = TRUE,
   ...) {
 
   stopifnot( is(obj, 'sleuth') )
@@ -162,7 +162,7 @@ plot_loadings <- function(obj,
   #   mat <- spread_abundance_by(obj$obs_norm, units)
   # }
   mat <- spread_abundance_by(obj$obs_norm_filt, units)
-  
+
   pca_calc <- prcomp(mat, scale = scale)
 
   #sort of hack-y, may wish to fix
@@ -197,7 +197,7 @@ plot_loadings <- function(obj,
   }
 
   label_names <- names(loadings)
-  
+
   if (!is.null(pc_count)) {
       loadings <- loadings[1:pc_count]
       label_names <- label_names[1:pc_count]
@@ -209,7 +209,7 @@ plot_loadings <- function(obj,
   dat <- data.frame(pc = label_names, loadings = loadings)
   dat$pc <- factor(dat$pc, levels = unique(dat$pc))
 
-  p <- ggplot(dat, aes(x = pc, y = loadings)) 
+  p <- ggplot(dat, aes(x = pc, y = loadings))
   p <- p + geom_bar(stat = "identity")
   p <- p + xlab("principal components") + ylab("contribution scores")
   if (!toggle) {
@@ -242,12 +242,12 @@ plot_loadings <- function(obj,
 #' @param PC_relative gives the option to compare subsequent principal components and their contributions
 #' @return a ggplot object
 #' @export
-plot_pc_variance <- function(obj, 
+plot_pc_variance <- function(obj,
   use_filtered = TRUE,
   units = 'est_counts',
   pca_number = NULL,
   scale = FALSE,
-  PC_relative = NULL, 
+  PC_relative = NULL,
   ...) {
 
   # mat <- NULL
@@ -258,13 +258,13 @@ plot_pc_variance <- function(obj,
   # }
   mat <- spread_abundance_by(obj$obs_norm_filt, units)
 
-  pca_calc <- prcomp(mat, scale = scale) #PCA calculations 
+  pca_calc <- prcomp(mat, scale = scale) #PCA calculations
 
   #computation
-  eigenvalues <- (pca_calc$sdev)^2  
+  eigenvalues <- (pca_calc$sdev)^2
   var_explained <- eigenvalues*100/sum(eigenvalues)
   var_explained2 <- var_explained
-  
+
   if (!is.null(pca_number)) {
     colsize <- pca_number
     var_explained <- var_explained[1:pca_number]
@@ -275,22 +275,22 @@ plot_pc_variance <- function(obj,
   pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) #order here matters
 
   if(!is.null(PC_relative)) {
-    pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2) 
-    pc_df <- pc_df[PC_relative:nrow(pc_df),] 
+    pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2)
+    pc_df <- pc_df[PC_relative:nrow(pc_df),]
 
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) {
-      pc_df <- pc_df[1:pca_number,] 
+      pc_df <- pc_df[1:pca_number,]
     } else if (PC_relative + 5 >= length(eigenvalues)) {
-      pc_df <- pc_df[1:nrow(pc_df),] 
+      pc_df <- pc_df[1:nrow(pc_df),]
     }
-  } 
+  }
 
   p <- ggplot(pc_df, aes(x = PC_count, y = var)) + geom_bar(stat = "identity")
   p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
   p <- p + ylab("% of variance") + xlab("principal components")
 
   p
-  
+
 }
 
 
@@ -538,11 +538,11 @@ plot_vars <- function(obj,
     if (nrow(highlight) > 0) {
       p <- p + geom_point(aes(sqrt(obs_var), sqrt(sigma_q_sq)), data = highlight_in, colour = highlight_color)
     } else {
-      warning("Couldn't find any transcripts from highlight set in this sleuth_test. They were probably filtered out.")
+      warning("Couldn't find any transcripts from highlight set in this sleuth test. They were probably filtered out.")
     }
 
     if ( nrow(highlight_in) > 0 && (nrow(highlight_in) != nrow(highlight)) ) {
-      warning("Couldn't find any transcripts from highlight set in this sleuth_test. They were probably filtered out.")
+      warning("Couldn't find any transcripts from highlight set in this sleuth test. They were probably filtered out.")
     }
   }
 

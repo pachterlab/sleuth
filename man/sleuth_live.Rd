@@ -9,9 +9,9 @@ sleuth_live(obj, settings = sleuth_live_settings(), options = list(port =
 }
 \arguments{
 \item{obj}{a \code{sleuth} object already processed and has run
-\code{\link{sleuth_fit}} and \code{\link{sleuth_test}}}
+\code{\link{sleuth_fit}} and \code{\link{sleuth_wt}} or \code{\link{sleuth_lrt}}}
 
-\item{settings}{see the function \code{\link{sleuth_alive_settings}} for options}
+\item{settings}{see the function \code{\link{sleuth_live_settings}} for options}
 
 \item{options}{additional options which are sent to shiny}
 
