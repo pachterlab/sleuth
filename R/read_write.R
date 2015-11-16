@@ -159,6 +159,34 @@ h5check <- function(fname, group, name) {
   bs
 }
 
+#MARK: PASCAL
+#'
+#' Computes the bootstrap summary statistics of each transcript in a kallisto
+#' object.
+#'
+#'
+#' @param num_transcripts the number of transcripts
+#' @param fname the file name for the HDF5 file
+#' @param num_bootstraps the number of bootstraps
+#' @return a \code{data.frame} containing with columns for the summary statistics
+#' and a row for each transcript
+
+read_bootstrap_statistics <- function(num_transcripts, fname = "abundance.h5", num_bootstraps = 100)
+{
+    bs_statistics = data.frame(V1 = 1:num_transcripts)
+    
+    plyr::l_ply(0:(num_bootstraps[1] - 1), function(i) {
+        bs_statistics[i+1] <<- h5read(fname, paste0("bootstrap/bs", i))
+    })
+    bs_statistics
+    
+    bs_statistics$mean = apply(bs_statistics, 1, mean)
+    bs_statistics$sd   = apply(bs_statistics, 1, sd)
+    bs_statistics[,c("mean", "sd")]
+}
+
+
+
 #' Read kallisto plaintext output
 #'
 #' This function reads kallisto plaintext output. Note, it cannot be used with
