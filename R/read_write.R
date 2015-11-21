@@ -171,18 +171,14 @@ h5check <- function(fname, group, name) {
 #' @return a \code{data.frame} containing with columns for the summary statistics
 #' and a row for each transcript
 
-read_bootstrap_statistics <- function(num_transcripts, fname = "abundance.h5", num_bootstraps = 100)
+read_bootstrap_statistics <- function(fname = "abundance.h5", num_bootstraps = 100, transform = function(x) log(x + 0.5))
 {
-    bs_statistics = data.frame(V1 = 1:num_transcripts)
+    bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
+        transform(h5read("abundance.h5", paste0("bootstrap/bs", i)))
+    }))
     
-    plyr::l_ply(0:(num_bootstraps[1] - 1), function(i) {
-        bs_statistics[i+1] <<- h5read(fname, paste0("bootstrap/bs", i))
-    })
-    bs_statistics
-    
-    bs_statistics$mean = apply(bs_statistics, 1, mean)
-    bs_statistics$sd   = apply(bs_statistics, 1, sd)
-    bs_statistics[,c("mean", "sd")]
+    bs_stats <- apply(bs_mat, 2, sd)
+    bs_stats <- cbind(bs_stats, apply(bs_mat, 2, mean))
 }
 
 
