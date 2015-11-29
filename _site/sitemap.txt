@@ -10,7 +10,6 @@ http://pachterlab.github.io/sleuth/pseudobam.html
 http://pachterlab.github.io/sleuth/rss.xml
 http://pachterlab.github.io/sleuth/sitemap.txt
 http://pachterlab.github.io/sleuth/source.html
-http://pachterlab.github.io/sleuth/starting.html
 
 http://pachterlab.github.io/sleuth/releases/2015/07/06/v0.42.2.1
 http://pachterlab.github.io/sleuth/releases/2015/06/09/v0.42.2
