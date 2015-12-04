@@ -31,6 +31,12 @@ and install __sleuth__ by typing
 devtools::install_github("pachterlab/sleuth")
 ~~~
 
+If you have [__conda__](http://conda.pydata.org/docs/), a cross-platform package manager installed, you can install __sleuth__ via the [__bioconda__](https://bioconda.github.io/) channel.
+
+~~~
+conda install --channel bioconda r-sleuth
+~~~
+
 Next load __sleuth__ with
 
 ~~~
