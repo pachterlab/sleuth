@@ -21,6 +21,14 @@ can then load `sleuth` like any other R package:
 library('sleuth')
 ```
 
+## Installation via `conda`
+
+If you have [`conda`](http://conda.pydata.org/docs/), a cross-platform package manager installed, you can install `sleuth` via the [`bioconda`](https://bioconda.github.io/) channel.
+
+```
+conda install --channel bioconda r-sleuth
+```
+
 # Documentation
 
 We recommend starting with the vignette:
