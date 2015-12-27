@@ -15,7 +15,7 @@ bias_graph <- function(obj,
 	sample = "",
 	...) {
 	stopifnot( is(obj, 'sleuth'))
-
+  
 	#sample df construction
 	so <- obj
 	bt <- bias_table(so, sample) 
