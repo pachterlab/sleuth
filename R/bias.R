@@ -17,9 +17,9 @@ bias_graph <- function(obj,
 	stopifnot( is(obj, 'sleuth'))
   
 	#sample df construction
-	so <- obj
-	bt <- bias_table(so, sample) 
+	bt <- bias_table(obj, sample) 
 	bt <- data.frame(hexamer = bt$hexamer, bias_weights = bt$bias_weights)
+	bt$hexamer <- sapply(bt$hexamer, as.character)
 	norm_count <- nrow(bt)
 	
 	#set up
