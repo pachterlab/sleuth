@@ -70,11 +70,8 @@ bias_graph <- function(obj,
 
 	final_df <- rbind(A_df, C_df, G_df, T_df)
 
-	index_df$index <- as.factor(index_df$index)
-
-
-	p <- ggplot(data = index_df, aes(x = ))
-	p <- ggplot(index_df, aes(x = index, y = )
+	p <- ggplot(final_df, aes(index, bias))+ geom_line(aes(colour = base, group = base))
+	p <- p + scale_x_continuous(breaks = 1:6)
 	p <- p + xlab("hexamer index") + ylab("Ratio (bias weight)")
 
 	p
