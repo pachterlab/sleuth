@@ -5,13 +5,7 @@
 
 #setwd("~/Documents/Research/sleuth/ellahi/results")
 
-
-#assumptions: 
-#1. there are an equal number of hexamers for each base
-#2. they are in the order of ACGT
-
 library(ggplot2)
-
 
 bias_graph <- function(obj,  
 	sample = "",
@@ -66,7 +60,6 @@ bias_graph <- function(obj,
 	C_df <- data.frame(index = index_vector, bias = C_vector, base = Cv)
 	G_df <- data.frame(index = index_vector, bias = G_vector, base = Gv)
 	T_df <- data.frame(index = index_vector, bias = T_vector, base = Tv)
-
 
 	final_df <- rbind(A_df, C_df, G_df, T_df)
 
