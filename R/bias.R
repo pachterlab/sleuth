@@ -9,7 +9,9 @@
 #assumptions: 
 #1. there are an equal number of hexamers for each base
 #2. they are in the order of ACGT
-#PRETTY BRAINDEAD, THERE HAS TO BE A BETTER WAY TO DO THIS
+
+library(ggplot2)
+
 
 bias_graph <- function(obj,  
 	sample = "",
@@ -53,19 +55,26 @@ bias_graph <- function(obj,
 	C_vector <- C_vector / norm_count
 	G_vector <- G_vector / norm_count
 	T_vector <- T_vector / norm_count
+	Av <- c(rep("A", 6))
+	Cv <- c(rep("C", 6))
+	Gv <- c(rep("G", 6))
+	Tv <- c(rep("T", 6))
 
-	#df construction of actual frame
-	index_df <- data.frame(A = A_vector, C = C_vector, G = G_vector, T = T_vector)
+	index_vector <- c(1,2,3,4,5,6)
+
+	A_df <- data.frame(index = index_vector, bias = A_vector, base = Av)
+	C_df <- data.frame(index = index_vector, bias = C_vector, base = Cv)
+	G_df <- data.frame(index = index_vector, bias = G_vector, base = Gv)
+	T_df <- data.frame(index = index_vector, bias = T_vector, base = Tv)
 
 
-	#http://docs.ggplot2.org/current/geom_line.html for reference
-	#will return ggplot object of a line graph
-	p <- ggplot(data = TEMPORARY, 
-		aes(x = index, 
-			y = ratio,
-			group = bases,
-			color = bases)) 
-	p <- p + geom_line() + geom_point()
+	final_df <- rbind(A_df, C_df, G_df, T_df)
+
+	index_df$index <- as.factor(index_df$index)
+
+
+	p <- ggplot(data = index_df, aes(x = ))
+	p <- ggplot(index_df, aes(x = index, y = )
 	p <- p + xlab("hexamer index") + ylab("Ratio (bias weight)")
 
 	p
