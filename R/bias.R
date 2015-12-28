@@ -57,6 +57,8 @@ bias_graph <- function(obj,
 	#df construction of actual frame
 	index_df <- data.frame(A = A_vector, C = C_vector, G = G_vector, T = T_vector)
 
+
+	#http://docs.ggplot2.org/current/geom_line.html for reference
 	#will return ggplot object of a line graph
 	p <- ggplot(data = TEMPORARY, 
 		aes(x = index, 
