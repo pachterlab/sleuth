@@ -128,10 +128,10 @@ plot_pca <- function(obj,
 }
 
 
-#' Plot Loadings and Interpretations 
-#' 
+#' Plot Loadings and Interpretations
+#'
 #' give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
-#' 
+#'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param sample user input on which sample and which PC's contribute the most
@@ -142,14 +142,14 @@ plot_pca <- function(obj,
 #' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
 #' @return a ggplot object
 #' @export
-plot_loadings <- function(obj, 
+plot_loadings <- function(obj,
   use_filtered = TRUE,
-  sample = NULL, 
-  pc_input = NULL, 
+  sample = NULL,
+  pc_input = NULL,
   units = 'est_counts',
   pc_count = NULL,
   scale = FALSE,
-  pca_loading_abs = TRUE, 
+  pca_loading_abs = TRUE,
   ...) {
 
   stopifnot( is(obj, 'sleuth') )
@@ -162,7 +162,6 @@ plot_loadings <- function(obj,
   #   mat <- spread_abundance_by(obj$obs_norm, units)
   # }
   mat <- spread_abundance_by(obj$obs_norm_filt, units)
-  
   pca_calc <- prcomp(mat, scale = scale)
 
   #sort of hack-y, may wish to fix
@@ -197,7 +196,7 @@ plot_loadings <- function(obj,
   }
 
   label_names <- names(loadings)
-  
+
   if (!is.null(pc_count)) {
       loadings <- loadings[1:pc_count]
       label_names <- label_names[1:pc_count]
@@ -209,7 +208,7 @@ plot_loadings <- function(obj,
   dat <- data.frame(pc = label_names, loadings = loadings)
   dat$pc <- factor(dat$pc, levels = unique(dat$pc))
 
-  p <- ggplot(dat, aes(x = pc, y = loadings)) 
+  p <- ggplot(dat, aes(x = pc, y = loadings))
   p <- p + geom_bar(stat = "identity")
   p <- p + xlab("principal components") + ylab("contribution scores")
   if (!toggle) {
@@ -242,12 +241,12 @@ plot_loadings <- function(obj,
 #' @param PC_relative gives the option to compare subsequent principal components and their contributions
 #' @return a ggplot object
 #' @export
-plot_pc_variance <- function(obj, 
+plot_pc_variance <- function(obj,
   use_filtered = TRUE,
   units = 'est_counts',
   pca_number = NULL,
   scale = FALSE,
-  PC_relative = NULL, 
+  PC_relative = NULL,
   ...) {
 
   # mat <- NULL
@@ -258,13 +257,13 @@ plot_pc_variance <- function(obj,
   # }
   mat <- spread_abundance_by(obj$obs_norm_filt, units)
 
-  pca_calc <- prcomp(mat, scale = scale) #PCA calculations 
+  pca_calc <- prcomp(mat, scale = scale) #PCA calculations
 
   #computation
-  eigenvalues <- (pca_calc$sdev)^2  
-  var_explained <- eigenvalues*100/sum(eigenvalues)
+  eigenvalues <- (pca_calc$sdev) ^ 2
+  var_explained <- eigenvalues * 100 / sum(eigenvalues)
   var_explained2 <- var_explained
-  
+
   if (!is.null(pca_number)) {
     colsize <- pca_number
     var_explained <- var_explained[1:pca_number]
@@ -275,22 +274,22 @@ plot_pc_variance <- function(obj,
   pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) #order here matters
 
   if(!is.null(PC_relative)) {
-    pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2) 
-    pc_df <- pc_df[PC_relative:nrow(pc_df),] 
+    pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2)
+    pc_df <- pc_df[PC_relative:nrow(pc_df),]
 
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) {
-      pc_df <- pc_df[1:pca_number,] 
+      pc_df <- pc_df[1:pca_number,]
     } else if (PC_relative + 5 >= length(eigenvalues)) {
-      pc_df <- pc_df[1:nrow(pc_df),] 
+      pc_df <- pc_df[1:nrow(pc_df),]
     }
-  } 
+  }
 
   p <- ggplot(pc_df, aes(x = PC_count, y = var)) + geom_bar(stat = "identity")
   p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
   p <- p + ylab("% of variance") + xlab("principal components")
 
   p
-  
+
 }
 
 
@@ -575,7 +574,10 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
   stopifnot( is(obj, 'sleuth') )
 
   if ( test_type == 'lrt' ) {
-    stop('Currently only works for the Wald test. Eventually we will do something for the likelihood ratio test. Suggestions? Email us.')
+    stop(
+      'Currently only works for the Wald test.',
+      ' Eventually we will do something for the likelihood ratio test.',
+      ' Suggestions? Email us.')
   }
 
   res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
@@ -665,7 +667,8 @@ plot_fld.sleuth <- function(obj, sample) {
 #' @export
 plot_fld.kallisto <- function(obj) {
   if ( length(obj$fld) == 1 && all(is.na(obj$fld)) ) {
-    stop("kallisto object does not contain the fragment length distribution. Please rerun with a new version of kallisto.")
+    stop('kallisto object does not contain the fragment length distribution.',
+      ' Please rerun with a new version of kallisto.')
   }
   df <- adf(len = 1:length(obj$fld), fld = obj$fld)
   df <- dplyr::mutate(df, fld = fld / sum(fld))
@@ -738,7 +741,7 @@ plot_sample_heatmap <- function(obj,
 #' These points will be displayed below in a table.
 #' @return a \code{ggplot} object
 #' @export
-plot_volcano = function(obj, test, test_type = 'wt', which_model = 'full',
+ plot_volcano <- function(obj, test, test_type = 'wt', which_model = 'full',
     sig_level = 0.10,
     point_alpha = 0.2,
     sig_color = 'red',
@@ -747,7 +750,9 @@ plot_volcano = function(obj, test, test_type = 'wt', which_model = 'full',
   stopifnot( is(obj, 'sleuth') )
 
   if ( test_type == 'lrt' ) {
-    stop('Currently only works for the Wald test. Eventually we will do something for the likelihood ratio test. Suggestions? Email us.')
+    stop('Currently only works for the Wald test.',
+      ' Eventually we will do something for the likelihood ratio test.',
+      ' Suggestions? Email us.')
   }
 
   res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
@@ -868,8 +873,7 @@ plot_transcript_heatmap <- function(obj,
   transcripts,
   units = 'tpm',
   trans = 'log',
-  offset = 1)
-{
+  offset = 1) {
   if(!all(transcripts %in% obj$obs_norm$target_id)) {
     stop("Couldn't find the following transcripts: ",
       paste(transcripts[!(transcripts %in% obj$obs_norm$target_id)], collapse = ", "),
@@ -893,7 +897,7 @@ plot_transcript_heatmap <- function(obj,
 
   p <- NULL
   if (nchar(trans) > 0 && !is.null(trans)) {
-    tFunc = eval(parse(text = trans))
+    tFunc <- eval(parse(text = trans))
     p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)), clustRows = FALSE)
   } else {
     p <- ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
@@ -914,13 +918,12 @@ plot_transcript_heatmap <- function(obj,
 #' @param colNames if TRUE, print the column names on the plot
 #' @return a ggplot object
 ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
-                             rowNames = TRUE, colNames = TRUE)
-{
+                             rowNames = TRUE, colNames = TRUE) {
     if (is(exMat, 'matrix')) {
         exMat <- as.matrix(exMat)
         stopifnot(class(exMat) == 'matrix')
     }
-    exMat = t(exMat)
+    exMat <- t(exMat)
     rowOrder <- 1:nrow(exMat)
     colOrder <- 1:ncol(exMat)
     if (clustRows)
@@ -938,14 +941,14 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
     meltMat$x <- factor(meltMat$x, levels = rownames(exMat))
     p <- ggplot(meltMat, aes(x, y, fill = value))
     p <- p + geom_tile() + scale_fill_gradientn(colours = heat.colors(20),
-                                                guide = guide_legend(title = "Expression: ",
-                                                                     reverse = T, size = 14))
+          guide = guide_legend(title = "Expression: ",
+                               reverse = T, size = 14))
     p <- p + theme_bw() + theme(legend.text = element_text(size = 14),
-                                                                   legend.title = element_text(size = 14),
-                                                           legend.direction = 'vertical',
-                                                           legend.position = 'top',
-                                                           legend.background = element_rect(fill = "gray95", colour = "black", size = 0.5, linetype = 1),
-                                                           axis.title=element_blank())
+     legend.title = element_text(size = 14),
+     legend.direction = 'vertical',
+     legend.position = 'top',
+     legend.background = element_rect(fill = "gray95", colour = "black", size = 0.5, linetype = 1),
+     axis.title=element_blank())
     if (rowNames)
         p <- p + theme(axis.text.x=element_text(angle = 90, size=14))
     else
@@ -964,9 +967,7 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
 #'
 #' @param mat a matrix where the rows are observations and the columns are different dimensions on the matrix
 #' @return a vector of label orderings
-
-orderByDendrogram <- function(mat)
-{
+orderByDendrogram <- function(mat) {
     hc <- hclust(dist(mat))
     dc <- as.dendrogram(hc)
     order.dendrogram(dc)
