@@ -21,8 +21,8 @@
 #' Interactive sleuth visualization with Shiny. To exit, type \code{ESC} in R.
 #'
 #' @param obj a \code{sleuth} object already processed and has run
-#' \code{\link{sleuth_fit}} and \code{\link{sleuth_test}}
-#' @param settings see the function \code{\link{sleuth_alive_settings}} for options
+#' \code{\link{sleuth_fit}} and \code{\link{sleuth_wt}} or \code{\link{sleuth_lrt}}
+#' @param settings see the function \code{\link{sleuth_live_settings}} for options
 #' @param options additional options which are sent to shiny
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result

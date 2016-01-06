@@ -537,11 +537,11 @@ plot_vars <- function(obj,
     if (nrow(highlight) > 0) {
       p <- p + geom_point(aes(sqrt(obs_var), sqrt(sigma_q_sq)), data = highlight_in, colour = highlight_color)
     } else {
-      warning("Couldn't find any transcripts from highlight set in this sleuth_test. They were probably filtered out.")
+      warning("Couldn't find any transcripts from highlight set in this sleuth test. They were probably filtered out.")
     }
 
     if ( nrow(highlight_in) > 0 && (nrow(highlight_in) != nrow(highlight)) ) {
-      warning("Couldn't find any transcripts from highlight set in this sleuth_test. They were probably filtered out.")
+      warning("Couldn't find any transcripts from highlight set in this sleuth test. They were probably filtered out.")
     }
   }
 
