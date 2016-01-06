@@ -264,9 +264,7 @@ sleuth_prep <- function(
     })
 
     # add in eff_len and len
-    obs_norm <- dplyr::mutate(obs_norm,
-      eff_len = obs_raw$eff_len,
-      len = obs_raw$len)
+    obs_norm = dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
 
     msg("normalizing bootstrap samples")
     ret$kal <- lapply(seq_along(ret$kal), function(i) {
