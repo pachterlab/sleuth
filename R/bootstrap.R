@@ -23,16 +23,14 @@
 #
 # @param kal a kallisto object with non-null member \code{bootstrap}
 # @return a matrix with rownames equal to target_id
-bootstrap2mat <- function(kal, column = "tpm")
-{
+bootstrap2mat <- function(kal, column = "tpm") {
     stopifnot(is(kal, "kallisto"))
     # TODO: check if "column" is a valid kallisto column
 
     # assumes that all bootstrap samples are in same order (from read_kallisto)
 
     all_boot <- kal$bootstrap
-    mat <- matrix(unlist(lapply(all_boot, function(bs)
-        {
+    mat <- matrix(unlist(lapply(all_boot, function(bs) {
             bs[column]
         })), nrow = nrow(all_boot[[1]]))
 
@@ -100,8 +98,7 @@ get_bootstraps.kallisto <- function(kal, transcript, max_bs = 30) {
 # @param column the column to pull out of the kallisto results (default = "tpm")
 # @return a molten data.frame with columns "target_id", "sample" and the selected variable
 # @export
-melt_bootstrap <- function(kal, column = "tpm", transform = identity)
-{
+melt_bootstrap <- function(kal, column = "tpm", transform = identity) {
     stopifnot(is(kal, "kallisto"))
   stopifnot(length(kal$bootstrap) > 0)
 
@@ -177,8 +174,7 @@ aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
 # @param column the column to select (rho, tpm, est_counts
 # @return a summarized data.frame
 # @export
-summarize_bootstrap <- function(kal, column = "tpm", transform = identity)
-{
+summarize_bootstrap <- function(kal, column = "tpm", transform = identity) {
     stopifnot(is(kal, "kallisto"))
     bs <- melt_bootstrap(kal, column, transform)
 
@@ -227,8 +223,7 @@ normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
     stopifnot(length(est_counts_size_factor) == 1)
   }
 
-  bs <- lapply(kal$bootstrap, function(bs_tbl)
-    {
+  bs <- lapply(kal$bootstrap, function(bs_tbl) {
       if (calc_norm_tpm)
         bs_tbl$tpm <- bs_tbl$tpm / tpm_size_factor
       if (calc_norm_counts)
@@ -259,8 +254,7 @@ sample_bootstrap <- function(obj, n_samples = 100L) {
   }
 
   which_samp <- lapply(seq_along(n_bs_per_samp),
-    function(i)
-    {
+    function(i) {
       cur_n <- n_bs_per_samp[i]
       sample.int(cur_n, n_samples, replace = TRUE)
     })
@@ -269,8 +263,7 @@ sample_bootstrap <- function(obj, n_samples = 100L) {
 
   # allocate the matrices
   sample_mat <- lapply(1:n_samples,
-    function(discard)
-    {
+    function(discard) {
       mat <- matrix(NA_real_, nrow = nrow(obj$kal[[1]]$abundance),
         ncol = nrow(which_samp))
       rownames(mat) <- obj$kal[[1]]$abundance$target_id

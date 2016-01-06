@@ -169,7 +169,9 @@ sleuth_prep <- function(
     function(i) {
       nsamp <- dot(nsamp)
       path <- kal_dirs[i]
-      suppressMessages({kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)})
+      suppressMessages({
+        kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)
+        })
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
 
@@ -338,7 +340,7 @@ norm_factors <- function(mat) {
   s <- sweep(mat_nz, 1, geo_means, `/`)
 
   sf <- apply(s, 2, median)
-  scaling <- exp( (-1/p) * sum(log(sf)))
+  scaling <- exp( (-1 / p) * sum(log(sf)))
 
   sf * scaling
 }
@@ -384,8 +386,7 @@ sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
 }
 
 sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
-  res <- lapply(seq_along(obj$kal), function(i)
-    {
+  res <- lapply(seq_along(obj$kal), function(i) {
       cur_samp <- obj$sample_to_covariates$sample[i]
 
       dplyr::mutate(summarize_bootstrap(obj$kal[[i]], col, transform),
@@ -421,8 +422,7 @@ spread_abundance_by <- function(abund, var, which_order) {
 #' @export
 melt_bootstrap_sleuth <- function(obj) {
   # TODO: make this into a S3 function
-  lapply(seq_along(obj$kal), function(i)
-    {
+  lapply(seq_along(obj$kal), function(i) {
       cur_samp <- obj$sample_to_condition$sample[i]
       cur_cond <- obj$sample_to_condition$condition[i]
 
@@ -512,8 +512,7 @@ get_col <- function(obj, ...) {
 
   #which_cols <- as.character(...)
   lapply(seq_along(obj$kal),
-    function(i)
-    {
+    function(i) {
       which_sample <- obj$sample_to_condition$sample[i]
       dplyr::select_(obj$kal[[i]]$abundance, "target_id",
         .dots = lazyeval::lazy_dots(...)) %>%
@@ -527,7 +526,7 @@ get_col <- function(obj, ...) {
 summary.sleuth <- function(obj, covariates = TRUE) {
   mapped_reads <- sapply(obj$kal, function(k) attr(k, 'num_mapped'))
   n_bs <- sapply(obj$kal, function(k) length(k$bootstrap))
-  n_processed = sapply(obj$kal, function(k) attr(k, 'num_processed'))
+  n_processed <- sapply(obj$kal, function(k) attr(k, 'num_processed'))
 
   res <- adf(sample = obj$sample_to_covariates[['sample']],
     reads_mapped = mapped_reads,
@@ -559,22 +558,30 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
   if(is.null(obj$target_mapping)) {
     stop("This sleuth object doesn't have added gene names.")
   }
-  popped_gene_table = sleuth_results(obj, test, test_type, which_model)
+  popped_gene_table <- sleuth_results(obj, test, test_type, which_model)
 
-  popped_gene_table = dplyr::arrange_(popped_gene_table, which_group, ~qval)
-  popped_gene_table = dplyr::group_by_(popped_gene_table, which_group)
+  popped_gene_table <- dplyr::arrange_(popped_gene_table, which_group, ~qval)
+  popped_gene_table <- dplyr::group_by_(popped_gene_table, which_group)
 
-  popped_gene_table = dplyr::summarise_(popped_gene_table,
-    most_sig_transcript = ~target_id[1],
+  popped_gene_table <- dplyr::summarise_(popped_gene_table,
+    target_id = ~target_id[1],
     pval = ~min(pval, na.rm  = TRUE),
     qval = ~min(qval, na.rm = TRUE),
     num_transcripts = ~n(),
-    list_of_transcripts = ~toString(target_id[1:length(target_id)])
+    # all_target_ids = ~toString(target_id[1:length(target_id)])
+    all_target_ids = ~paste0(target_id[1:length(target_id)], collapse = ',')
     )
 
-  popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
-  popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
-  popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+  filter_empty <- nchar(popped_gene_table[[which_group]]) == 0 | # empty transcript name
+    is.na(popped_gene_table[[which_group]]) | # empty gene name
+    is.na(popped_gene_table$qval) # missing q-value
+  filter_empty <- !filter_empty
+  popped_gene_table <- popped_gene_table[filter_empty, ]
+
+  # popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
+  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
+  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+
   popped_gene_table
 }
 
@@ -594,8 +601,7 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
 #' @return a vector of strings containing the names of the transcripts that map to a gene
 #' @export
 transcripts_from_gene <- function(obj, test, test_type,
-  which_model, gene_colname, gene_name)
-{
+  which_model, gene_colname, gene_name) {
   table <- sleuth_results(obj, test, test_type, which_model)
   table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
   table <- dplyr::arrange_(table, gene_colname, ~qval)
