@@ -21,6 +21,7 @@ Imports:
     shiny
 Suggests:
     MASS,
+    lintr,
     testthat,
     knitr
 VignetteBuilder: knitr

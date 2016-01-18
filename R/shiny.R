@@ -74,29 +74,55 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
           p(strong('sleuth live features:')),
              tags$ul(
-                    tags$li(strong('v0.28.0'), ': Download buttons for plots and tables by Alex Tseng. PCA variance explained and loadings by Daniel Li. Fragment length distribution plot, bias table, and integration of likelihood ratio test by Harold Pimentel.'),
-                     tags$li(strong('v0.27.3'),': Gene table, gene viewer, transcript heatmap, and volcano plot by Pascal Sturmfels.'),
-                     tags$li(strong('v0.27.2'),': Design matrix, kallisto table, transcript view, and QQplot by Harold Pimentel.'),
-                     tags$li(strong('v0.27.1'),': Densities, MA plot, mean-variance plot, PCA,  processed data, sample heatmap, scatter plots, and test table by Harold Pimentel.')
-
+                    tags$li(strong('v0.28.0'),
+                      ':',
+                      'Download buttons for plots and tables by Alex Tseng.',
+                      'PCA variance explained and loadings by Daniel Li.',
+                      'Fragment length distribution plot, bias table,',
+                        'and integration of likelihood ratio test by Harold Pimentel.'
+                      ),
+                     tags$li(strong('v0.27.3'),
+                       ':',
+                        'Gene table, gene viewer, transcript heatmap,',
+                          'and volcano plot by Pascal Sturmfels.'
+                      ),
+                     tags$li(strong('v0.27.2'),
+                       ':',
+                       'Design matrix, kallisto table, transcript view,',
+                       'and QQplot by Harold Pimentel.'
+                     ),
+                     tags$li(strong('v0.27.1'),
+                      ':',
+                      'Densities, MA plot, mean-variance plot, PCA,',
+                      'processed data, sample heatmap, scatter plots,',
+                      'and test table by Harold Pimentel.')
                      )
           ))),
 
-                             navbarMenu('analyses',
+    navbarMenu('analyses',
 
       tabPanel('gene view',
         fluidRow(
             column(12,
-                p(h3('gene view'), "Boxplots of abundances of transcript mapping to a given gene, and their technical variation. This step can take a while, especially with many plots." )
+                p(h3('gene view'),
+                'Boxplots of abundances of transcript mapping to a given gene,',
+                'and their technical variation.',
+                'This step can take a while, especially with many plots.')
                 ),
             offset = 1),
         fluidRow(column(3,
             textInput('gv_var_input', label = 'gene: ', value = '')
             ),
             column(3,
-                selectInput('gv_var_color_by', label = 'color by: ', choices = c(NULL, poss_covars), selected = NULL)),
+                selectInput('gv_var_color_by',
+                  label = 'color by: ',
+                  choices = c(NULL, poss_covars),
+                  selected = NULL)),
             column(3,
-                selectInput('gv_var_units', label = 'units: ', choices = c('est_counts', 'tpm'), selected = 'est_counts')),
+                selectInput('gv_var_units',
+                  label = 'units: ',
+                  choices = c('est_counts', 'tpm'),
+                  selected = 'est_counts')),
             column(3,
                 uiOutput('gv_gene_column')
             )
@@ -114,7 +140,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('heat map',
         fluidRow(
           column(12,
-              p(h3('heat map'), "Plot of select abundances in a clustered heat map. Enter space-separated values.")
+              p(h3('heat map'), 'Plot of select abundances in a clustered heat map.',
+                'Enter space-separated values.')
               ),
           offset = 1
         ),
@@ -144,7 +171,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('MA plot',
       fluidRow(
         column(12,
-          p(h3('MA plot'), "Plot of abundance versus fixed effect (e.g. fold change). Select a set of transcripts to explore their variance across samples. ")
+          p(h3('MA plot'),
+            'Plot of abundance versus fixed effect (e.g. fold change).',
+            'Select a set of transcripts to explore their variance across samples.')
           ),
           offset = 1),
           conditionalPanel(condition = 'input.settings_test_type == "wt"',
@@ -188,7 +217,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('test table',
       fluidRow(
         column(12,
-          p(h3('test table'), "Table of transcript names, gene names (if supplied), sleuth parameter estimates, tests, and summary statistics." )
+          p(h3('test table'),
+            'Table of transcript names, gene names (if supplied),',
+            'sleuth parameter estimates, tests, and summary statistics.' )
           ),
           offset = 1),
         conditionalPanel(condition = 'input.settings_test_type == "wt"',
@@ -231,59 +262,66 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
         ####
         tabPanel('transcript view',
-            fluidRow(
-                column(12,
-                    p(h3('transcript view'), "Boxplots of transcript abundances showing technical variation in each sample." )
-                    ),
-                    offset = 1),
-            fluidRow(
-                column(4,textInput('bs_var_input', label = 'transcript: ', value = '')
+          fluidRow(
+            column(12,
+              p(
+                h3('transcript view'),
+                'Boxplots of transcript abundances showing technical variation in each sample.')
                 ),
-                column(4,
-                    selectInput('bs_var_color_by', label = 'color by: ',
-                    choices = c(NULL, poss_covars), selected = NULL)
-                ),
-                column(3,
-                    selectInput('bs_var_units', label = 'units: ',
-                    choices = c('est_counts', 'tpm'),
-                    selected = 'est_counts'))
-                ),
-            fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-            fluidRow(plotOutput('bs_var_plt')),
-            fluidRow(
-              div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                  downloadButton("download_bs_var_plt", "Download Plot"))
-                  )
+                offset = 1),
+          fluidRow(
+            column(4,
+              textInput('bs_var_input', label = 'transcript: ', value = '')
+            ),
+            column(4,
+              selectInput('bs_var_color_by', label = 'color by: ',
+                choices = c(NULL, poss_covars), selected = NULL)
+            ),
+            column(3,
+              selectInput('bs_var_units', label = 'units: ',
+                choices = c('est_counts', 'tpm'),
+                selected = 'est_counts'))
+            ),
+          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+          fluidRow(plotOutput('bs_var_plt')),
+          fluidRow(
+            div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+              downloadButton("download_bs_var_plt", "Download Plot"))
+              )
         ),
 
         ####
         tabPanel('volcano plot',
           fluidRow(
-              column(12,
-                  p(h3('volcano plot'), "Plot of beta value (regression) versus log of significance. Select a set of transcripts to explore their variance across samples. ")
-                  ),
-                  offset = 1),
+            column(12,
+              p(
+                h3('volcano plot'),
+                'Plot of beta value (regression) versus log of significance.',
+                'Select a set of transcripts to explore their variance across samples.'
+                )
+              ),
+            offset = 1),
           conditionalPanel(condition = 'input.settings_test_type == "wt"',
             fluidRow(
-                column(2,
-                    numericInput('max_fdr_vol', label = 'max Fdr:', value = 0.10,
-                        min = 0, max = 1, step = 0.01)),
-                column(4,
-                    selectInput('which_model_vol', label = 'fit: ',
-                        choices = poss_models,
-                        selected = poss_models[1])
+              column(2,
+                numericInput('max_fdr_vol', label = 'max Fdr:', value = 0.10,
+                    min = 0, max = 1, step = 0.01)),
+              column(4,
+                selectInput('which_model_vol', label = 'fit: ',
+                  choices = poss_models,
+                  selected = poss_models[1])
+              ),
+              column(4,
+                uiOutput('which_beta_ctrl_vol')
                 ),
-                column(4,
-                    uiOutput('which_beta_ctrl_vol')
-                    ),
-                column(2,
-                    numericInput('vol_alpha', label = 'opacity:', value = 0.2,
-                        min = 0, max = 1, step = 0.01))
+              column(2,
+                numericInput('vol_alpha', label = 'opacity:', value = 0.2,
+                  min = 0, max = 1, step = 0.01))
                 ),
             fluidRow(plotOutput('vol', brush = 'vol_brush')),
             fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                    downloadButton("download_volcano_plt", "Download Plot"))),
+              div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                downloadButton("download_volcano_plt", "Download Plot"))),
             fluidRow(dataTableOutput('vol_brush_out')),
             fluidRow(uiOutput("download_volcano_table_button"))
           ),
@@ -300,7 +338,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('PCA',
       fluidRow(
         column(12,
-          p(h3('principal component analysis'), "PCA projections of sample abundances onto any pair of components.")
+          p(
+            h3('principal component analysis'),
+            'PCA projections of sample abundances onto any pair of components.')
           ),
           offset = 1),
         fluidRow(
@@ -339,7 +379,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                     downloadButton("download_pca_plt", "Download Plot"))),
         fluidRow(
         column(12,
-          p(h3('loadings'), "observe contributions of samples or transcripts to the principal component")
+          p(
+            h3('loadings'),
+            'observe contributions of samples or transcripts to the principal component')
           ),
           offset = 1),
         fluidRow(
@@ -388,8 +430,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
         fluidRow(plotOutput('samp_heat_plt')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                    downloadButton("download_samp_heat_plt", "Download Map")))
+          div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+            downloadButton("download_samp_heat_plt", "Download Map")))
         )
       ),
 
@@ -399,7 +441,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('densities',
       fluidRow(
         column(12,
-          p(h3('distribution of abundances'), "Distributions of abundances of individual samples or groupings by covariates.")
+          p(
+            h3('distribution of abundances'),
+            'Distributions of abundances of individual samples or groupings by covariates.'
+            )
           ),
           offset = 1),
         fluidRow(
@@ -423,8 +468,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
         fluidRow(plotOutput('condition_density')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
-                    downloadButton("download_cond_dens_plt", "Download Plot"))),
+          div(align = "right", style = "margin-right:15px",
+            downloadButton("download_cond_dens_plt", "Download Plot"))),
         fluidRow(
           column(4,
             selectInput('samp_dens', 'sample: ',
@@ -432,9 +477,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               selected = samp_names[1]))),
         fluidRow(plotOutput('sample_density')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
-                    downloadButton("download_samp_dens_plt", "Download Plot")))
-
+          div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
+            downloadButton("download_samp_dens_plt", "Download Plot")))
         ),
 
 
@@ -465,7 +509,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('fragment length distribution',
         fluidRow(
           column(12,
-            p(h3('fragment length distribution plot'), "Plot fragment length distribution used by kallisto in a particular sample")
+            p(
+              h3('fragment length distribution plot'),
+              'Plot fragment length distribution used by kallisto in a particular sample')
             )
         ),
         fluidRow(
@@ -485,7 +531,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('processed data',
       fluidRow(
         column(12,
-          p(h3('processed data'), "Names of samples, number of mapped reads, number of boostraps performed by kallisto, and sample to covariate mappings.")
+          p(
+            h3('processed data'),
+            'Names of samples, number of mapped reads, number of boostraps performed by kallisto,',
+            'and sample to covariate mappings.'
+            )
           ),
           offset = 1),
         fluidRow(
@@ -495,8 +545,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
         fluidRow(dataTableOutput('summary_dt')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
-                    downloadButton("download_summary_table", "Download Table")))
+          div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
+            downloadButton("download_summary_table", "Download Table")))
         ),
 
       ###
@@ -522,11 +572,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
         fluidRow(dataTableOutput('kallisto_table')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                    downloadButton("download_kallisto_table", "Download Table")))
-
+          div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+            downloadButton("download_kallisto_table", "Download Table")))
         )
-
       ),
 
       navbarMenu('diagnostics',
@@ -557,13 +605,17 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('mean-variance plot',
       fluidRow(
         column(12,
-          p(h3('mean-variance plot'), "Plot of abundance versus square root of standard deviation which is used for shrinkage estimation. The blue dots are in the interquartile range and the red curve is the fit used by sleuth." )
+          p(
+            h3('mean-variance plot'),
+            'Plot of abundance versus square root of standard deviation which is used for shrinkage estimation.',
+            'The blue dots are in the interquartile range and the red curve is the fit used by sleuth.'
+            )
           ),
           offset = 1),
         fluidRow(plotOutput('mv_plt')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                    downloadButton("download_mv_plt", "Download Plot")))
+          div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+            downloadButton("download_mv_plt", "Download Plot")))
 
         ),
 
@@ -571,7 +623,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         ####
         fluidRow(
           column(12,
-            p(h3('scatter plot '), "Display scatter plot for any two samples and then select a set of transcripts to explore their variance across samples.")
+            p(
+              h3('scatter plot '),
+              "Display scatter plot for any two samples and then select",
+              "a set of transcripts to explore their variance across samples.")
             ),
           offset = 1),
         fluidRow(
@@ -605,12 +660,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           ),
         fluidRow(plotOutput('scatter', brush = 'scatter_brush')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px",
-                    downloadButton("download_scatter_plt", "Download Plot"))),
+          div(align = "right", style = "margin-right:15px",
+            downloadButton("download_scatter_plt", "Download Plot"))),
         fluidRow(plotOutput('scatter_vars')),
         fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
-                    downloadButton("download_scatter_var_plt", "Download Plot"))),
+          div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
+            downloadButton("download_scatter_var_plt", "Download Plot"))),
         fluidRow(dataTableOutput('scatter_brush_table')),
         fluidRow(uiOutput("download_scatter_table_button"))
         ),
@@ -644,8 +699,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           plotOutput('qqplot')
           ),
         fluidRow(
-                div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                    downloadButton("download_qq_plt", "Download Plot")))
+          div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+            downloadButton("download_qq_plt", "Download Plot")))
         )
 
       ),
@@ -665,25 +720,27 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
   server_fun <- function(input, output) {
     # Reactive master object that stores all plots and tables for downloading later
-    saved_plots_and_tables <- reactiveValues(pca_plt = NULL,
-                            samp_heat_plt = NULL,
-                            ma_plt = NULL,
-                            ma_var_plt = NULL,
-                            ma_table = NULL,
-                            test_table = NULL,
-                            volcano_plt = NULL,
-                            volcano_table = NULL,
-                            mv_plt = NULL,
-                            scatter_plt = NULL,
-                            scatter_var_plt = NULL,
-                            scatter_table = NULL,
-                            qq_plt = NULL,
-                            cond_dens_plt = NULL,
-                            samp_dens_plt = NULL,
-                            sample_table = NULL,
-                            kallisto_table = NULL,
-                            hm_plt = NULL,
-                            bs_var_plt = NULL)
+    saved_plots_and_tables <- reactiveValues(
+      pca_plt = NULL,
+      samp_heat_plt = NULL,
+      ma_plt = NULL,
+      ma_var_plt = NULL,
+      ma_table = NULL,
+      test_table = NULL,
+      volcano_plt = NULL,
+      volcano_table = NULL,
+      mv_plt = NULL,
+      scatter_plt = NULL,
+      scatter_var_plt = NULL,
+      scatter_table = NULL,
+      qq_plt = NULL,
+      cond_dens_plt = NULL,
+      samp_dens_plt = NULL,
+      sample_table = NULL,
+      kallisto_table = NULL,
+      hm_plt = NULL,
+      bs_var_plt = NULL
+      )
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input
 
@@ -720,9 +777,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_qq_plt <- downloadHandler(
-        filename = function() { "qq_plot.pdf" },
+        filename = function() {
+          "qq_plot.pdf"
+          },
         content = function(file) {
-            ggsave(file, saved_plots_and_tables$qq_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file, saved_plots_and_tables$qq_plt,
+              width = user_settings$save_width,
+              height = user_settings$save_height,
+              units = "cm")
     })
 
     output$summary_dt <- renderDataTable({
@@ -731,7 +793,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_summary_table <- downloadHandler(
-      filename = function() { "processed_data_table.csv" },
+      filename = function() {
+        "processed_data_table.csv"
+      },
       content = function(file) {
          write.csv(saved_plots_and_tables$summary_table, file)
     })
@@ -747,9 +811,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_cond_dens_plt <- downloadHandler(
-        filename = function() { "condition_density_plot.pdf" },
+        filename = function() {
+          "condition_density_plot.pdf"
+          },
         content = function(file) {
-            ggsave(file, saved_plots_and_tables$cond_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file,
+              saved_plots_and_tables$cond_dens_plt,
+              width = user_settings$save_width,
+              height = user_settings$save_height,
+              units = "cm")
     })
 
     output$sample_density <- renderPlot({
@@ -764,9 +834,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_samp_dens_plt <- downloadHandler(
-        filename = function() { "sample_density_plot.pdf" },
+        filename = function() {
+          "sample_density_plot.pdf"
+          },
         content = function(file) {
-            ggsave(file, saved_plots_and_tables$samp_dens_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file,
+              saved_plots_and_tables$samp_dens_plt,
+              width = user_settings$save_width,
+              height = user_settings$save_height,
+              units = "cm")
     })
 
     ###
@@ -780,13 +856,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_kallisto_table <- downloadHandler(
-      filename = function() { "kallisto_table.csv" },
+      filename = function() {
+        "kallisto_table.csv"
+        },
       content = function(file) {
          write.csv(saved_plots_and_tables$kallisto_table, file)
     })
 
     output$design_matrix <- renderPrint({
-    #output$design_matrix <- renderTable({
       design_matrix(obj, input$which_model_design)
     })
 
@@ -809,9 +886,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_scatter_plt <- downloadHandler(
-        filename = function() { "scatter_plot.pdf" },
+        filename = function() {
+          "scatter_plot.pdf"
+          },
         content = function(file) {
-            ggsave(file, saved_plots_and_tables$scatter_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file,
+              saved_plots_and_tables$scatter_plt,
+              width = user_settings$save_width,
+              height = user_settings$save_height,
+              units = "cm")
     })
 
     output$scatter_vars <- renderPlot({
@@ -819,7 +902,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       test_type <- input$settings_test_type
 
       current_test <- input$which_test_qq
-      if ( is.null(current_test) ) {
+      if (is.null(current_test)) {
         possible_tests <- list_tests(obj, test_type)
         if (test_type == 'wt') {
           possible_tests <- possible_tests[[input$which_model_qq]]
@@ -840,9 +923,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_scatter_var_plt <- downloadHandler(
-        filename = function() { "scatter_var_plot.pdf" },
+        filename = function() {
+          "scatter_var_plot.pdf"
+          },
         content = function(file) {
-            ggsave(file, saved_plots_and_tables$scatter_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+          ggsave(file,
+            saved_plots_and_tables$scatter_var_plt,
+            width = user_settings$save_width,
+            height = user_settings$save_height,
+            units = "cm")
     })
 
     output$scatter_brush_table <- renderDataTable({
@@ -900,7 +989,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_scatter_table <- downloadHandler(
-      filename = function() { "scatter_table.csv" },
+      filename = function() {
+        "scatter_table.csv"
+        },
       content = function(file) {
          write.csv(saved_plots_and_tables$scatter_table, file)
     })
@@ -913,9 +1004,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_samp_heat_plt <- downloadHandler(
-        filename = function() { "samp_heat_plot.pdf" },
+        filename = function() {
+          "samp_heat_plot.pdf"
+          },
         content = function(file) {
-            ggsave(file, saved_plots_and_tables$samp_heat_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file,
+              saved_plots_and_tables$samp_heat_plt,
+              width = user_settings$save_width,
+              height = user_settings$save_height,
+              units = "cm")
     })
 
     ###
@@ -939,9 +1036,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_pca_plt <- downloadHandler(
-      filename = function() { "pca_plot.pdf" },
+      filename = function() {
+        "pca_plot.pdf"
+        },
       content = function(file) {
-         ggsave(file, saved_plots_and_tables$pca_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file, saved_plots_and_tables$pca_plt,
+           width = user_settings$save_width,
+           height = user_settings$save_height,
+           units = "cm")
     })
 
     output$fld_plt <- renderPlot({
@@ -950,11 +1052,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     output$bias_weights_table <- renderDataTable({
       bias_table(obj, input$bias_sample)
-      })
+    })
 
    ### Plot pc loadings
     output$plt_pc_loadings <- renderPlot({
-
       plot_loadings(obj,
         use_filtered = input$pc_filt,
         pc_count = as.integer(input$pc_count),
@@ -968,7 +1069,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     ###plot pc variance
     output$plt_pc_var <- renderPlot({
-
       plot_pc_variance(obj,
         use_filtered = input$pc_filt,
         pca_number = 5,
@@ -987,9 +1087,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_mv_plt <- downloadHandler(
-      filename = function() { "mv_plot.pdf" },
+      filename = function() {
+        "mv_plot.pdf"
+        },
       content = function(file) {
-         ggsave(file, saved_plots_and_tables$mv_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file,
+           saved_plots_and_tables$mv_plt,
+           width = user_settings$save_width,
+           height = user_settings$save_height,
+           units = "cm")
     })
 
     ### MA
@@ -1007,7 +1113,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$ma <- renderPlot({
 
       current_test <- input$which_beta_ma
-      if ( is.null(current_test) ) {
+      if (is.null(current_test)) {
         possible_tests <- list_tests(obj, input$settings_test_type)
         possible_tests <- possible_tests[[input$which_model_ma]]
         current_test <- possible_tests[1]
@@ -1023,15 +1129,21 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_ma_plt <- downloadHandler(
-      filename = function() { "ma_plot.pdf" },
+      filename = function() {
+        "ma_plot.pdf"
+      },
       content = function(file) {
-         ggsave(file, saved_plots_and_tables$ma_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file,
+           saved_plots_and_tables$ma_plt,
+           width = user_settings$save_width,
+           height = user_settings$save_height,
+           units = "cm")
       }
     )
 
     output$vars <- renderPlot({
       wb <- input$which_beta_ma
-      if ( is.null(wb) ) {
+      if (is.null(wb)) {
         possible_tests <- list_tests(obj, input$settings_test_type)
         possible_tests <- possible_tests[[input$which_model_ma]]
         wb <- possible_tests[1]
@@ -1049,9 +1161,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_ma_var_plt <- downloadHandler(
-      filename = function() { "ma_var_plot.pdf" },
+      filename = function() {
+        "ma_var_plot.pdf"
+        },
       content = function(file) {
-         ggsave(file, saved_plots_and_tables$ma_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+         ggsave(file,
+           saved_plots_and_tables$ma_var_plt,
+           width = user_settings$save_width,
+           height = user_settings$save_height,
+           units = "cm")
       }
     )
 
@@ -1093,7 +1211,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_ma_table <- downloadHandler(
-      filename = function() { "ma_table.csv" },
+      filename = function() {
+        "ma_table.csv"
+        },
       content = function(file) {
          write.csv(saved_plots_and_tables$ma_table, file)
       }
@@ -1124,13 +1244,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     output$group_by <- renderUI({
       if(!is.null(input$pop_genes) && input$pop_genes == 2) {
-        selectInput('mappingGroup', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        selectInput('mappingGroup',
+          label = 'group by: ',
+          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
       }
     })
 
     output$de_dt <- renderDataTable({
       wb <- input$which_beta_de
-      if ( is.null(wb) ) {
+      if (is.null(wb)) {
         possible_tests <- list_tests(obj, input$settings_test_type)
         possible_tests <- possible_tests[[input$which_model_de]]
         wb <- possible_tests[1]
@@ -1150,7 +1272,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_test_table <- downloadHandler(
-      filename = function() { "test_table.csv" },
+      filename = function() {
+        "test_table.csv"
+        },
       content = function(file) {
          write.csv(saved_plots_and_tables$test_table, file)
       }
@@ -1185,7 +1309,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
     output$group_by_lrt <- renderUI({
       if(!is.null(input$pop_genes_lrt) && input$pop_genes_lrt == 2) {
-        selectInput('mapping_group_lrt', label = 'group by: ', choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+        selectInput('mapping_group_lrt',
+          label = 'group by: ',
+          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
       }
     })
 
@@ -1196,7 +1322,6 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         input$bs_var_input
     })
 
-
     output$bs_var_plt <- renderPlot({
         saved_plots_and_tables$bs_var_plt <- plot_bootstrap(obj, bs_var_text(),
         units = input$bs_var_units,
@@ -1205,9 +1330,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_bs_var_plt <- downloadHandler(
-        filename = function() { "bootstrap_vars.pdf" },
+        filename = function() {
+          "bootstrap_vars.pdf"
+          },
         content = function(file) {
-            ggsave(file, saved_plots_and_tables$bs_var_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+            ggsave(file,
+              saved_plots_and_tables$bs_var_plt,
+              width = user_settings$save_width,
+              height = user_settings$save_height,
+              units = "cm")
     })
 
 
@@ -1220,8 +1351,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$gv_gene_column <- renderUI({
-      if(!is.null(obj$target_mapping))
-      {
+      if(!is.null(obj$target_mapping)) {
         selectInput('gv_gene_colname',
           label = 'genes from: ',
           choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
@@ -1256,34 +1386,36 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$gv_var_plts <- renderUI({
-        gv_plot_list <- lapply(1:input$gv_maxplots, function(i) {
-                gv_plotname <- paste("plot", i, sep="")
-                plotOutput(gv_plotname)
-            })
-
-            do.call(tagList, gv_plot_list)
+      gv_plot_list <- lapply(1:input$gv_maxplots,
+        function(i) {
+          gv_plotname <- paste("plot", i, sep="")
+          plotOutput(gv_plotname)
         })
 
-        for (i in 1:15) {
+        do.call(tagList, gv_plot_list)
+      })
 
-            local({
-                my_i <- i
-                gv_plotname <- paste("plot", my_i, sep="")
-
-                    output[[gv_plotname]] <- renderPlot({
-                       if(!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i]))
-                        {
-                           plot_bootstrap(obj, gv_var_list()[my_i], units = input$gv_var_units, color_by = input$gv_var_color_by)
-                        }
-                   })
-           })
+      for (i in 1:15) {
+        local({
+          my_i <- i
+          gv_plotname <- paste("plot", my_i, sep="")
+            output[[gv_plotname]] <- renderPlot({
+               if(!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i])) {
+                 plot_bootstrap(obj,
+                   gv_var_list()[my_i],
+                   units = input$gv_var_units,
+                   color_by = input$gv_var_color_by)
+              }
+             })
+         })
         }
 
     output$no_genes_message <- renderUI({
-        if(is.null(obj$target_mapping))
-        {
-            HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br> &nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the <a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
-        }
+      if(is.null(obj$target_mapping)) {
+        HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br>',
+        '&nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the ',
+        '<a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
+      }
     })
 
     ### Heat Map
@@ -1312,8 +1444,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           offset = input$hm_offset)
 
         output$download_hm_plt_button <- renderUI({
-          div(align = "right", style = paste("margin-right:15px; margin-top:", (hm_plot_height() - default_hm_plot_height + 15), "px; margin-bottom:10px", sep = ""),
-                  downloadButton("download_hm_plt", "Download Plot"))
+          div(
+            align = "right",
+            style = paste("margin-right:15px; margin-top:",
+              (hm_plot_height() - default_hm_plot_height + 15),
+              "px; margin-bottom:10px",
+              sep = ""),
+            downloadButton("download_hm_plt", "Download Plot"))
           })
          saved_plots_and_tables$hm_plt
 
@@ -1321,9 +1458,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
 
     output$download_hm_plt <- downloadHandler(
-      filename = function() { "heat_map.pdf" },
+      filename = function() {
+        "heat_map.pdf"
+        },
       content = function(file) {
-         ggsave(file, saved_plots_and_tables$hm_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+       ggsave(file,
+         saved_plots_and_tables$hm_plt,
+         width = user_settings$save_width,
+         height = user_settings$save_height,
+         units = "cm")
     })
     ### Volcano Plot
     output$which_beta_ctrl_vol <- renderUI({
@@ -1335,7 +1478,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     output$vol <- renderPlot({
       which_test <- input$which_beta_vol
-      if ( is.null(which_test) ) {
+      if (is.null(which_test)) {
         possible_tests <- list_tests(obj, input$settings_test_type)
         possible_tests <- possible_tests[[input$which_model_vol]]
         which_test <- possible_tests[1]
@@ -1351,15 +1494,21 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_volcano_plt <- downloadHandler(
-      filename = function() { "volcano.pdf" },
+      filename = function() {
+        "volcano.pdf"
+        },
       content = function(file) {
-         ggsave(file, saved_plots_and_tables$volcano_plt, width = user_settings$save_width, height = user_settings$save_height, units = "cm")
+       ggsave(file,
+         saved_plots_and_tables$volcano_plt,
+         width = user_settings$save_width,
+         height = user_settings$save_height,
+         units = "cm")
     })
 
     #vol_observe
     output$vol_brush_out <- renderDataTable({
       wb <- input$which_beta_vol
-      if ( is.null(wb) ) {
+      if (is.null(wb)) {
         possible_tests <- list_tests(obj, input$settings_test_type)
         possible_tests <- possible_tests[[input$which_model_vol]]
         wb <- possible_tests[1]
@@ -1396,7 +1545,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$download_volcano_table <- downloadHandler(
-      filename = function() { "volcano_table.csv" },
+      filename = function() {
+        "volcano_table.csv"
+        },
       content = function(file) {
          write.csv(saved_plots_and_tables$volcano_table, file)
     })
