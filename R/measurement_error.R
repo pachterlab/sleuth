@@ -338,6 +338,8 @@ me_white_var <- function(df, sigma_col, sigma_q_col, X, tXX_inv) {
   res
 }
 
+
+
 #' @export
 bs_sigma_summary <- function(obj, transform = identity) {
   obs_counts <- obs_to_matrix(obj, "est_counts")
@@ -345,6 +347,53 @@ bs_sigma_summary <- function(obj, transform = identity) {
 
   bs_summary <- sleuth_summarize_bootstrap_col(obj, "est_counts", transform)
   bs_summary <- dplyr::group_by(bs_summary, target_id)
+  bs_summary <- dplyr::summarise(bs_summary,
+    sigma_q_sq = mean(bs_var_est_counts))
+
+  bs_summary <- as_df(bs_summary)
+
+  bs_sigma <- bs_summary$sigma_q_sq
+  names(bs_sigma) <- bs_summary$target_id
+  bs_sigma <- bs_sigma[rownames(obs_counts)]
+
+  list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
+}
+
+reads_per_base_transform <- function(reads_table, scale_factor) {
+  reads_table <- dplyr::mutate(reads_table,
+    reads_per_base = est_counts / eff_len,
+    scaled_reads_per_base = scale_factor * reads_per_base
+    )
+
+  reads_table
+}
+
+gene_summary <- function(obj, transform = identity) {
+  # stopifnot(is(obj, 'sleuth'))
+  obj_mod <- obj
+  scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
+  obj_mod$obs_norm_filt <- reads_per_base_transform(obj_mod$obs_norm_filt,
+    scale_factor = scale_factor)
+  obj_mod$obs_norm <- reads_per_base_transform(obj_mod$obs_norm,
+    scale_factor = scale_factor)
+
+  obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
+  obs_counts <- transform(obs_counts)
+
+  obj_mod$kal <- lapply(obj_mod$kal,
+    function(k) {
+      k$bootstrap <- lapply(k$bootstrap, function(b) {
+        reads_per_base_transform(b, scale_factor)
+      })
+
+      k
+    })
+
+  bs_summary <- sleuth_summarize_bootstrap_col(obj_mod, "scaled_reads_per_base",
+    transform)
+
+  bs_summary <- dplyr::group_by(bs_summary, target_id)
+  # FIXME: the column name 'bs_var_est_counts' is incorrect. should actually rename it above
   bs_summary <- dplyr::summarise(bs_summary,
     sigma_q_sq = mean(bs_var_est_counts))
 

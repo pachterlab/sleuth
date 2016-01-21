@@ -6,7 +6,8 @@
 \usage{
 sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
   target_mapping = NULL, max_bootstrap = NULL,
-  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors, ...)
+  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
+  gene_mode = FALSE, ...)
 }
 \arguments{
 \item{sample_to_covariates}{is a \code{data.frame} which contains a mapping

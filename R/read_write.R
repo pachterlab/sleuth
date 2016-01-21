@@ -158,6 +158,7 @@ h5check <- function(fname, group, name) {
   bs <- adf( target_id = main_est$target_id )
   bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
   bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
+  bs$eff_len <- main_est$eff_len
 
   bs
 }

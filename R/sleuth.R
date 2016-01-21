@@ -96,6 +96,7 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
+  gene_mode = FALSE,
   ...) {
 
   ##############################
@@ -266,7 +267,7 @@ sleuth_prep <- function(
     })
 
     # add in eff_len and len
-    obs_norm = dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
+    obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
 
     msg("normalizing bootstrap samples")
     ret$kal <- lapply(seq_along(ret$kal), function(i) {
@@ -285,13 +286,19 @@ sleuth_prep <- function(
     ret$tpm_sf <- tpm_sf
 
     msg('summarizing bootstraps')
-    # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
-    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
-    # TODO: check if normalized. if not, normalize
-    # TODO: in normalization step, take out all things that don't pass filter so
-    # don't have to filter out here
-    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+    bs_summary <- NULL
+    if (!gene_mode) {
+      bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
+      # TODO: check if normalized. if not, normalize
+      # TODO: in normalization step, take out all things that don't pass filter so
+      # don't have to filter out here
+      bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
+      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+    } else {
+      bs_summary <- gene_summary(ret, function(x) log(x + 0.5))
+      bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
+      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+    }
 
     ret$bs_summary <- bs_summary
   }
