@@ -96,7 +96,9 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
-  gene_mode = FALSE,
+  gene_mode = NULL,
+  filter_target_id = NULL,
+  norm_by_abundance = FALSE,
   ...) {
 
   ##############################
@@ -202,6 +204,43 @@ sleuth_prep <- function(
   rownames(design_matrix) <- sample_to_covariates$sample
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
+
+  ###
+  # try to deal with weird ensemble names
+  ###
+  # attempts to merge in metadata. if it doesn't work, try to deal with it
+  if (!is.null(target_mapping)) {
+    tmp <- data.table::data.table(obs_raw)
+    tmp_join <- dplyr::inner_join(tmp, data.table::data.table(target_mapping),
+      by = 'target_id')
+    if (!nrow(tmp_join)) {
+      # TODO: this means that there is something wrong with the mapping.
+      # you should probably get rid of the trailing .N
+      cat('in here!')
+      tmp <- dplyr::mutate(tmp, target_id = sub('\\.[0-9]+', '', target_id))
+      tmp_join <- dplyr::inner_join(tmp, data.table::data.table(target_mapping),
+        by = 'target_id')
+      warning('intersection between target id in and the target mapping is empty. attempting to solve the problem')
+
+      if (!nrow(tmp_join)) {
+        stop("couldn't solve nonzero intersection")
+      }
+
+      message("changing all bootstrap names")
+      kal_list <- lapply(kal_list,
+      # tmp <- lapply(ret$kal,
+        function(k) {
+          k$bootstrap <- lapply(k$bootstrap,
+            function(bs) {
+              dplyr::mutate(bs, target_id = sub('\\.[0-9]+', '', target_id))
+            })
+          k
+        })
+
+      obs_raw <- tmp
+    }
+  }
+
   ret <- list(
       kal = kal_list,
       kal_versions = kal_versions,
@@ -216,6 +255,26 @@ sleuth_prep <- function(
   # TODO: eventually factor this out
   normalize <- TRUE
   if ( normalize ) {
+
+    # FIXME: in the future, filtering should be performed here.
+    # For now, it's not a big deal since we filter using `filter_target_id`
+    # for benchmarking.
+
+    # if ( !is.null(gene_mode) ) {
+    #   #
+    #   obs_raw_genes <- dplyr::inner_join(
+    #     data.table::data.table(obs_raw),
+    #     data.table::data.table(target_mapping),
+    #     by = 'target_id')
+    #   obs_gene_raw <- dplyr::group_by_(obs_raw_genes, 'sample', gene_mode)
+    #   obs_raw_genes <- dplyr::summarize(obs_gene_raw,
+    #     total_counts = sum(est_counts))
+    #   obs_raw_gene_spread <- spread_abundance_by(obs_raw_genes, 'total_counts',
+    #     sample_to_covariates$sample)
+    #   gene_filter_bool <- apply(obs_raw_genes_spread, 1, filter_fun, ...)
+    #   gene_filter_true <- gene_filter_bool[gene_filter_bool]
+    # }
+
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
       sample_to_covariates$sample)
@@ -285,19 +344,90 @@ sleuth_prep <- function(
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
 
+
     msg('summarizing bootstraps')
     bs_summary <- NULL
-    if (!gene_mode) {
+    if (is.null(gene_mode)) {
       bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
       # TODO: check if normalized. if not, normalize
       # TODO: in normalization step, take out all things that don't pass filter so
       # don't have to filter out here
-      bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+      if (is.null(filter_target_id)) {
+        # if no target ids were specified for the filter, use the ones generated here
+        bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
+        bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+      } else {
+
+        if (length(intersect(filter_target_id,
+          rownames(bs_summary$obs_counts))) <
+          length(filter_target_id)) {
+
+          warning('There are some missing transcripts in the sleuth annotation: ',
+            length(setdiff(filter_target_id, rownames(bs_summary$obs_counts))), '\n')
+          warning('Taking the intersection and missing those')
+
+          filter_target_id <- intersect(filter_target_id,
+            rownames(bs_summary$obs_counts))
+        }
+
+        bs_summary$obs_counts <- bs_summary$obs_counts[filter_target_id, ]
+        bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[filter_target_id]
+        ret$filter_df <- adf(target_id = filter_target_id)
+        ret$obs_norm_filt <- dplyr::semi_join(obs_norm, ret$filter_df, by = 'target_id')
+      }
     } else {
-      bs_summary <- gene_summary(ret, function(x) log(x + 0.5))
-      bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+      bs_summary <- gene_summary(ret, gene_mode, function(x) log(x + 0.5),
+        norm_by_abundance = norm_by_abundance)
+      if (!is.null(filter_target_id)) {
+        if (length(intersect(filter_target_id,
+          rownames(bs_summary$obs_counts))) <
+          length(filter_target_id)) {
+
+          warning('There are some missing genes in the sleuth annotation: ',
+            length(setdiff(filter_target_id, rownames(bs_summary$obs_counts))), '\n')
+          warning('Taking the intersection and missing those')
+
+          filter_target_id <- intersect(filter_target_id,
+            rownames(bs_summary$obs_counts))
+        }
+
+        # ret$obs_norm_filt <- dplyr::semi_join(obs_norm, ret$filter_df, by = 'target_id')
+      } else {
+        # TODO: propagate the transcript filter here
+        tmp <- ret$obs_raw
+        tmp <- dplyr::group_by(tmp, target_id)
+        tmp <- dplyr::summarize(tmp, pass_filter = basic_filter(est_counts))
+        tmp <- data.table::data.table(tmp)
+        target_mapping <- data.table::data.table(target_mapping)
+        tmp_join <- dplyr::inner_join(tmp, target_mapping, by = 'target_id')
+        if (!nrow(tmp_join)) {
+          # TODO: this means that there is something wrong with the mapping.
+          # you should probably get rid of the trailing .N
+          cat('in unfortunately in here here!')
+          tmp <- dplyr::mutate(tmp, target_id = sub('\\.[0-9]+', '', target_id))
+          tmp_join <- dplyr::inner_join(tmp, target_mapping, by = 'target_id')
+          warning('intersection between target id in and the target mapping is empty. attempting to solve the problem')
+
+          if (!nrow(tmp_join)) {
+            stop("couldn't solve nonzero intersection")
+          }
+        }
+        tmp <- tmp_join
+        rm(tmp_join)
+        sleuth_gene_filter <- dplyr::filter(tmp, pass_filter)
+        sleuth_gene_filter <- dplyr::select_(sleuth_gene_filter,
+          # target_id = )
+          target_id = gene_mode)
+        sleuth_gene_filter <- dplyr::distinct(sleuth_gene_filter)
+        filter_target_id <- sleuth_gene_filter$target_id
+      }
+      bs_summary$obs_counts <- bs_summary$obs_counts[filter_target_id, ]
+      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[filter_target_id]
+      ret$filter_df <- adf(target_id = filter_target_id)
+
+      # gf <- propagate_transcript_filter(ret$filter_df, target_mapping, gene_mode)
+      # bs_summary$obs_counts <- bs_summary$obs_counts[gf$target_id, ]
+      # bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[gf$target_id]
     }
 
     ret$bs_summary <- bs_summary
@@ -315,7 +445,8 @@ check_kal_pack <- function(kal_list) {
   versions <- sapply(kal_list, function(x) attr(x, 'kallisto_version'))
   u_versions <- unique(versions)
   if ( length(u_versions) > 1) {
-    warning('More than one version of kallisto was used: ', u_versions)
+    warning('More than one version of kallisto was used: ',
+      paste(u_versions, collapse = "\n"))
   }
 
   ntargs <- sapply(kal_list, function(x) attr(x, 'num_targets'))
