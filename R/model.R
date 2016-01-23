@@ -35,7 +35,7 @@ print.sleuth_model <- function(obj) {
 #'
 #' View which models have been fit
 #'
-#' @param obj
+#' @param obj a sleuth object
 #' @export
 models <- function(obj, ...) {
   UseMethod('models')

@@ -104,13 +104,12 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
-
   msg('computing variance of betas')
   beta_covars <- lapply(1:nrow(l_smooth),
     function(i) {
       row <- l_smooth[i,]
       with(row,
-        covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
+          covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
         )
     })
   names(beta_covars) <- l_smooth$target_id
@@ -341,7 +340,11 @@ me_white_var <- function(df, sigma_col, sigma_q_col, X, tXX_inv) {
 
 
 #' @export
-bs_sigma_summary <- function(obj, transform = identity) {
+bs_sigma_summary <- function(obj, transform = identity, norm_by_length = FALSE) {
+  # if (norm_by_length) {
+  #   scaling_factor <- get_scaling_factors(obj$obs_raw)
+  #   reads_per_base_transform()
+  # }
   obs_counts <- obs_to_matrix(obj, "est_counts")
   obs_counts <- transform( obs_counts )
 
@@ -359,31 +362,90 @@ bs_sigma_summary <- function(obj, transform = identity) {
   list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
 }
 
-reads_per_base_transform <- function(reads_table, scale_factor) {
+# transform reads into reads per base
+#
+#
+reads_per_base_transform <- function(reads_table, scale_factor_input,
+  collapse_column = NULL,
+  mapping = NULL,
+  norm_by_length = TRUE) {
+
+  if (is(scale_factor_input, 'data.frame')) {
+    message('USING NORMALIZATION BY EFFECTIVE LENGTH')
+    # browser()
+    reads_table <- dplyr::left_join(
+      data.table::as.data.table(reads_table),
+      data.table::as.data.table(dplyr::select(scale_factor_input, target_id, sample, scale_factor)),
+      by = c('sample', 'target_id'))
+  } else {
+    reads_table <- dplyr::mutate(reads_table, scale_factor = scale_factor_input)
+  }
+  # browser()
   reads_table <- dplyr::mutate(reads_table,
     reads_per_base = est_counts / eff_len,
     scaled_reads_per_base = scale_factor * reads_per_base
     )
 
-  reads_table
+  reads_table <- data.table::as.data.table(reads_table)
+
+  if (!is.null(collapse_column)) {
+    mapping <- data.table::as.data.table(mapping)
+    # old stuff
+    if (!(collapse_column %in% colnames(reads_table))) {
+      reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
+    }
+    # browser()
+    # reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
+
+    rows_to_remove <- !is.na(reads_table[[collapse_column]])
+    reads_table <- dplyr::filter(reads_table, rows_to_remove)
+    if ('sample' %in% colnames(reads_table)) {
+      reads_table <- dplyr::group_by_(reads_table, 'sample', collapse_column)
+    } else {
+      reads_table <- dplyr::group_by_(reads_table, collapse_column)
+    }
+
+    reads_table <- dplyr::summarize(reads_table,
+      scaled_reads_per_base = sum(scaled_reads_per_base))
+    data.table::setnames(reads_table, collapse_column, 'target_id')
+  }
+
+  as_df(reads_table)
 }
 
-gene_summary <- function(obj, transform = identity) {
+gene_summary <- function(obj, which_column, transform = identity, norm_by_length = TRUE) {
   # stopifnot(is(obj, 'sleuth'))
   obj_mod <- obj
-  scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
+  if (norm_by_length) {
+    tmp <- obj$obs_raw
+    # tmp <- as.data.table(tmp)
+    tmp <- dplyr::left_join(
+      data.table::as.data.table(tmp),
+      data.table::as.data.table(obj$target_mapping),
+      by = 'target_id')
+    tmp <- dplyr::group_by_(tmp, 'sample', which_column)
+    scale_factor <- dplyr::mutate(tmp, scale_factor = median(eff_len))
+  } else {
+    scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
+  }
+  # scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
   obj_mod$obs_norm_filt <- reads_per_base_transform(obj_mod$obs_norm_filt,
-    scale_factor = scale_factor)
+    scale_factor, which_column, obj$target_mapping, norm_by_length)
   obj_mod$obs_norm <- reads_per_base_transform(obj_mod$obs_norm,
-    scale_factor = scale_factor)
+    scale_factor, which_column, obj$target_mapping, norm_by_length)
 
   obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
   obs_counts <- transform(obs_counts)
 
-  obj_mod$kal <- lapply(obj_mod$kal,
-    function(k) {
+  obj_mod$kal <- lapply(seq_along(obj_mod$kal),
+    function(i) {
+      k <- obj_mod$kal[[i]]
+      current_sample <- obj_mod$sample_to_covariates$sample[i]
+      print(current_sample)
       k$bootstrap <- lapply(k$bootstrap, function(b) {
-        reads_per_base_transform(b, scale_factor)
+        b <- dplyr::mutate(b, sample = current_sample)
+        reads_per_base_transform(b, scale_factor, which_column,
+          obj$target_mapping, norm_by_length)
       })
 
       k
@@ -395,7 +457,7 @@ gene_summary <- function(obj, transform = identity) {
   bs_summary <- dplyr::group_by(bs_summary, target_id)
   # FIXME: the column name 'bs_var_est_counts' is incorrect. should actually rename it above
   bs_summary <- dplyr::summarise(bs_summary,
-    sigma_q_sq = mean(bs_var_est_counts))
+    sigma_q_sq = mean(bs_var_scaled_reads_per_base))
 
   bs_summary <- as_df(bs_summary)
 

@@ -96,7 +96,7 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
-  gene_mode = FALSE,
+  gene_mode = NULL,
   ...) {
 
   ##############################
@@ -153,6 +153,7 @@ sleuth_prep <- function(
     stop("norm_fun_tpm must be a function")
   }
 
+
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
 
@@ -202,6 +203,17 @@ sleuth_prep <- function(
   rownames(design_matrix) <- sample_to_covariates$sample
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
+
+  ###
+  # try to deal with weird ensemble names
+  ###
+  if (!is.null(target_mapping)) {
+    tmp_names <- data.frame(target_id = kal_list[[1]]$abundance$target_id,
+      stringsAsFactors = FALSE)
+    target_mapping <- check_target_mapping(tmp_names, target_mapping)
+    rm(tmp_names)
+  }
+
   ret <- list(
       kal = kal_list,
       kal_versions = kal_versions,
@@ -216,6 +228,7 @@ sleuth_prep <- function(
   # TODO: eventually factor this out
   normalize <- TRUE
   if ( normalize ) {
+
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
       sample_to_covariates$sample)
@@ -285,19 +298,34 @@ sleuth_prep <- function(
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
 
+
     msg('summarizing bootstraps')
     bs_summary <- NULL
-    if (!gene_mode) {
+    if (is.null(gene_mode)) {
       bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
-      # TODO: check if normalized. if not, normalize
-      # TODO: in normalization step, take out all things that don't pass filter so
-      # don't have to filter out here
+      # if no target ids were specified for the filter, use the ones generated here
       bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
       bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
     } else {
-      bs_summary <- gene_summary(ret, function(x) log(x + 0.5))
-      bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+      bs_summary <- gene_summary(ret, gene_mode, function(x) log(x + 0.5))
+
+        tmp <- ret$obs_raw
+        tmp <- dplyr::group_by(tmp, target_id)
+        tmp <- dplyr::summarize(tmp, pass_filter = basic_filter(est_counts))
+        tmp <- data.table::data.table(tmp)
+        target_mapping <- data.table::data.table(target_mapping)
+        tmp <- dplyr::inner_join(tmp, target_mapping, by = 'target_id')
+
+        sleuth_gene_filter <- dplyr::filter(tmp, pass_filter)
+        sleuth_gene_filter <- dplyr::select_(sleuth_gene_filter,
+          target_id = gene_mode)
+        sleuth_gene_filter <- dplyr::distinct(sleuth_gene_filter)
+        filter_target_id <- sleuth_gene_filter$target_id
+
+      bs_summary$obs_counts <- bs_summary$obs_counts[filter_target_id, ]
+      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[filter_target_id]
+      ret$filter_df <- adf(target_id = filter_target_id)
+
     }
 
     ret$bs_summary <- bs_summary
@@ -315,7 +343,8 @@ check_kal_pack <- function(kal_list) {
   versions <- sapply(kal_list, function(x) attr(x, 'kallisto_version'))
   u_versions <- unique(versions)
   if ( length(u_versions) > 1) {
-    warning('More than one version of kallisto was used: ', u_versions)
+    warning('More than one version of kallisto was used: ',
+      paste(u_versions, collapse = "\n"))
   }
 
   ntargs <- sapply(kal_list, function(x) attr(x, 'num_targets'))
@@ -327,6 +356,48 @@ check_kal_pack <- function(kal_list) {
   no_bootstrap <- which(sapply(kal_list, function(x) length(x$bootstrap) == 0))
 
   list(versions = u_versions, no_bootstrap = no_bootstrap)
+}
+
+# this function is mostly to deal with annoying ENSEMBL transcript names that
+# have a training .N to keep track of version number
+#
+# @return the target_mapping if an intersection is found. a target_mapping that
+# matches \code{t_id} if no matching is found
+check_target_mapping <- function(t_id, target_mapping) {
+  t_id <- data.table::as.data.table(t_id)
+  target_mapping <- data.table::as.data.table(target_mapping)
+
+  tmp_join <- dplyr::inner_join(t_id, target_mapping, by = 'target_id')
+
+  if (!nrow(tmp_join)) {
+    t_id <- dplyr::mutate(t_id, target_id_old = sub('\\.[0-9]+', '', target_id))
+    target_mapping_upd <- dplyr::rename(target_mapping, target_id_old = target_id)
+
+    tmp_join <- dplyr::inner_join(t_id, target_mapping_upd,
+      c('target_id_old'))
+
+    if (!nrow(tmp_join)) {
+      stop("couldn't solve nonzero intersection")
+    }
+
+    target_mapping <- dplyr::left_join(target_mapping,
+      unique(dplyr::select(tmp_join, target_id_new = target_id,
+        target_id = target_id_old),
+        by = NULL),
+      by = 'target_id')
+    # if we couldn't recover, use the old one
+    target_mapping <- dplyr::mutate(target_mapping,
+      target_id_new = ifelse(is.na(target_id_new), target_id, target_id_new))
+    target_mapping <- dplyr::select(target_mapping, -target_id)
+    target_mapping <- dplyr::rename(target_mapping, target_id = target_id_new)
+
+    warning(paste0('intersection between target_id from kallisto runs and ',
+      'the target_mapping is empty. attempted to fix problem by removing .N ',
+      'from target_id, then merging back into target_mapping.',
+      ' please check obj$target_mapping to ensure this new mapping is correct.'))
+  }
+
+  target_mapping
 }
 
 #' Normalization factors
