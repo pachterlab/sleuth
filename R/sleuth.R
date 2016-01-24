@@ -180,10 +180,10 @@ sleuth_prep <- function(
   msg('')
 
   check_result <- check_kal_pack(kal_list)
-  if ( length(check_result$no_bootstrap) > 0 ) {
-    stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
-      paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
-  }
+  #if ( length(check_result$no_bootstrap) > 0 ) {
+  #  stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
+  #    paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
+  #} MARK: DEBUG
 
   kal_versions <- check_result$versions
 
@@ -269,12 +269,43 @@ sleuth_prep <- function(
     obs_norm = dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
 
     msg("normalizing bootstrap samples")
-    ret$kal <- lapply(seq_along(ret$kal), function(i) {
-      normalize_bootstrap(ret$kal[[i]],
-        tpm_size_factor = tpm_sf[i],
-        est_counts_size_factor = est_counts_sf[i])
-      })
-
+    
+    #ret$kal <- lapply(seq_along(ret$kal), function(i) {
+    #  normalize_bootstrap(ret$kal[[i]],
+    #    tpm_size_factor = tpm_sf[i],
+    #    est_counts_size_factor = est_counts_sf[i])
+    #  }) MARK: DEBUG
+    
+    #ret$kal <- lapply(seq_along(ret$kal), function(i) {
+    #    path <- kal_dirs[i]
+    #    kal_path <- get_kallisto_path(path)
+    #    num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
+    #    target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
+    #    abund <- adf(target_id = target_id)
+    #    ret$kal[[i]]$bs_stats <- read_bootstrap_statistics(fname=kal_path$path,
+    #        num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
+    #        num_transcripts=length(abund$target_id))
+    #
+    #    ret$kal[[i]]
+    #}) MARK: DEBUG
+    
+    ret$bs_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
+        path <- kal_dirs[i]
+        kal_path <- get_kallisto_path(path)
+        num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
+        target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
+        abund <- adf(target_id = target_id)
+        bs_stats <- read_bootstrap_statistics(fname=kal_path$path,
+            num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
+            num_transcripts=length(abund$target_id))
+        bs_stats
+    }))
+    
+    browser()
+    ret$bs_summary <- list(varMeans = data.frame(varMeans = rowMeans(ret$bs_summary)))
+    path <- kal_dirs[1]
+    kal_path <- get_kallisto_path(path)
+    rownames(ret$bs_summary$varMeans) <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
 
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
@@ -292,7 +323,7 @@ sleuth_prep <- function(
     # don't have to filter out here
     bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
     bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
-
+    
     ret$bs_summary <- bs_summary
   }
 

@@ -122,34 +122,34 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   #  } else {
   #    msg("No bootstrap samples found")
   #  }
-  #}
+  #} MARK: DEBUG
   
   bs_stats <- data.frame()
   
-  if (read_bootstrap)
-  {
-    num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
-    if (num_bootstrap > 0)
-    {
-      msg("Found ", num_bootstrap, " bootstrap samples")
-      if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap)
-      {
-        msg("Only reading ", max_bootstrap, " bootstrap samples")
-        num_bootstrap <- max_bootstrap
-      }
-      
-      bs_stats <- adf(read_bootstrap_statistics(fname=fname, num_bootstrap=num_bootstrap,
-                                        num_transcripts=length(abund$target_id)))
-      colnames(bs_stats) <- c("sd", "mean")
-      
-      bs_stats$target_id <- abund$target_id
-    }
-    
-    else
-    {
-      msg("No bootstrap samples found")
-    }
-  }
+  #if (read_bootstrap)
+  #{
+  #  num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
+  #  if (num_bootstrap > 0)
+  #  {
+  #    msg("Found ", num_bootstrap, " bootstrap samples")
+  #    if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap)
+  #    {
+  #      msg("Only reading ", max_bootstrap, " bootstrap samples")
+  #      num_bootstrap <- max_bootstrap
+  #    }
+  #
+  #    bs_stats <- adf(read_bootstrap_statistics(fname=fname, num_bootstrap=num_bootstrap,
+  #                                      num_transcripts=length(abund$target_id)))
+  #    colnames(bs_stats) <- c("sd", "mean")
+  #
+  #    bs_stats$target_id <- abund$target_id
+  #  }
+  #
+  #  else
+  #  {
+  #    msg("No bootstrap samples found")
+  #  }
+  #} MARK: DEBUG
 
   abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
@@ -199,11 +199,13 @@ h5check <- function(fname, group, name) {
 #' @param num_transcripts the number of transcripts
 #' @param fname the file name for the HDF5 file
 #' @param num_bootstraps the number of bootstraps
+#' @param transform a function to apply to each bootstrap
+#' @param est_counts_sf a double to divide all the bootstraps by
 #' @return a \code{data.frame} containing with columns for the summary statistics
 #' and a row for each transcript
 
 read_bootstrap_statistics <- function(fname, num_bootstraps,
-    num_transcripts, transform = function(x) log(x + 0.5))
+    num_transcripts, est_count_sf, transform = function(x) log(x + 0.5))
 {
     #bs_mat <- matrix(0, nrow = num_bootstraps[1], ncol = num_transcripts)
     
@@ -212,14 +214,11 @@ read_bootstrap_statistics <- function(fname, num_bootstraps,
     #    bs_mat[row,] = transform(h5read("abundance.h5", paste0("bootstrap/bs", row - 1)))
     #}
     
-    #Where to normalize samples?
-    
     bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
-        transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
+        transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
     }))
-    
     bs_stats <- apply(bs_mat, 2, sd)
-    bs_stats <- cbind(bs_stats, apply(bs_mat, 2, mean))
+    #bs_stats <- cbind(bs_stats, apply(bs_mat, 2, mean))
     #Do any other statistical computation here...
 }
 
