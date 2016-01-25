@@ -289,6 +289,14 @@ sleuth_prep <- function(
     #    ret$kal[[i]]
     #}) MARK: DEBUG
     
+    obs_norm <- as_df(obs_norm)
+    ret$obs_norm <- obs_norm
+    ret$est_counts_sf <- est_counts_sf
+    ret$filter_bool <- filter_bool
+    ret$filter_df <- filter_df
+    ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
+    ret$tpm_sf <- tpm_sf
+    
     ret$bs_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
         path <- kal_dirs[i]
         kal_path <- get_kallisto_path(path)
@@ -301,28 +309,27 @@ sleuth_prep <- function(
         bs_stats
     }))
     
-    browser()
-    ret$bs_summary <- list(varMeans = data.frame(varMeans = rowMeans(ret$bs_summary)))
+    msg('summarizing bootstraps')
+    bs_summary <- list(varMeans = data.frame(varMeans = rowMeans(ret$bs_summary)))
     path <- kal_dirs[1]
     kal_path <- get_kallisto_path(path)
-    rownames(ret$bs_summary$varMeans) <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
-
-    obs_norm <- as_df(obs_norm)
-    ret$obs_norm <- obs_norm
-    ret$est_counts_sf <- est_counts_sf
-    ret$filter_bool <- filter_bool
-    ret$filter_df <- filter_df
-    ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
-    ret$tpm_sf <- tpm_sf
-
-    msg('summarizing bootstraps')
+    bs_summary$varMeans$target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids")) #I'm sure this is already stored somewhere, but where??? MARK: DEBUG
+    obs_counts <- obs_to_matrix(ret, "est_counts")
+    obs_counts <- log(obs_counts + 0.5) #arbitrary transformation
+    
+    bs_summary$obs_counts <- obs_counts[ret$filter_df$target_id, ]
+    bs_summary$varMeans <- bs_summary$varMeans[bs_summary$varMeans$target_id %in% ret$filter_df$target_id, ]
+    bs_summary$varMeans <- bs_summary$varMeans[[1]] #convert to vector from df
+    
+    
+    #msg('summarizing bootstraps') MARK: DEBUG
     # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
-    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
+    #bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5)) MARK: DEBUG
     # TODO: check if normalized. if not, normalize
     # TODO: in normalization step, take out all things that don't pass filter so
     # don't have to filter out here
-    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+    #bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ] MARK: DEBUG
+    #bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id] MARK: DEBUG
     
     ret$bs_summary <- bs_summary
   }
