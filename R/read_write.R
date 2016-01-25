@@ -217,7 +217,7 @@ read_bootstrap_statistics <- function(fname, num_bootstraps,
     bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
         transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
     }))
-    bs_stats <- apply(bs_mat, 2, sd)
+    bs_stats <- apply(bs_mat, 2, var)
     #bs_stats <- cbind(bs_stats, apply(bs_mat, 2, mean))
     #Do any other statistical computation here...
 }
