@@ -310,16 +310,16 @@ sleuth_prep <- function(
     }))
     
     msg('summarizing bootstraps')
-    bs_summary <- list(varMeans = data.frame(varMeans = rowMeans(ret$bs_summary)))
+    bs_summary <- list(sigma_q_sq = data.frame(varMeans = rowMeans(ret$bs_summary)))
     path <- kal_dirs[1]
     kal_path <- get_kallisto_path(path)
-    bs_summary$varMeans$target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids")) #I'm sure this is already stored somewhere, but where??? MARK: DEBUG
+    bs_summary$sigma_q_sq$target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids")) #I'm sure this is already stored somewhere, but where??? MARK: DEBUG
     obs_counts <- obs_to_matrix(ret, "est_counts")
     obs_counts <- log(obs_counts + 0.5) #arbitrary transformation
     
     bs_summary$obs_counts <- obs_counts[ret$filter_df$target_id, ]
-    bs_summary$varMeans <- bs_summary$varMeans[bs_summary$varMeans$target_id %in% ret$filter_df$target_id, ]
-    bs_summary$varMeans <- bs_summary$varMeans[[1]] #convert to vector from df
+    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[bs_summary$sigma_q_sq$target_id %in% ret$filter_df$target_id, ]
+    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[[1]] #convert to vector from df
     
     
     #msg('summarizing bootstraps') MARK: DEBUG
