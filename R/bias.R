@@ -3,12 +3,13 @@
 
 #test for local machine
 
-#setwd("~/Documents/Research/sleuth/ellahi/results")
+setwd("~/Documents/Research/sleuth/ellahi/results")
 
 library(ggplot2)
 
 bias_graph <- function(obj,  
 	sample = "",
+	legend = TRUE,
 	...) {
 	stopifnot( is(obj, 'sleuth'))
   
@@ -63,8 +64,13 @@ bias_graph <- function(obj,
 
 	final_df <- rbind(A_df, C_df, G_df, T_df)
 
-	p <- ggplot(final_df, aes(index, bias))+ geom_line(aes(colour = base, group = base))
-	p <- p + geom_point(aes(colour = factor(base)))
+
+	p <- ggplot(final_df, aes(index, bias)) + geom_line(aes(colour = base, group = base), linetype = "dotted")
+	if (!legend) {
+		p <- p + geom_point(aes(colour = factor(base)))
+	} else {
+		p <- p + geom_text()
+	}
 	p <- p + scale_x_continuous(breaks = 1:6)
 	p <- p + xlab("hexamer index") + ylab("bias weight")
 
