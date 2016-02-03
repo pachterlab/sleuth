@@ -106,50 +106,24 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     bias_normalized <- rhdf5::h5read(fname, 'aux/bias_normalized')
   }
 
-  #bs_samples <- list()
-  #if (read_bootstrap) {
-  #  num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
-  #  if (num_bootstrap > 0) {
-  #    msg("Found ", num_bootstrap, " bootstrap samples")
-  #    if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap) {
-  #      msg("Only reading ", max_bootstrap, " bootstrap samples")
-  #      num_bootstrap <- max_bootstrap
-  #    }
-  #    bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
-  #      {
-  #        .read_bootstrap_hdf5(fname, i, abund)
-  #      })
-  #  } else {
-  #    msg("No bootstrap samples found")
-  #  }
-  #} MARK: DEBUG
-  
+  bs_samples <- list()
+  if (read_bootstrap) {
+    num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
+    if (num_bootstrap > 0) {
+      msg("Found ", num_bootstrap, " bootstrap samples")
+      if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap) {
+        msg("Only reading ", max_bootstrap, " bootstrap samples")
+        num_bootstrap <- max_bootstrap
+      }
+      bs_samples <- lapply(0:(num_bootstrap[1] - 1), function(i) {
+          .read_bootstrap_hdf5(fname, i, abund)
+        })
+    } else {
+      msg("No bootstrap samples found")
+    }
+  }
+
   bs_stats <- data.frame()
-  
-  #if (read_bootstrap)
-  #{
-  #  num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
-  #  if (num_bootstrap > 0)
-  #  {
-  #    msg("Found ", num_bootstrap, " bootstrap samples")
-  #    if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap)
-  #    {
-  #      msg("Only reading ", max_bootstrap, " bootstrap samples")
-  #      num_bootstrap <- max_bootstrap
-  #    }
-  #
-  #    bs_stats <- adf(read_bootstrap_statistics(fname=fname, num_bootstrap=num_bootstrap,
-  #                                      num_transcripts=length(abund$target_id)))
-  #    colnames(bs_stats) <- c("sd", "mean")
-  #
-  #    bs_stats$target_id <- abund$target_id
-  #  }
-  #
-  #  else
-  #  {
-  #    msg("No bootstrap samples found")
-  #  }
-  #} MARK: DEBUG
 
   abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
@@ -157,7 +131,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     abundance = abund,
     bias_normalized = bias_normalized,
     bias_observed = bias_observed,
-    #bootstrap = bs_samples,
+    bootstrap = bs_samples,
     bs_stats = bs_stats,
     fld = fld
     )
@@ -186,7 +160,6 @@ h5check <- function(fname, group, name) {
   bs <- adf( target_id = main_est$target_id )
   bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
   bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
-  
   bs
 }
 
@@ -205,24 +178,20 @@ h5check <- function(fname, group, name) {
 #' and a row for each transcript
 
 read_bootstrap_statistics <- function(fname, num_bootstraps,
-    num_transcripts, est_count_sf, transform = function(x) log(x + 0.5))
-{
+    num_transcripts, est_count_sf, transform = function(x) log(x + 0.5)) {
     #bs_mat <- matrix(0, nrow = num_bootstraps[1], ncol = num_transcripts)
-    
     #for(row in 1:num_bootstraps[1])
     #{
     #    bs_mat[row,] = transform(h5read("abundance.h5", paste0("bootstrap/bs", row - 1)))
     #}
-    
     bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
         transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
     }))
+
     bs_stats <- apply(bs_mat, 2, var)
     #bs_stats <- cbind(bs_stats, apply(bs_mat, 2, mean))
     #Do any other statistical computation here...
 }
-
-
 
 #' Read kallisto plaintext output
 #'

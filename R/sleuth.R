@@ -103,7 +103,7 @@ sleuth_prep <- function(
 
   # data types
 
-  if ( !is(sample_to_covariates, "data.frame") ) {
+  if (!is(sample_to_covariates, "data.frame")) {
     stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
@@ -184,7 +184,6 @@ sleuth_prep <- function(
   #  stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
   #    paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
   #} MARK: DEBUG
-
   kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
@@ -266,29 +265,16 @@ sleuth_prep <- function(
     })
 
     # add in eff_len and len
-    obs_norm = dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
+    obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
 
     msg("normalizing bootstrap samples")
-    
-    #ret$kal <- lapply(seq_along(ret$kal), function(i) {
-    #  normalize_bootstrap(ret$kal[[i]],
-    #    tpm_size_factor = tpm_sf[i],
-    #    est_counts_size_factor = est_counts_sf[i])
-    #  }) MARK: DEBUG
-    
-    #ret$kal <- lapply(seq_along(ret$kal), function(i) {
-    #    path <- kal_dirs[i]
-    #    kal_path <- get_kallisto_path(path)
-    #    num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-    #    target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
-    #    abund <- adf(target_id = target_id)
-    #    ret$kal[[i]]$bs_stats <- read_bootstrap_statistics(fname=kal_path$path,
-    #        num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
-    #        num_transcripts=length(abund$target_id))
-    #
-    #    ret$kal[[i]]
-    #}) MARK: DEBUG
-    
+
+    ret$kal <- lapply(seq_along(ret$kal), function(i) {
+        normalize_bootstrap(ret$kal[[i]],
+        tpm_size_factor = tpm_sf[i],
+        est_counts_size_factor = est_counts_sf[i])
+    })
+
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
     ret$est_counts_sf <- est_counts_sf
@@ -296,41 +282,63 @@ sleuth_prep <- function(
     ret$filter_df <- filter_df
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
-    
-    ret$bs_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
+
+    path <- kal_dirs[1]
+    kal_path <- get_kallisto_path(path)
+    target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
+    num_transcripts <- length(target_id)
+    ret$bs_test_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
         path <- kal_dirs[i]
         kal_path <- get_kallisto_path(path)
         num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-        target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
-        abund <- adf(target_id = target_id)
         bs_stats <- read_bootstrap_statistics(fname=kal_path$path,
             num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
-            num_transcripts=length(abund$target_id))
+            num_transcripts=num_transcripts)
         bs_stats
     }))
-    
+
+    bs_test_summary <- adf(ret$bs_test_summary)
+    bs_test_summary$target_id <- target_id
+    bs_test_summary <- bs_test_summary[order(bs_test_summary$target_id), ]
+    bs_test_summary <- data.frame(varMeans =
+        rowMeans(bs_test_summary[,names(bs_test_summary) != "target_id"]), target_id =
+        bs_test_summary$target_id)
+
     msg('summarizing bootstraps')
-    bs_summary <- list(sigma_q_sq = data.frame(varMeans = rowMeans(ret$bs_summary)))
+    bs_test_summary <- list(sigma_q_sq = bs_test_summary)
+
     path <- kal_dirs[1]
     kal_path <- get_kallisto_path(path)
-    bs_summary$sigma_q_sq$target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids")) #I'm sure this is already stored somewhere, but where??? MARK: DEBUG
     obs_counts <- obs_to_matrix(ret, "est_counts")
     obs_counts <- log(obs_counts + 0.5) #arbitrary transformation
-    
-    bs_summary$obs_counts <- obs_counts[ret$filter_df$target_id, ]
-    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[bs_summary$sigma_q_sq$target_id %in% ret$filter_df$target_id, ]
-    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[[1]] #convert to vector from df
-    
-    
-    #msg('summarizing bootstraps') MARK: DEBUG
+
+    browser()
+
+    bs_test_summary$obs_counts <- obs_counts[rownames(obs_counts)
+        %in% ret$filter_df$target_id, ]
+    bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[bs_test_summary$sigma_q_sq
+        $target_id %in% ret$filter_df$target_id, ]
+    target_id <- as.character(bs_test_summary$sigma_q_sq$target_id)
+    bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[[1]] #convert to vector from df
+    names(bs_test_summary$sigma_q_sq) <- target_id
+
+    msg('summarizing bootstraps') #MARK: DEBUG
     # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
-    #bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5)) MARK: DEBUG
+    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
     # TODO: check if normalized. if not, normalize
     # TODO: in normalization step, take out all things that don't pass filter so
     # don't have to filter out here
-    #bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ] MARK: DEBUG
-    #bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id] MARK: DEBUG
-    
+    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
+    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+
+    #CHECK IF DOES EXACTLY THE SAME AS PREVIOUS IMPLEMENTATION
+    #TODO: Run through lintr tests (see contributin.md)
+    #Uncomment reading bootstraps in read_kallisto
+    #Make sure to not crash if read_bootstraps is false
+    #merge to branch in actual repo
+    #Make pull request
+    browser()
+
     ret$bs_summary <- bs_summary
   }
 
@@ -338,7 +346,6 @@ sleuth_prep <- function(
 
   ret
 }
-
 
 # check versions of kallistos and num bootstraps, etc
 check_kal_pack <- function(kal_list) {
@@ -428,7 +435,6 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
       dplyr::mutate(summarize_bootstrap(obj$kal[[i]], col, transform),
         sample = cur_samp)
     })
-
   dplyr::bind_rows(res)
 }
 
