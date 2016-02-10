@@ -38,7 +38,8 @@
 #' @return a sleuth object with updated attributes
 #' @seealso \code{\link{models}} for seeing which models have been fit,
 #' \code{\link{sleuth_prep}} for creating a sleuth object,
-#' \code{\link{sleuth_test}} to test whether a coefficient is zero
+#' \code{\link{sleuth_wt}} to test whether a coefficient is zero or
+#' \code{\link{sleuth_lrt}} to compare two different models
 #' @export
 sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   stopifnot( is(obj, 'sleuth') )
@@ -71,8 +72,9 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     X <- formula
   }
   rownames(X) <- obj$sample_to_covariates$sample
-  A <- solve( t(X) %*% X )
+  A <- solve(t(X) %*% X)
 
+  msg("fitting measurement error models")
   mes <- me_model_by_row(obj, X, obj$bs_summary)
   tid <- names(mes)
 
@@ -249,8 +251,7 @@ me_model_by_row <- function(obj, design, bs_summary) {
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
-    function(i)
-    {
+    function(i) {
       me_model(design, bs_summary$obs_counts[i,], bs_summary$sigma_q_sq[i])
     })
   names(models) <- rownames(bs_summary$obs_counts)
@@ -288,7 +289,7 @@ me_heteroscedastic_by_row <- function(obj, design, samp_bs_summary, obs_counts) 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
       res <- me_white_model(design, obs_counts[i,], sigma_q_sq[i,], A)
-      res$df$target_id = rownames(obs_counts)[i]
+      res$df$target_id <- rownames(obs_counts)[i]
       res
     })
   names(models) <- rownames(obs_counts)
@@ -356,8 +357,7 @@ bs_sigma_summary <- function(obj, transform = identity) {
   list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
 }
 
-me_model <- function(X, y, sigma_q_sq)
-{
+me_model <- function(X, y, sigma_q_sq) {
   n <- nrow(X)
   degrees_free <- n - ncol(X)
 

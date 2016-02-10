@@ -107,7 +107,7 @@ jsd <- function(p, q) {
   p <- p / sum(p)
   q <- q / sum(q)
 
-  m <- (p + q)/2
+  m <- (p + q) / 2
   (kld(p, m) + kld(q, m)) / 2
 }
 

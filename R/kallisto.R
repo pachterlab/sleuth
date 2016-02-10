@@ -62,7 +62,8 @@ bias_table.sleuth <- function(obj, sample) {
 #' @export
 bias_table.kallisto <- function(obj) {
   if ( length(obj$fld) == 1 && all(is.na(obj$fld)) ) {
-    stop("kallisto object does not contain the fragment length distribution. Please rerun with a new version of kallisto.")
+    stop("kallisto object does not contain the fragment length distribution.",
+      "Please rerun with a new version of kallisto.")
   }
 
   adf(

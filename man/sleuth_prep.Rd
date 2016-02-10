@@ -49,7 +49,7 @@ accounting for covariates, sequencing depth, technical and biological
 variance.
 }
 \seealso{
-\code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-test whether a coeffient in the model is zero
+\code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
+test whether a coeffient in the model is zero or \code{\link{sleuth_lrt}} to compare different models
 }
 

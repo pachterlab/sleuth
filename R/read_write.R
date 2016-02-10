@@ -71,7 +71,10 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
   if ( length(target_id) != length(unique(target_id))) {
     tid_counts <- table(target_id)
-    warning('Some target_ids in your kallisto index are exactly the same. We will make these unique but strongly suggest you change the names of the FASTA and recreate the index.',
+    warning(
+      'Some target_ids in your kallisto index are exactly the same.',
+      ' We will make these unique but strongly suggest you change the names',
+      ' of the FASTA and recreate the index.',
       ' These are the repeats: ',
       paste(names(tid_counts[which(tid_counts > 1)]), collapse = ', '))
     rm(tid_counts)
@@ -84,13 +87,13 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
   abund$len <- as.numeric(rhdf5::h5read(fname, "aux/lengths"))
 
-  num_processed <- if ( h5check(fname, '/aux', 'num_processed') ) {
+  num_processed <- if ( h5check(fname, '/aux', 'num_processed') ) { # nolint
     as.integer(rhdf5::h5read(fname, 'aux/num_processed'))
   } else {
     NA_integer_
   }
 
-  fld <- if ( h5check(fname, '/aux', 'fld') ) {
+  fld <- if ( h5check(fname, '/aux', 'fld') ) { # nolint
     as.integer(rhdf5::h5read(fname, 'aux/fld'))
   } else {
     NA_integer_
@@ -98,7 +101,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 
   bias_observed <- NA
   bias_normalized <- NA
-  if ( h5check(fname, '/aux', 'bias_observed') ) {
+  if ( h5check(fname, '/aux', 'bias_observed') ) { # nolint
     bias_observed <- rhdf5::h5read(fname, 'aux/bias_observed')
     bias_normalized <- rhdf5::h5read(fname, 'aux/bias_normalized')
   }
@@ -112,14 +115,15 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
         msg("Only reading ", max_bootstrap, " bootstrap samples")
         num_bootstrap <- max_bootstrap
       }
-      bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
-        {
+      bs_samples <- lapply(0:(num_bootstrap[1] - 1), function(i) {
           .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {
       msg("No bootstrap samples found")
     }
   }
+
+  bs_stats <- data.frame()
 
   abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
@@ -128,6 +132,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     bias_normalized = bias_normalized,
     bias_observed = bias_observed,
     bootstrap = bs_samples,
+    bs_stats = bs_stats,
     fld = fld
     )
   class(res) <- 'kallisto'
@@ -155,8 +160,37 @@ h5check <- function(fname, group, name) {
   bs <- adf( target_id = main_est$target_id )
   bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
   bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
-
   bs
+}
+
+
+#'
+#' Computes the bootstrap summary statistics of each transcript in a kallisto
+#' object.
+#'
+#'
+#' @param num_transcripts the number of transcripts
+#' @param fname the file name for the HDF5 file
+#' @param num_bootstraps the number of bootstraps
+#' @param transform a function to apply to each bootstrap
+#' @param est_counts_sf a double to divide all the bootstraps by
+#' @return a \code{data.frame} containing with columns for the summary statistics
+#' and a row for each transcript
+
+read_bootstrap_statistics <- function(fname, num_bootstraps,
+    num_transcripts, est_count_sf, transform = function(x) log(x + 0.5)) {
+    #bs_mat <- matrix(0, nrow = num_bootstraps[1], ncol = num_transcripts)
+    #for(row in 1:num_bootstraps[1])
+    #{
+    #    bs_mat[row,] = transform(h5read("abundance.h5", paste0("bootstrap/bs", row - 1)))
+    #}
+    bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
+        transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
+    }))
+
+    bs_stats <- apply(bs_mat, 2, var)
+    #bs_stats <- cbind(bs_stats, apply(bs_mat, 2, mean))
+    #Do any other statistical computation here...
 }
 
 #' Read kallisto plaintext output
@@ -272,12 +306,12 @@ gtf_gene_names <- function(gtf_attr) {
     while ((nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
       j <= length(all_attr[[i]]) ) {
       if (all_attr[[i]][j] == "gene_id") {
-        gene_id[i] <- all_attr[[i]][j+1] %>%
+        gene_id[i] <- all_attr[[i]][j + 1] %>%
           gsub('"', "", .) %>%
           sub(";", "", .)
         j <- j + 2
       } else if (all_attr[[i]][j] == "transcript_id") {
-        trans_id[i] <- all_attr[[i]][j+1] %>%
+        trans_id[i] <- all_attr[[i]][j + 1] %>%
           gsub('"', "", .) %>%
           sub(";", "", .)
         j <- j + 2
