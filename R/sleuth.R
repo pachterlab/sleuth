@@ -170,7 +170,7 @@ sleuth_prep <- function(
       nsamp <- dot(nsamp)
       path <- kal_dirs[i]
       suppressMessages({
-        kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)
+        kal <- read_kallisto(path, read_bootstrap = FALSE, max_bootstrap = max_bootstrap)
         })
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
@@ -312,8 +312,6 @@ sleuth_prep <- function(
     obs_counts <- obs_to_matrix(ret, "est_counts")
     obs_counts <- log(obs_counts + 0.5) #arbitrary transformation
 
-    browser()
-
     bs_test_summary$obs_counts <- obs_counts[rownames(obs_counts)
         %in% ret$filter_df$target_id, ]
     bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[bs_test_summary$sigma_q_sq
@@ -322,24 +320,7 @@ sleuth_prep <- function(
     bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[[1]] #convert to vector from df
     names(bs_test_summary$sigma_q_sq) <- target_id
 
-    msg('summarizing bootstraps') #MARK: DEBUG
-    # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
-    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
-    # TODO: check if normalized. if not, normalize
-    # TODO: in normalization step, take out all things that don't pass filter so
-    # don't have to filter out here
-    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
-
-    #CHECK IF DOES EXACTLY THE SAME AS PREVIOUS IMPLEMENTATION
-    #TODO: Run through lintr tests (see contributin.md)
-    #Uncomment reading bootstraps in read_kallisto
-    #Make sure to not crash if read_bootstraps is false
-    #merge to branch in actual repo
-    #Make pull request
-    browser()
-
-    ret$bs_summary <- bs_summary
+    ret$bs_summary <- bs_test_summary
   }
 
   class(ret) <- 'sleuth'

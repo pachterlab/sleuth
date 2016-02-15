@@ -123,8 +123,6 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     }
   }
 
-  bs_stats <- data.frame()
-
   abund$tpm <- counts_to_tpm(abund$est_counts, abund$eff_len)
 
   res <- list(
@@ -132,7 +130,6 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     bias_normalized = bias_normalized,
     bias_observed = bias_observed,
     bootstrap = bs_samples,
-    bs_stats = bs_stats,
     fld = fld
     )
   class(res) <- 'kallisto'
