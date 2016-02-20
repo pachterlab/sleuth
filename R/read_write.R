@@ -176,18 +176,14 @@ h5check <- function(fname, group, name) {
 
 read_bootstrap_statistics <- function(fname, num_bootstraps,
     num_transcripts, est_count_sf, transform = function(x) log(x + 0.5)) {
-    #bs_mat <- matrix(0, nrow = num_bootstraps[1], ncol = num_transcripts)
-    #for(row in 1:num_bootstraps[1])
-    #{
-    #    bs_mat[row,] = transform(h5read("abundance.h5", paste0("bootstrap/bs", row - 1)))
-    #}
     bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
         transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
     }))
+    
+    bs_quant <- apply(bs_mat, 2, quantile)
 
-    bs_stats <- apply(bs_mat, 2, var)
-    #bs_stats <- cbind(bs_stats, apply(bs_mat, 2, mean))
-    #Do any other statistical computation here...
+    bs_var <- apply(bs_mat, 2, var)
+    list(bs_var=bs_var, bs_quant=bs_quant)
 }
 
 #' Read kallisto plaintext output

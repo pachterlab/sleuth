@@ -618,16 +618,22 @@ plot_bootstrap <- function(obj,
   x_axis_angle = 50
   ) {
 
-  df <- get_bootstraps(obj, transcript)
-
-  if (nrow(df) == 0) {
-    stop("Couldn't find transcript ", transcript)
-  }
-  p <- ggplot(df, aes_string('sample', units))
-  p <- p + geom_boxplot(aes_string(fill = color_by))
-  p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
-  p <- p + ggtitle(transcript)
-  p
+  #df <- get_bootstraps(obj, transcript)
+  #
+  #if (nrow(df) == 0) {
+  #  stop("Couldn't find transcript ", transcript)
+  #}
+  #p <- ggplot(df, aes_string('sample', units))
+  #p <- p + geom_boxplot(aes_string(fill = color_by))
+  #p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
+  #p <- p + ggtitle(transcript)
+  #p
+  tr_index <- which(obj$target_id == transcript)
+  df <- as_df(do.call(cbind, lapply(seq_along(obj$bs_quants), function(i) {
+    obj$bs_quants[[i]][tr_index]
+  })))
+  
+  boxplot(df, las = 2, names = names(obj$bs_quants), ylab = "est_counts")
 }
 
 #' @export

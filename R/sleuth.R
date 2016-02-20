@@ -287,17 +287,25 @@ sleuth_prep <- function(
     kal_path <- get_kallisto_path(path)
     target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
     num_transcripts <- length(target_id)
-    ret$bs_test_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
+    num_samples <- length(ret$kal)
+    ret$bs_quants = list()
+    ret$bs_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
         path <- kal_dirs[i]
+        samp_name <- names(path)
         kal_path <- get_kallisto_path(path)
         num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
         bs_stats <- read_bootstrap_statistics(fname=kal_path$path,
             num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
             num_transcripts=num_transcripts)
-        bs_stats
+        
+        dot(i)
+        ret$bs_quants[[samp_name]] <<- bs_stats$bs_quant
+        bs_stats$bs_var
     }))
+    
+    ret$target_id <- target_id
 
-    bs_test_summary <- adf(ret$bs_test_summary)
+    bs_test_summary <- adf(ret$bs_summary)
     bs_test_summary$target_id <- target_id
     bs_test_summary <- bs_test_summary[order(bs_test_summary$target_id), ]
     bs_test_summary <- data.frame(varMeans =
