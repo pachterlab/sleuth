@@ -632,11 +632,10 @@ plot_bootstrap <- function(obj,
   df <- as_df(do.call(rbind, lapply(seq_along(obj$bs_quants), function(i) {
     obj$bs_quants[[i]][[units]][tr_index, ]
   })))
-  
-  
+
   colnames(df) <- c("min", "lower", "mid", "upper", "max")
   df <- data.frame(df, obj$sample_to_covariates)
-  
+
   p <- ggplot(df, aes(x=sample, ymin=min, lower=lower, middle=mid, upper=upper, ymax=max))
   p <- p + geom_boxplot(stat = "identity", aes_string(fill = color_by))
   p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))

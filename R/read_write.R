@@ -187,11 +187,11 @@ read_bootstrap_quant <- function(fname, num_bootstraps) {
     bs <- do.call(cbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
         as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
     }))
-    
+
     eff_len <- rhdf5::h5read(fname, "aux/eff_lengths")
-    
+
     bs_quant_est_counts <- aperm(apply(bs, 1, quantile))
-    
+
     bs_quant_tpm <- apply(bs, 2, counts_to_tpm, eff_len)
     bs_quant_tpm <- aperm(apply(bs_quant_tpm, 1, quantile))
     list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)

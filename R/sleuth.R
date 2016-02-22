@@ -288,7 +288,7 @@ sleuth_prep <- function(
     target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
     num_transcripts <- length(target_id)
     num_samples <- length(ret$kal)
-    ret$bs_quants = list()
+    ret$bs_quants <- list()
 
     msg("calculating bootstrap quantiles")
     ret$bs_quants <- lapply(1:length(kal_dirs), function(i) {
