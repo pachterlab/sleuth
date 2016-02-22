@@ -290,8 +290,6 @@ sleuth_prep <- function(
     num_samples <- length(ret$kal)
     ret$bs_quants = list()
 
-    browser()
-    
     msg("calculating bootstrap quantiles")
     ret$bs_quants <- lapply(1:length(kal_dirs), function(i) {
             kal_path <- get_kallisto_path(kal_dirs[i])
