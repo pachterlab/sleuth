@@ -296,7 +296,7 @@ sleuth_prep <- function(
     ret$bs_quants <- lapply(1:length(kal_dirs), function(i) {
             kal_path <- get_kallisto_path(kal_dirs[i])
             num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-            msg(names(kal_dirs[i]))
+            msg(paste0("Reading sample: ",names(kal_dirs[i])))
             read_bootstrap_quant(fname=kal_path$path, num_bootstrap)
     })
     names(ret$bs_quants) <- names(kal_dirs)
