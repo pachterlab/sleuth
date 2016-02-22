@@ -289,6 +289,19 @@ sleuth_prep <- function(
     num_transcripts <- length(target_id)
     num_samples <- length(ret$kal)
     ret$bs_quants = list()
+
+    browser()
+    
+    msg("calculating bootstrap quantiles")
+    ret$bs_quants <- lapply(1:length(kal_dirs), function(i) {
+            kal_path <- get_kallisto_path(kal_dirs[i])
+            num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
+            msg(names(kal_dirs[i]))
+            read_bootstrap_quant(fname=kal_path$path, num_bootstrap)
+    })
+    names(ret$bs_quants) <- names(kal_dirs)
+
+    msg("calculating bootstrap variance")
     ret$bs_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
         path <- kal_dirs[i]
         samp_name <- names(path)
@@ -297,12 +310,10 @@ sleuth_prep <- function(
         bs_stats <- read_bootstrap_statistics(fname=kal_path$path,
             num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
             num_transcripts=num_transcripts)
-        
         dot(i)
-        ret$bs_quants[[samp_name]] <<- bs_stats$bs_quant
         bs_stats$bs_var
     }))
-    
+
     ret$target_id <- target_id
 
     bs_test_summary <- adf(ret$bs_summary)

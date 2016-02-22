@@ -179,12 +179,24 @@ read_bootstrap_statistics <- function(fname, num_bootstraps,
     bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
         transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
     }))
-    
-    bs_quant <- apply(bs_mat, 2, quantile)
 
     bs_var <- apply(bs_mat, 2, var)
-    list(bs_var=bs_var, bs_quant=bs_quant)
 }
+
+read_bootstrap_quant <- function(fname, num_bootstraps) {
+    bs <- do.call(cbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
+        as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
+    }))
+    
+    eff_len <- rhdf5::h5read(fname, "aux/eff_lengths")
+    
+    bs_quant_est_counts <- aperm(apply(bs, 1, quantile))
+    
+    bs_quant_tpm <- apply(bs, 2, counts_to_tpm, eff_len)
+    bs_quant_tpm <- aperm(apply(bs_quant_tpm, 1, quantile))
+    list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)
+}
+
 
 #' Read kallisto plaintext output
 #'
