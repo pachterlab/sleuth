@@ -305,11 +305,11 @@ sleuth_prep <- function(
         samp_name <- names(path)
         kal_path <- get_kallisto_path(path)
         num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-        bs_stats <- read_bootstrap_statistics(fname=kal_path$path,
+        bs_var <- read_bootstrap_statistics(fname=kal_path$path,
             num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
             num_transcripts=num_transcripts)
         dot(i)
-        bs_stats$bs_var
+        bs_var
     }))
 
     ret$target_id <- target_id
