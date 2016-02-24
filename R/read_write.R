@@ -173,28 +173,27 @@ h5check <- function(fname, group, name) {
 #' @param est_counts_sf a double to divide all the bootstraps by
 #' @return a \code{data.frame} containing with columns for the summary statistics
 #' and a row for each transcript
-
 read_bootstrap_statistics <- function(fname, num_bootstraps,
-    num_transcripts, est_count_sf, transform = function(x) log(x + 0.5)) {
-    bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
-        transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
-    }))
+  num_transcripts, est_count_sf, transform = function(x) log(x + 0.5)) {
+  bs_mat <- do.call(rbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
+    transform(rhdf5::h5read(fname, paste0("bootstrap/bs", i)) / est_count_sf)
+  }))
 
-    bs_var <- apply(bs_mat, 2, var)
+  bs_var <- apply(bs_mat, 2, var)
 }
 
 read_bootstrap_quant <- function(fname, num_bootstraps) {
-    bs <- do.call(cbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
-        as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
-    }))
+  bs <- do.call(cbind, lapply(0:(num_bootstraps[1] - 1), function(i) {
+    as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
+  }))
 
-    eff_len <- rhdf5::h5read(fname, "aux/eff_lengths")
+  eff_len <- rhdf5::h5read(fname, "aux/eff_lengths")
 
-    bs_quant_est_counts <- aperm(apply(bs, 1, quantile))
+  bs_quant_est_counts <- aperm(apply(bs, 1, quantile))
 
-    bs_quant_tpm <- apply(bs, 2, counts_to_tpm, eff_len)
-    bs_quant_tpm <- aperm(apply(bs_quant_tpm, 1, quantile))
-    list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)
+  bs_quant_tpm <- apply(bs, 2, counts_to_tpm, eff_len)
+  bs_quant_tpm <- aperm(apply(bs_quant_tpm, 1, quantile))
+  list(est_counts = bs_quant_est_counts, tpm = bs_quant_tpm)
 }
 
 
