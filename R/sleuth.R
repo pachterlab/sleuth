@@ -298,6 +298,8 @@ sleuth_prep <- function(
     })
     names(ret$bs_quants) <- names(kal_dirs)
 
+    transformation_function <- function(x) log(x + 0.5)
+
     msg("calculating bootstrap variance")
     ret$bs_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
       path <- kal_dirs[i]
@@ -308,7 +310,9 @@ sleuth_prep <- function(
         fname = kal_path$path,
         num_bootstrap = num_bootstrap,
         est_count_sf = est_counts_sf[[i]],
-        num_transcripts = num_transcripts)
+        num_transcripts = num_transcripts,
+        transform = transformation_function
+        )
       dot(i)
       bs_var
     }))
@@ -328,7 +332,7 @@ sleuth_prep <- function(
     path <- kal_dirs[1]
     kal_path <- get_kallisto_path(path)
     obs_counts <- obs_to_matrix(ret, "est_counts")
-    obs_counts <- log(obs_counts + 0.5) #arbitrary transformation
+    obs_counts <- transformation_function(obs_counts)
 
     bs_test_summary$obs_counts <- obs_counts[rownames(obs_counts)
         %in% ret$filter_df$target_id, ]
