@@ -228,16 +228,31 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' This function extracts Wald test results from a sleuth object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param test a character denoting the test to extract
+#' @param test a character string denoting the test to extract. Possible tests can be found by using \code{models(obj)}.
 #' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
 #' consistent with vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
-#' @return a \code{data.frame}
+#' @return a \code{data.frame} with the following columns:
+#' @return target_id: transcript name, e.g. "ENSXX#####"
+#' @return pval: p-value of the chost model
+#' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg
+#' @return b: 'beta' value, analogous to a fold change, but technically a bias estimator; values greater than zero indicate increased expression compared to intercept
+#' @return se_b: standard error of the beta
+#' @return mean_obs: natural log of mean count of observations
+#' @return var_obs: variance of observation
+#' @return tech_var: technical variance of observation from the bootstraps
+#' @return sigma_sq: raw estimator of the variance once the technical variance has been removed
+#' @return smooth_sigma_sq: smooth regression fit for the shrinkage estimation
+#' @return final_simga_sq: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
 #' @seealso \code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
+#' @examples
+#' models(sleuth_obj) # for this example, assume the formula is ~condition,
+#'                      and a coefficient is IP
+#' results_table <- sleuth_results(sleuth_obj, 'conditionIP')
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
   which_model = 'full', rename_cols = TRUE, show_all = TRUE) {

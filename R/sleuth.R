@@ -550,7 +550,18 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' @param test_type either 'wt' for Wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param which_group a character string denoting which gene group to use
-#' @return a \code{data.frame} containing gene names, transcript names, and significance
+#' @return a \code{data.frame} with the following columns
+#' @return gene name; if ext_gene name specified, it will be legible gene name
+#'         if ens_gene name, it will be an Ensemble gene
+#' @return most_sig_trancript: Most significant transcript for the given gene
+#' @return pval: p-value for the test chosen
+#' @return qval: False discovery rate normalized pval
+#' @return num_transcripts: Number of transcripts sequenced
+#' @return list_of_transcripts: All transcripts associated with this gene
+#' @examples sleuth_genes <- sleuth_gene_table(sleuth_obj, 'conditionIP', test_type ='wt',
+#'                                   which_group = 'ext_gene')
+#' head(sleuth_genes) # show info for first 5 genes
+#' sleuth_genes[1:5, 6] # show transcripts for first 5 genes
 #' @export
 sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full', which_group = 'ens_gene') {
 

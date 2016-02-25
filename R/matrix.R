@@ -25,6 +25,11 @@
 #' ("obs_norm" or "obs_raw")
 #' @param which_units character vector of length one. Which units to use ("tpm"
 #' or "est_counts")
+#' @return a \code{matrix} with an attribute 'data', which contains a list of gene names,
+#'         and transcript counts
+#' @examples 
+#' sleuth_matrix <- sleuth_to_matrix(sleuth_obj, 'obs_norm', 'tpm')
+#' head(sleuth_matrix$data) # look at first 5 transcripts, sorted by name
 #' @export
 sleuth_to_matrix <- function(obj, which_df, which_units) {
   if ( !(which_df %in% c("obs_norm", "obs_raw")) ) {
