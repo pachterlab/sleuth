@@ -40,7 +40,7 @@ list the most significant transcript mapping to themselves
 }
 \examples{
 sleuth_genes <- sleuth_gene_table(sleuth_obj, 'conditionIP', test_type ='wt',
-                                     which_group = 'ext_gene')
+                                  which_group = 'ext_gene')
 head(sleuth_genes) # show info for first 5 genes
 sleuth_genes[1:5, 6] # show transcripts for first 5 genes
 }

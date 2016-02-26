@@ -9,8 +9,9 @@ sleuth_wt(obj, which_beta, which_model = "full")
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{which_beta}{a character string of length one denoting which beta to
-test}
+\item{which_beta}{a character string of denoting which grouping to test.
+For example, if you have a model fit to 'treatment,' with values of neg_ctl, pos_ctl, 
+and drug, you would need to run \code{sleuth_wt} once each for pos_ctl and drug}
 
 \item{which_model}{a character string of length one denoting which model to
 use}
@@ -21,6 +22,17 @@ an updated sleuth object
 \description{
 This function computes the Wald test on one specific 'beta' coefficient on
 every transcript.
+}
+\examples{
+# Assume we have a sleuth object with a model fit to both genotype and drug,
+models(so)
+# formula:  ~genotype + drug 
+# coefficients:
+#   (Intercept)
+#   genotypeKO
+#   drugDMSO
+so <- sleuth_wt(so, 'genotypeKO')
+so <- sleuth_wt(so, 'drugDMSO')
 }
 \seealso{
 \code{\link{models}} to view which models have been fit and which

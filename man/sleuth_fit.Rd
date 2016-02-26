@@ -9,10 +9,11 @@ sleuth_fit(obj, formula = NULL, fit_name = NULL, ...)
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
-\item{formula}{a formula specifying the design to fit OR a design matrix}
+\item{formula}{an R formula specifying the design to fit OR a design matrix.
+If you have already specified the formula in \code{sleuth_prep}, you do not need
+to do it here.}
 
-\item{fit_name}{the name to store the fit in the sleuth
-object}
+\item{fit_name}{the name to store the fit in the sleuth object (at so$fits$fit_name)}
 
 \item{...}{additional arguments passed to \code{sliding_window_grouping} and
 \code{shrink_df}}
@@ -32,6 +33,10 @@ it in the sleuth object under 'full'.
 
 To see which models have been fit, users will likely find the function
 \code{\link{models}} helpful.
+}
+\examples{
+# If you specified the formula in sleuth_prep, you can simply run
+so <- sleuth_fit(so)
 }
 \seealso{
 \code{\link{models}} for seeing which models have been fit,

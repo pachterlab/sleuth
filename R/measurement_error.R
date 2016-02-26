@@ -30,12 +30,15 @@
 #' \code{\link{models}} helpful.
 #'
 #' @param obj a \code{sleuth} object
-#' @param formula a formula specifying the design to fit OR a design matrix
-#' @param fit_name the name to store the fit in the sleuth
-#' object
+#' @param formula an R formula specifying the design to fit OR a design matrix.
+#' If you have already specified the formula in \code{sleuth_prep}, you do not need
+#' to do it here.
+#' @param fit_name the name to store the fit in the sleuth object (at so$fits$fit_name)
 #' @param ... additional arguments passed to \code{sliding_window_grouping} and
 #' \code{shrink_df}
 #' @return a sleuth object with updated attributes
+#' @examples # If you specified the formula in sleuth_prep, you can simply run
+#' so <- sleuth_fit(so)
 #' @seealso \code{\link{models}} for seeing which models have been fit,
 #' \code{\link{sleuth_prep}} for creating a sleuth object,
 #' \code{\link{sleuth_test}} to test whether a coefficient is zero
@@ -150,11 +153,21 @@ model_exists <- function(obj, which_model, fail = TRUE) {
 #' every transcript.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string of length one denoting which beta to
-#' test
+#' @param which_beta a character string of denoting which grouping to test.
+#' For example, if you have a model fit to 'treatment,' with values of neg_ctl, pos_ctl, 
+#' and drug, you would need to run \code{sleuth_wt} once each for pos_ctl and drug
 #' @param which_model a character string of length one denoting which model to
 #' use
 #' @return an updated sleuth object
+#' @examples # Assume we have a sleuth object with a model fit to both genotype and drug,
+#' models(so)
+#' # formula:  ~genotype + drug 
+#' # coefficients:
+#' #   (Intercept)
+#' #   genotypeKO
+#' #   drugDMSO
+#' so <- sleuth_wt(so, 'genotypeKO')
+#' so <- sleuth_wt(so, 'drugDMSO')
 #' @seealso \code{\link{models}} to view which models have been fit and which
 #' coefficients can be tested, \code{\link{sleuth_results}} to get back
 #' a data.frame of the results

@@ -33,9 +33,17 @@ print.sleuth_model <- function(obj) {
 
 #' View which models have been fit
 #'
-#' View which models have been fit
+#' @description  View which models have been fit. sleuth fits data using R formulas
 #'
-#' @param obj
+#' @param obj a sleuth object, containing kallisto results, usually made by sleuth_prep
+#' @return an R formula showing what has been fit
+#' @examples # imagine you have a set of samples from input and IP, and input has been set to intercept
+#' models(so)
+#' # [full]
+#' # formula: ~condition
+#' # coefficients:
+#' #      (Intercept)
+#' #      conditionIP
 #' @export
 models <- function(obj, ...) {
   UseMethod('models')
