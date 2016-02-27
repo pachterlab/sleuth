@@ -283,8 +283,8 @@ sleuth_prep <- function(
     kal_path <- get_kallisto_path(path)
     target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
     num_transcripts <- length(target_id)
-    num_samples <- length(ret$kal)
     ret$bs_quants <- list()
+
     ret$bs_summary <- matrix(nrow=num_transcripts, ncol=length(ret$kal))
     transform <- function(x) log(x + 0.5)
     
@@ -324,7 +324,7 @@ sleuth_prep <- function(
     path <- kal_dirs[1]
     kal_path <- get_kallisto_path(path)
     obs_counts <- obs_to_matrix(ret, "est_counts")
-    obs_counts <- log(obs_counts + 0.5) #arbitrary transformation
+    obs_counts <- transformation_function(obs_counts)
 
     bs_test_summary$obs_counts <- obs_counts[rownames(obs_counts)
         %in% ret$filter_df$target_id, ]
