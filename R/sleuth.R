@@ -180,10 +180,6 @@ sleuth_prep <- function(
   msg('')
 
   check_result <- check_kal_pack(kal_list)
-  #if ( length(check_result$no_bootstrap) > 0 ) {
-  #  stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
-  #    paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
-  #} MARK: DEBUG
   kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
@@ -289,37 +285,38 @@ sleuth_prep <- function(
     num_transcripts <- length(target_id)
     num_samples <- length(ret$kal)
     ret$bs_quants <- list()
-
-    msg("calculating bootstrap quantiles")
-    ret$bs_quants <- lapply(1:length(kal_dirs), function(i) {
-            kal_path <- get_kallisto_path(kal_dirs[i])
-            num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-            msg(paste0("Reading sample: ",names(kal_dirs[i])))
-            read_bootstrap_quant(fname=kal_path$path, num_bootstrap)
-    })
-    names(ret$bs_quants) <- names(kal_dirs)
-
-    msg("calculating bootstrap variance")
-    ret$bs_summary <- do.call(cbind, lapply(seq_along(ret$kal), function(i) {
+    ret$bs_summary <- matrix(nrow=num_transcripts, ncol=length(ret$kal))
+    transform <- function(x) log(x + 0.5)
+    
+    for(i in 1:length(kal_dirs)) {
+        msg(paste0("Reading bootstraps from sample: ", names(kal_dirs[i])))
         path <- kal_dirs[i]
         samp_name <- names(path)
         kal_path <- get_kallisto_path(path)
         num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-        bs_var <- read_bootstrap_statistics(fname=kal_path$path,
-            num_bootstrap=num_bootstrap, est_count_sf = est_counts_sf[[i]],
-            num_transcripts=num_transcripts)
-        dot(i)
-        bs_var
-    }))
+        if(num_bootstrap == 0) {
+            stop(paste0('Sample ', samp_name, ' has no bootstraps. You must generate bootstraps on all of your samples.'))
+        }
+        
+        eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
+        bs_mat <- read_bootstrap_mat(fname=kal_path$path, num_bootstraps=num_bootstrap, num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
+        
+        bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
+        bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
+        bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+        ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)
+        
+        bs_mat <- transform(bs_mat)
+        ret$bs_summary[, i] <- apply(bs_mat, 2, var)
+    }
 
     ret$target_id <- target_id
-
-    bs_test_summary <- adf(ret$bs_summary)
-    bs_test_summary$target_id <- target_id
-    bs_test_summary <- bs_test_summary[order(bs_test_summary$target_id), ]
-    bs_test_summary <- data.frame(varMeans =
-        rowMeans(bs_test_summary[,names(bs_test_summary) != "target_id"]), target_id =
-        bs_test_summary$target_id)
+    bs_test_summary <- ret$bs_summary
+    rownames(bs_test_summary) <- target_id
+    
+    bs_test_summary <- bs_test_summary[order(rownames(bs_test_summary)), ]
+    bs_test_summary <- data.frame(varMeans = rowMeans(bs_test_summary), target_id =
+        rownames(bs_test_summary))
 
     msg('summarizing bootstraps')
     bs_test_summary <- list(sigma_q_sq = bs_test_summary)
@@ -360,9 +357,7 @@ check_kal_pack <- function(kal_list) {
     stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
   }
 
-  no_bootstrap <- which(sapply(kal_list, function(x) length(x$bootstrap) == 0))
-
-  list(versions = u_versions, no_bootstrap = no_bootstrap)
+  list(versions = u_versions)
 }
 
 #' Normalization factors
