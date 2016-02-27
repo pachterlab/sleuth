@@ -562,7 +562,7 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' @return most_sig_trancript: Most significant transcript for the given gene
 #' @return pval: p-value for the test chosen
 #' @return qval: False discovery rate normalized p-value (Benjamini-Hochberg)
-#' @return num_transcripts: Number of transcripts sequenced
+#' @return num_transcripts: Sum of number of reads for all transcripts for the given gene
 #' @return list_of_transcripts: All transcripts associated with this gene
 #' @examples sleuth_genes <- sleuth_gene_table(so, 'conditionIP', test_type ='wt',
 #'                                   which_group = 'ext_gene')
