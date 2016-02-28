@@ -287,9 +287,9 @@ sleuth_prep <- function(
     ret$bs_quants <- list()
 
     ret$bs_summary <- matrix(nrow=num_transcripts, ncol=length(ret$kal))
-    transform <- function(x) log(x + 0.5)
+    transformation_function <- function(x) log(x + 0.5)
 
-    msg('summarize bootstraps')
+    msg('summarizing bootstraps')
     for(i in 1:length(kal_dirs)) {
       msg(paste0("Reading bootstraps from sample: ", names(kal_dirs[i])))
       path <- kal_dirs[i]
@@ -305,15 +305,15 @@ sleuth_prep <- function(
         num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
 
       bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
+      ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts)
 
-      bs_quant_tpm <- matrix()
       if(read_bootstrap_tpm) {
         bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+        ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
       }
 
-      ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)
-      bs_mat <- transform(bs_mat)
+      bs_mat <- transformation_function(bs_mat)
       ret$bs_summary[, i] <- apply(bs_mat, 2, var)
     }
 

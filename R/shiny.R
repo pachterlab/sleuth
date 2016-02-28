@@ -279,8 +279,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
             column(3,
               selectInput('bs_var_units', label = 'units: ',
-                choices = c('est_counts', 'tpm'),
-                selected = 'est_counts'))
+                choices = names(obj$bs_quants[[1]]),
+                selected = names(so$bs_quants[[1]])[1]))
             ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
           fluidRow(plotOutput('bs_var_plt')),
