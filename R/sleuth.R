@@ -96,7 +96,7 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
-  read_bootstrap_tpm = FALSE
+  read_bootstrap_tpm = FALSE,
   ...) {
 
   ##############################
@@ -267,9 +267,9 @@ sleuth_prep <- function(
     msg("normalizing bootstrap samples")
 
     ret$kal <- lapply(seq_along(ret$kal), function(i) {
-        normalize_bootstrap(ret$kal[[i]],
-        tpm_size_factor = tpm_sf[i],
-        est_counts_size_factor = est_counts_sf[i])
+      normalize_bootstrap(ret$kal[[i]],
+      tpm_size_factor = tpm_sf[i],
+      est_counts_size_factor = est_counts_sf[i])
     })
 
     obs_norm <- as_df(obs_norm)
@@ -288,39 +288,39 @@ sleuth_prep <- function(
 
     ret$bs_summary <- matrix(nrow=num_transcripts, ncol=length(ret$kal))
     transform <- function(x) log(x + 0.5)
-    
+
     msg('summarize bootstraps')
     for(i in 1:length(kal_dirs)) {
-        msg(paste0("Reading bootstraps from sample: ", names(kal_dirs[i])))
-        path <- kal_dirs[i]
-        samp_name <- names(path)
-        kal_path <- get_kallisto_path(path)
-        num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-        if(num_bootstrap == 0) {
-            stop(paste0('Sample ', samp_name, ' has no bootstraps. You must generate bootstraps on all of your samples.'))
-        }
-        
-        eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
-        bs_mat <- read_bootstrap_mat(fname=kal_path$path, num_bootstraps=num_bootstrap, num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
-        
-        bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
-        
-        bs_quant_tpm <- matrix()
-        if(read_bootstrap_tpm) {
-            bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
-            bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
-        }
-        
-        ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)
-        
-        bs_mat <- transform(bs_mat)
-        ret$bs_summary[, i] <- apply(bs_mat, 2, var)
+      msg(paste0("Reading bootstraps from sample: ", names(kal_dirs[i])))
+      path <- kal_dirs[i]
+      samp_name <- names(path)
+      kal_path <- get_kallisto_path(path)
+      num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
+      if(num_bootstrap == 0) {
+        stop(paste0('Sample ', samp_name, ' has no bootstraps. You must generate bootstraps on all of your samples.'))
+      }
+
+      eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
+      bs_mat <- read_bootstrap_mat(fname=kal_path$path, num_bootstraps=num_bootstrap,
+        num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
+
+      bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
+
+      bs_quant_tpm <- matrix()
+      if(read_bootstrap_tpm) {
+        bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
+        bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+      }
+
+      ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)
+      bs_mat <- transform(bs_mat)
+      ret$bs_summary[, i] <- apply(bs_mat, 2, var)
     }
 
     ret$target_id <- target_id
     bs_test_summary <- ret$bs_summary
     rownames(bs_test_summary) <- target_id
-    
+
     bs_test_summary <- bs_test_summary[order(rownames(bs_test_summary)), ]
     bs_test_summary <- data.frame(varMeans = rowMeans(bs_test_summary), target_id =
         rownames(bs_test_summary))
