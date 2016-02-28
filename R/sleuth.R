@@ -96,6 +96,7 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
+  read_bootstrap_tpm = FALSE
   ...) {
 
   ##############################
@@ -288,6 +289,7 @@ sleuth_prep <- function(
     ret$bs_summary <- matrix(nrow=num_transcripts, ncol=length(ret$kal))
     transform <- function(x) log(x + 0.5)
     
+    msg('summarize bootstraps')
     for(i in 1:length(kal_dirs)) {
         msg(paste0("Reading bootstraps from sample: ", names(kal_dirs[i])))
         path <- kal_dirs[i]
@@ -302,8 +304,13 @@ sleuth_prep <- function(
         bs_mat <- read_bootstrap_mat(fname=kal_path$path, num_bootstraps=num_bootstrap, num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
         
         bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
-        bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
-        bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+        
+        bs_quant_tpm <- matrix()
+        if(read_bootstrap_tpm) {
+            bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
+            bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+        }
+        
         ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts, tpm=bs_quant_tpm)
         
         bs_mat <- transform(bs_mat)
@@ -318,7 +325,6 @@ sleuth_prep <- function(
     bs_test_summary <- data.frame(varMeans = rowMeans(bs_test_summary), target_id =
         rownames(bs_test_summary))
 
-    msg('summarizing bootstraps')
     bs_test_summary <- list(sigma_q_sq = bs_test_summary)
 
     path <- kal_dirs[1]
