@@ -320,7 +320,6 @@ sleuth_prep <- function(
       ret$bs_summary[, i] <- apply(bs_mat, 2, var)
     }
 
-    browser()
     ret$target_id <- target_id
     bs_test_summary <- ret$bs_summary
     rownames(bs_test_summary) <- target_id
