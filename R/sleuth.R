@@ -97,6 +97,7 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   read_bootstrap_tpm = FALSE,
+  read_bootstrap_est_counts = TRUE,
   ...) {
 
   ##############################
@@ -303,10 +304,12 @@ sleuth_prep <- function(
       eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
       bs_mat <- read_bootstrap_mat(fname=kal_path$path, num_bootstraps=num_bootstrap,
         num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
-
-      bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
-      ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts)
-
+      
+      if(read_bootstrap_est_counts) {
+        bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
+        ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts)
+      }
+      
       if(read_bootstrap_tpm) {
         bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
@@ -317,13 +320,14 @@ sleuth_prep <- function(
       ret$bs_summary[, i] <- apply(bs_mat, 2, var)
     }
 
+    browser()
     ret$target_id <- target_id
     bs_test_summary <- ret$bs_summary
     rownames(bs_test_summary) <- target_id
 
     bs_test_summary <- bs_test_summary[order(rownames(bs_test_summary)), ]
     bs_test_summary <- data.frame(varMeans = rowMeans(bs_test_summary), target_id =
-        rownames(bs_test_summary))
+      rownames(bs_test_summary))
 
     bs_test_summary <- list(sigma_q_sq = bs_test_summary)
 
@@ -332,10 +336,8 @@ sleuth_prep <- function(
     obs_counts <- obs_to_matrix(ret, "est_counts")
     obs_counts <- transformation_function(obs_counts)
 
-    bs_test_summary$obs_counts <- obs_counts[rownames(obs_counts)
-        %in% ret$filter_df$target_id, ]
-    bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[bs_test_summary$sigma_q_sq
-        $target_id %in% ret$filter_df$target_id, ]
+    bs_test_summary$obs_counts <- obs_counts[ret$filter_df$target_id, ]
+    bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[ret$filter_df$target_id, ]
     target_id <- as.character(bs_test_summary$sigma_q_sq$target_id)
     bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[[1]] #convert to vector from df
     names(bs_test_summary$sigma_q_sq) <- target_id
