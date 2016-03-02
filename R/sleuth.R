@@ -292,9 +292,9 @@ sleuth_prep <- function(
 
     msg('summarizing bootstraps')
     for(i in 1:length(kal_dirs)) {
-      msg(paste0("Reading bootstraps from sample: ", names(kal_dirs[i])))
+      msg(paste0("Reading bootstraps from sample: ", sample_to_covariates$sample[i]))
       path <- kal_dirs[i]
-      samp_name <- names(path)
+      samp_name <- sample_to_covariates$sample[i]
       kal_path <- get_kallisto_path(path)
       num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
       if(num_bootstrap == 0) {
