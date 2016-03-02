@@ -287,12 +287,15 @@ sleuth_prep <- function(
     num_transcripts <- length(target_id)
     ret$bs_quants <- list()
 
-    ret$bs_summary <- matrix(nrow=num_transcripts, ncol=length(ret$kal))
+    which_target_id <- ret$filter_df$target_id
+    all_sample_bootstrap <- matrix(NA_real_,
+      nrow = length(which_target_id),
+      ncol = length(ret$kal))
     transformation_function <- function(x) log(x + 0.5)
 
     msg('summarizing bootstraps')
     for(i in 1:length(kal_dirs)) {
-      msg(paste0("Reading bootstraps from sample: ", sample_to_covariates$sample[i]))
+      dot(i)
       samp_name <- sample_to_covariates$sample[i]
       kal_path <- get_kallisto_path(kal_dirs[i])
 
@@ -318,31 +321,39 @@ sleuth_prep <- function(
       }
 
       bs_mat <- transformation_function(bs_mat)
-      # ret$bs_summary[, i] bootstrap point estimate of the inferential
+      colnames(bs_mat) <- target_id
+      # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
       # variability in sample i
-      ret$bs_summary[, i] <- apply(bs_mat, 2, var)
+      # NOTE: we are only keeping the ones that pass the filter
+      all_sample_bootstrap[, i] <- apply(bs_mat[, which_target_id], 2, var)
     } # end summarize bootstraps
+    msg('')
 
-    ret$target_id <- target_id
-    bs_test_summary <- ret$bs_summary
-    rownames(bs_test_summary) <- target_id
+    sigma_q_sq <- rowMeans(all_sample_bootstrap)
+    names(sigma_q_sq) <- which_target_id
+    sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
 
-    bs_test_summary <- bs_test_summary[order(rownames(bs_test_summary)), ]
-    bs_test_summary <- data.frame(varMeans = rowMeans(bs_test_summary), target_id =
-      rownames(bs_test_summary))
-
-    bs_test_summary <- list(sigma_q_sq = bs_test_summary)
-
-    obs_counts <- obs_to_matrix(ret, "est_counts")
+    # ret$target_id <- target_id
+    # bs_test_summary <- ret$bs_summary
+    # rownames(bs_test_summary) <- target_id
+    #
+    # bs_test_summary <- bs_test_summary[order(rownames(bs_test_summary)), ]
+    # bs_test_summary <- data.frame(varMeans = rowMeans(bs_test_summary), target_id =
+    #   rownames(bs_test_summary))
+    #
+    # bs_test_summary <- list(sigma_q_sq = bs_test_summary)
+    #
+    obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
     obs_counts <- transformation_function(obs_counts)
+    #
+    # bs_test_summary$obs_counts <- obs_counts[ret$filter_df$target_id, ]
+    # bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[ret$filter_df$target_id, ]
+    # target_id <- as.character(bs_test_summary$sigma_q_sq$target_id)
+    # bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[[1]] #convert to vector from df
+    # names(bs_test_summary$sigma_q_sq) <- target_id
 
-    bs_test_summary$obs_counts <- obs_counts[ret$filter_df$target_id, ]
-    bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[ret$filter_df$target_id, ]
-    target_id <- as.character(bs_test_summary$sigma_q_sq$target_id)
-    bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[[1]] #convert to vector from df
-    names(bs_test_summary$sigma_q_sq) <- target_id
-
-    ret$bs_summary <- bs_test_summary
+    # ret$bs_summary <- bs_test_summary
+    ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
   }
 
   class(ret) <- 'sleuth'
