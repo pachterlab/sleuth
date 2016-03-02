@@ -293,32 +293,35 @@ sleuth_prep <- function(
     msg('summarizing bootstraps')
     for(i in 1:length(kal_dirs)) {
       msg(paste0("Reading bootstraps from sample: ", sample_to_covariates$sample[i]))
-      path <- kal_dirs[i]
       samp_name <- sample_to_covariates$sample[i]
-      kal_path <- get_kallisto_path(path)
+      kal_path <- get_kallisto_path(kal_dirs[i])
+
       num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
-      if(num_bootstrap == 0) {
+      if (num_bootstrap == 0) {
         stop(paste0('Sample ', samp_name, ' has no bootstraps. You must generate bootstraps on all of your samples.'))
       }
 
+      # TODO: only perform operations on filtered transcripts
       eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
       bs_mat <- read_bootstrap_mat(fname=kal_path$path, num_bootstraps=num_bootstrap,
         num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
-      
-      if(read_bootstrap_est_counts) {
+
+      if (read_bootstrap_est_counts) {
         bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
         ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts)
       }
-      
-      if(read_bootstrap_tpm) {
+
+      if (read_bootstrap_tpm) {
         bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
         ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
       }
 
       bs_mat <- transformation_function(bs_mat)
+      # ret$bs_summary[, i] bootstrap point estimate of the inferential
+      # variability in sample i
       ret$bs_summary[, i] <- apply(bs_mat, 2, var)
-    }
+    } # end summarize bootstraps
 
     ret$target_id <- target_id
     bs_test_summary <- ret$bs_summary
@@ -330,8 +333,6 @@ sleuth_prep <- function(
 
     bs_test_summary <- list(sigma_q_sq = bs_test_summary)
 
-    path <- kal_dirs[1]
-    kal_path <- get_kallisto_path(path)
     obs_counts <- obs_to_matrix(ret, "est_counts")
     obs_counts <- transformation_function(obs_counts)
 
