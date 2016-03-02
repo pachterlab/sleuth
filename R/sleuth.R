@@ -83,6 +83,11 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param ... additional arguments passed to the filter function
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
+#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM.
+#' NOTE: Unnecessary for typical analyses
+#' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
+#' statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
+#' NOTE: Unnecessary for typical analyses
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
@@ -97,7 +102,7 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   read_bootstrap_tpm = FALSE,
-  read_bootstrap_est_counts = TRUE,
+  extra_bootstrap_summary = FALSE,
   ...) {
 
   ##############################
@@ -315,7 +320,7 @@ sleuth_prep <- function(
         num_transcripts = num_transcripts,
         est_count_sf = est_counts_sf[[i]])
 
-      if (read_bootstrap_est_counts) {
+      if (extra_bootstrap_summary) {
         bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
         ret$bs_quants[[samp_name]] <- list(est_counts = bs_quant_est_counts)
       }
