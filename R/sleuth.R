@@ -70,7 +70,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' \code{path}.
 #' @param full_model an R \code{formula} which explains the full model (design)
 #' of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
-#' \code{sample_to_covariates}. You can fit multiple models by joining them with '+' (see example)
+#' \code{sample_to_covariates}. You can fit multiple covariates by joining them with '+' (see example)
 #' @param filter_fun the function to use when filtering.
 #' @param target_mapping a \code{data.frame} that has at least one column
 #' 'target_id' and others that denote the mapping for each target. if it is not
@@ -86,12 +86,12 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
-#' genotype and drug. 
-#' colnames(s2c) 
+#' genotype and drug.
+#' colnames(s2c)
 #' # [1] "sample"  "genotype"  "drug"  "path"
 #' so <- sleuth_prep(s2c, ~genotype + drug)
-#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_test}} to
-#' test whether a coeffient in the model is zero
+#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} or
+#' \code{\link{sleuth_lrt}} to perform hypothesis testing
 #' @export
 sleuth_prep <- function(
   sample_to_covariates,
@@ -556,13 +556,13 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' @param which_model a character string denoting which model to use
 #' @param which_group a character string denoting which gene group to use
 #' @return a \code{data.frame} with the following columns
-#' 
+#'
 #' @return gene name; if ext_gene name specified, it will be legible gene name.
-#'         If ens_gene name, it will be an Ensemble gene
+#'         If ens_gene name, it will be an Ensemble gene (assuming user followed the vignette)
 #' @return most_sig_trancript: Most significant transcript for the given gene
 #' @return pval: p-value for the test chosen
-#' @return qval: False discovery rate normalized p-value (Benjamini-Hochberg)
-#' @return num_transcripts: Sum of number of reads for all transcripts for the given gene
+#' @return qval: False discovery rate normalized p-value (Benjamini-Hochberg, see: \code{\link{p.adjust}})
+#' @return num_transcripts: Total number of transcripts for the given gene
 #' @return list_of_transcripts: All transcripts associated with this gene
 #' @examples sleuth_genes <- sleuth_gene_table(so, 'conditionIP', test_type ='wt',
 #'                                   which_group = 'ext_gene')

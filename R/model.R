@@ -244,18 +244,18 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
 #' @return a \code{data.frame} with the following columns:
-#' @return target_id: transcript name, e.g. "ENSXX#####"
-#' @return pval: p-value of the chost model
-#' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg
-#' @return b: 'beta' value, analogous to a fold change, but technically a bias estimator; values greater than zero indicate increased expression compared to intercept
+#' @return target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
+#' @return pval: p-value of the chosen model
+#' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
+#' @return b: 'beta' value (effect size). Technically a biased estimator of the fold change
 #' @return se_b: standard error of the beta
-#' @return mean_obs: natural log of mean count of observations
+#' @return mean_obs: mean of natural log counts of observations
 #' @return var_obs: variance of observation
 #' @return tech_var: technical variance of observation from the bootstraps
 #' @return sigma_sq: raw estimator of the variance once the technical variance has been removed
 #' @return smooth_sigma_sq: smooth regression fit for the shrinkage estimation
 #' @return final_simga_sq: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
-#' @seealso \code{\link{sleuth_test}} to compute tests, \code{\link{models}} to
+#' @seealso \code{\link{sleuth_wt}} and \code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 #' @examples
 #' models(sleuth_obj) # for this example, assume the formula is ~condition,
