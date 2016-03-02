@@ -161,11 +161,15 @@ h5check <- function(fname, group, name) {
 }
 
 # @return a matrix with each row being a bootstrap sample
-read_bootstrap_mat <- function(fname, num_bootstraps, num_transcripts, est_count_sf) {
+read_bootstrap_mat <- function(fname,
+  num_bootstraps,
+  num_transcripts,
+  est_count_sf) {
   bs_mat <- matrix(nrow=num_bootstraps, ncol=num_transcripts)
   for (i in 1:nrow(bs_mat)) {
     bs_mat[i, ] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1)) / est_count_sf
   }
+
   bs_mat
 }
 

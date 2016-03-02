@@ -299,19 +299,25 @@ sleuth_prep <- function(
       samp_name <- sample_to_covariates$sample[i]
       kal_path <- get_kallisto_path(kal_dirs[i])
 
-      num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, "aux/num_bootstrap"))
+      num_bootstrap <- as.integer(
+        rhdf5::h5read(kal_path$path, "aux/num_bootstrap")
+        )
       if (num_bootstrap == 0) {
-        stop(paste0('Sample ', samp_name, ' has no bootstraps. You must generate bootstraps on all of your samples.'))
+        stop(paste0('File ', kal_path,
+          ' has no bootstraps. Please generate bootstraps using "kallisto quant -b".')
+          )
       }
 
       # TODO: only perform operations on filtered transcripts
       eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
-      bs_mat <- read_bootstrap_mat(fname=kal_path$path, num_bootstraps=num_bootstrap,
-        num_transcripts=num_transcripts, est_count_sf=est_counts_sf[[i]])
+      bs_mat <- read_bootstrap_mat(fname = kal_path$path,
+        num_bootstraps = num_bootstrap,
+        num_transcripts = num_transcripts,
+        est_count_sf = est_counts_sf[[i]])
 
       if (read_bootstrap_est_counts) {
         bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
-        ret$bs_quants[[samp_name]] <- list(est_counts=bs_quant_est_counts)
+        ret$bs_quants[[samp_name]] <- list(est_counts = bs_quant_est_counts)
       }
 
       if (read_bootstrap_tpm) {
@@ -333,26 +339,9 @@ sleuth_prep <- function(
     names(sigma_q_sq) <- which_target_id
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
 
-    # ret$target_id <- target_id
-    # bs_test_summary <- ret$bs_summary
-    # rownames(bs_test_summary) <- target_id
-    #
-    # bs_test_summary <- bs_test_summary[order(rownames(bs_test_summary)), ]
-    # bs_test_summary <- data.frame(varMeans = rowMeans(bs_test_summary), target_id =
-    #   rownames(bs_test_summary))
-    #
-    # bs_test_summary <- list(sigma_q_sq = bs_test_summary)
-    #
     obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
     obs_counts <- transformation_function(obs_counts)
-    #
-    # bs_test_summary$obs_counts <- obs_counts[ret$filter_df$target_id, ]
-    # bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[ret$filter_df$target_id, ]
-    # target_id <- as.character(bs_test_summary$sigma_q_sq$target_id)
-    # bs_test_summary$sigma_q_sq <- bs_test_summary$sigma_q_sq[[1]] #convert to vector from df
-    # names(bs_test_summary$sigma_q_sq) <- target_id
 
-    # ret$bs_summary <- bs_test_summary
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
   }
 
