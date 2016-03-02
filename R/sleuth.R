@@ -83,6 +83,11 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param ... additional arguments passed to the filter function
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
+#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM.
+#' NOTE: Unnecessary for typical analyses
+#' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
+#' statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
+#' NOTE: Unnecessary for typical analyses
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
@@ -96,6 +101,8 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
+  read_bootstrap_tpm = FALSE,
+  extra_bootstrap_summary = FALSE,
   ...) {
 
   ##############################
@@ -103,7 +110,7 @@ sleuth_prep <- function(
 
   # data types
 
-  if ( !is(sample_to_covariates, "data.frame") ) {
+  if (!is(sample_to_covariates, "data.frame")) {
     stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
@@ -170,7 +177,7 @@ sleuth_prep <- function(
       nsamp <- dot(nsamp)
       path <- kal_dirs[i]
       suppressMessages({
-        kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)
+        kal <- read_kallisto(path, read_bootstrap = FALSE, max_bootstrap = max_bootstrap)
         })
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
@@ -180,11 +187,6 @@ sleuth_prep <- function(
   msg('')
 
   check_result <- check_kal_pack(kal_list)
-  if ( length(check_result$no_bootstrap) > 0 ) {
-    stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
-      paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
-  }
-
   kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
@@ -266,15 +268,15 @@ sleuth_prep <- function(
     })
 
     # add in eff_len and len
-    obs_norm = dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
+    obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
 
     msg("normalizing bootstrap samples")
+
     ret$kal <- lapply(seq_along(ret$kal), function(i) {
       normalize_bootstrap(ret$kal[[i]],
-        tpm_size_factor = tpm_sf[i],
-        est_counts_size_factor = est_counts_sf[i])
-      })
-
+      tpm_size_factor = tpm_sf[i],
+      est_counts_size_factor = est_counts_sf[i])
+    })
 
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
@@ -284,23 +286,74 @@ sleuth_prep <- function(
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
 
-    msg('summarizing bootstraps')
-    # TODO: store summary in 'obj' and check if it exists so don't have to redo every time
-    bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
-    # TODO: check if normalized. if not, normalize
-    # TODO: in normalization step, take out all things that don't pass filter so
-    # don't have to filter out here
-    bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-    bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+    path <- kal_dirs[1]
+    kal_path <- get_kallisto_path(path)
+    target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
+    num_transcripts <- length(target_id)
+    ret$bs_quants <- list()
 
-    ret$bs_summary <- bs_summary
+    which_target_id <- ret$filter_df$target_id
+    all_sample_bootstrap <- matrix(NA_real_,
+      nrow = length(which_target_id),
+      ncol = length(ret$kal))
+    transformation_function <- function(x) log(x + 0.5)
+
+    msg('summarizing bootstraps')
+    for(i in 1:length(kal_dirs)) {
+      dot(i)
+      samp_name <- sample_to_covariates$sample[i]
+      kal_path <- get_kallisto_path(kal_dirs[i])
+
+      num_bootstrap <- as.integer(
+        rhdf5::h5read(kal_path$path, "aux/num_bootstrap")
+        )
+      if (num_bootstrap == 0) {
+        stop(paste0('File ', kal_path,
+          ' has no bootstraps. Please generate bootstraps using "kallisto quant -b".')
+          )
+      }
+
+      # TODO: only perform operations on filtered transcripts
+      eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
+      bs_mat <- read_bootstrap_mat(fname = kal_path$path,
+        num_bootstraps = num_bootstrap,
+        num_transcripts = num_transcripts,
+        est_count_sf = est_counts_sf[[i]])
+
+      if (extra_bootstrap_summary) {
+        bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
+        ret$bs_quants[[samp_name]] <- list(est_counts = bs_quant_est_counts)
+      }
+
+      if (read_bootstrap_tpm) {
+        bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
+        bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+        ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
+      }
+
+      bs_mat <- transformation_function(bs_mat)
+      colnames(bs_mat) <- target_id
+      # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
+      # variability in sample i
+      # NOTE: we are only keeping the ones that pass the filter
+      all_sample_bootstrap[, i] <- apply(bs_mat[, which_target_id], 2, var)
+    } # end summarize bootstraps
+    msg('')
+
+    sigma_q_sq <- rowMeans(all_sample_bootstrap)
+    names(sigma_q_sq) <- which_target_id
+    sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
+
+    obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
+    obs_counts <- transformation_function(obs_counts)
+
+    ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
   }
 
   class(ret) <- 'sleuth'
 
   ret
 }
-
 
 # check versions of kallistos and num bootstraps, etc
 check_kal_pack <- function(kal_list) {
@@ -317,9 +370,7 @@ check_kal_pack <- function(kal_list) {
     stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
   }
 
-  no_bootstrap <- which(sapply(kal_list, function(x) length(x$bootstrap) == 0))
-
-  list(versions = u_versions, no_bootstrap = no_bootstrap)
+  list(versions = u_versions)
 }
 
 #' Normalization factors
@@ -390,7 +441,6 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
       dplyr::mutate(summarize_bootstrap(obj$kal[[i]], col, transform),
         sample = cur_samp)
     })
-
   dplyr::bind_rows(res)
 }
 
