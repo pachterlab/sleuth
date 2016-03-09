@@ -1414,7 +1414,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       if(is.null(obj$target_mapping)) {
         HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br>',
         '&nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the ',
-        '<a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
+        '<a href = "https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html">sleuth getting started guide</a>.')
       }
     })
 
