@@ -404,15 +404,15 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
   invisible(kal)
 }
 
-sleuth_save(obj, file) {
+sleuth_save <- function(obj, file) {
     saveRDS(obj, file=file)
 }
 
-sleuth_load(path) {
+sleuth_load <- function(path) {
     readRDS(path)
 }
 
-sleuth_deploy(obj, path='.', obj_name='so.rds') {
+sleuth_deploy <- function(obj, path='.', obj_name='so.rds') {
   if (substr(path, nchar(path), nchar(path)) != '/')
   {
     path <- paste0(path, '/')
@@ -428,7 +428,7 @@ sleuth_deploy(obj, path='.', obj_name='so.rds') {
   else
   {
     source_name <- paste0(source_name, substr(obj_name, 1, regexpr("\\.[^\\.]*$",
-      obj_name) - 1)
+      obj_name) - 1))
   }
 
   write(commands, paste0(path, source_name))
