@@ -404,10 +404,29 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
   invisible(kal)
 }
 
+#' save a sleuth object
+#'
+#' save a sleuth object
+#'
+#' @param obj a \code{sleuth} object
+#' @param the location to save the object to
+#' @seealso \code{\link{sleuth_load}}, \code{\link{sleuth_deploy}}
+#' @export
 sleuth_save <- function(obj, file) {
-    saveRDS(obj, file=file)
+  if (!is(obj, 'sleuth')) {
+    stop('please provide a sleuth object')
+  }
+  saveRDS(obj, file=file)
 }
 
-sleuth_load <- function(path) {
-    readRDS(path)
+#' load a sleuth object
+#'
+#' load a sleuth object previously saved with \code{sleuth_save}
+#'
+#' @param file the file to load
+#' @return a \code{sleuth} object
+#' @seealso \code{\link{sleuth_save}}, \code{\link{sleuth_deploy}}
+#' @export
+sleuth_load <- function(file) {
+  readRDS(file)
 }
