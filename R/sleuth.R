@@ -589,46 +589,6 @@ summary.sleuth <- function(obj, covariates = TRUE) {
   res
 }
 
-#' deploy a sleuth object
-#'
-#' prepare a sleuth object to be deployed in a shiny application.
-#'
-#' creates a directory \code{path} and creates a valid shiny application.
-#'
-#' \itemize{
-#'  \item saves a sleuth object using \code{\link{sleuth_save}}
-#'  \item creates a file \code{app.R} loading the sleuth object and calling \code{\link{sleuth_live}}
-#' }
-#'
-#' @param obj a \code{sleuth} object
-#' @param base_dir the base directory in which to save a shiny application
-#' @seealso \code{\link{sleuth_save}}, \code{\link{sleuth_load}}
-#' @export
-sleuth_deploy <- function(obj, base_dir, overwrite = FALSE) {
-  obj_name <- 'so.rds'
-
-  if (!overwrite) {
-    if (file.exists(file.path(base_dir, obj_name)) &&
-      file.exists(file.path(base_dir, 'app.R'))) {
-      stop('a sleuth shiny object already exists at this location. Either specify a different directory or set "overwrite = TRUE"')
-    }
-  }
-
-  dir.create(base_dir, showWarnings = FALSE, recursive = TRUE, mode = '0755')
-
-  sleuth_save(obj, file = file.path(base_dir, obj_name))
-  commands <- paste(
-    "library(sleuth)",
-    "",
-    paste0("so <- sleuth_load('", obj_name, "')"),
-    "sleuth_live(so)",
-    sep = "\n")
-
-  write(commands, file = file.path(base_dir, 'app.R'))
-
-  invisible(NULL)
-}
-
 #' Create a gene table from a sleuth object
 #'
 #' Take in a sleuth object with added genes, and return a data table in which genes
