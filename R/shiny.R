@@ -279,11 +279,17 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
             column(3,
               selectInput('bs_var_units', label = 'units: ',
-                choices = names(obj$bs_quants[[1]]),
-                selected = names(obj$bs_quants[[1]])[1]))
+                choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
+                            else { names(obj$bs_quants[[1]]) } ),
+                selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
+                            else { names(obj$bs_quants[[1]])[1] })
+                ))
             ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plotOutput('bs_var_plt')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0)
+                    { HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least one of extra_bootstrap_summary or read_bootstrap_tpm to use this feature.<br>') }
+                    else { plotOutput('bs_var_plt') }
+             )),
           fluidRow(
             div(align = "right", style = "margin-right:15px; margin-bottom:10px",
               downloadButton("download_bs_var_plt", "Download Plot"))

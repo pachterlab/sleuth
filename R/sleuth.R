@@ -339,6 +339,7 @@ sleuth_prep <- function(
       all_sample_bootstrap[, i] <- apply(bs_mat[, which_target_id], 2, var)
     } # end summarize bootstraps
     msg('')
+    ret$target_id <- target_id
 
     sigma_q_sq <- rowMeans(all_sample_bootstrap)
     names(sigma_q_sq) <- which_target_id
