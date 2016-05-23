@@ -236,6 +236,47 @@ normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
   kal
 }
 
+#' bootstrap summary
+#'
+#' Extract the bootstrap summary from a sleuth object that has been initialized in sleuth_prep.
+#'
+#' @param obj a \code{sleuth} object such that \code{extra_bootstrap_summary = TRUE} inside of \code{\link{sleuth_prep}}.
+#' @param target_id a character vector of length 1 indicating the target_id (transcript or gene name depending on aggregation mode)
+#' @param units a character vector of either 'est_counts' or 'tpm' (also requires \code{extra_bootstrap_summary = TRUE} in \code{\link{sleuth_prep}})
+#' @return a \code{data.frame} with the summary statistics across all samples for that particular target
+#' @export
+get_bootstrap_summary <- function(obj, target_id, units = 'est_counts') {
+  stopifnot( is(obj, 'sleuth') )
+
+  if (units != 'est_counts' && units != 'tpm') {
+    stop(paste0("'", units, "' is invalid for 'units'. please see documentation"))
+  }
+
+  if (is.null(obj$bs_quants)) {
+    if (units == 'est_counts') {
+      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE'")
+    } else {
+      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE' and 'read_bootstrap_tpm = TRUE'")
+    }
+  }
+
+  if (!(target_id %in% rownames(obj$bs_quants[[1]][[units]]))) {
+    stop(paste0("couldn't find target_id '", target_id, "'"))
+  }
+
+  df <- as_df(
+    do.call(rbind,
+      lapply(obj$bs_quants,
+      function(sample_bs) {
+        sample_bs[[units]][target_id, ]
+      })
+      )
+    )
+  df <- dplyr::bind_cols(df, obj$sample_to_covariates)
+
+  df
+}
+
 
 # Sample bootstraps
 #

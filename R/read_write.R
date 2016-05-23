@@ -169,6 +169,8 @@ read_bootstrap_mat <- function(fname,
   for (i in 1:nrow(bs_mat)) {
     bs_mat[i, ] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1)) / est_count_sf
   }
+  target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  colnames(bs_mat) <- target_id
 
   bs_mat
 }
