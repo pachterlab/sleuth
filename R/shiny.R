@@ -27,7 +27,7 @@
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result
 #' @export
-#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}
+#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}, \code{\link{sleuth_deploy}}
 sleuth_live <- function(obj, settings = sleuth_live_settings(),
   options = list(port = 42427), ...) {
   stopifnot( is(obj, 'sleuth') )
@@ -279,11 +279,17 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
             column(3,
               selectInput('bs_var_units', label = 'units: ',
-                choices = names(obj$bs_quants[[1]]),
-                selected = names(obj$bs_quants[[1]])[1]))
+                choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
+                            else { names(obj$bs_quants[[1]]) } ),
+                selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
+                            else { names(obj$bs_quants[[1]])[1] })
+                ))
             ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plotOutput('bs_var_plt')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0)
+                    { HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least one of extra_bootstrap_summary or read_bootstrap_tpm to use this feature.<br>') }
+                    else { plotOutput('bs_var_plt') }
+             )),
           fluidRow(
             div(align = "right", style = "margin-right:15px; margin-bottom:10px",
               downloadButton("download_bs_var_plt", "Download Plot"))
@@ -1584,4 +1590,45 @@ sleuth_live_settings <- function(test_type = 'wt') {
   result$test_type <- test_type
 
   result
+}
+
+#' deploy a sleuth object
+#'
+#' prepare a sleuth object to be deployed in a shiny application.
+#'
+#' creates a directory \code{path} and creates a valid shiny application.
+#'
+#' \itemize{
+#'  \item saves a sleuth object using \code{\link{sleuth_save}}
+#'  \item creates a file \code{app.R} loading the sleuth object and calling \code{\link{sleuth_live}}
+#' }
+#'
+#' @param obj a \code{sleuth} object
+#' @param base_dir the base directory in which to save a shiny application
+#' @param overwrite if \code{TRUE}, overwrite everything at \code{bayes_dir}
+#' @seealso \code{\link{sleuth_save}}, \code{\link{sleuth_load}}, \code{\link{sleuth_live}}
+#' @export
+sleuth_deploy <- function(obj, base_dir, overwrite = FALSE) {
+  obj_name <- 'so.rds'
+
+  if (!overwrite) {
+    if (file.exists(file.path(base_dir, obj_name)) &&
+      file.exists(file.path(base_dir, 'app.R'))) {
+      stop('a sleuth shiny object already exists at this location. Either specify a different directory or set "overwrite = TRUE"')
+    }
+  }
+
+  dir.create(base_dir, showWarnings = FALSE, recursive = TRUE, mode = '0755')
+
+  sleuth_save(obj, file = file.path(base_dir, obj_name))
+  commands <- paste(
+    "library(sleuth)",
+    "",
+    paste0("so <- sleuth_load('", obj_name, "')"),
+    "sleuth_live(so)",
+    sep = "\n")
+
+  write(commands, file = file.path(base_dir, 'app.R'))
+
+  invisible(NULL)
 }

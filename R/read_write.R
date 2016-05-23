@@ -169,6 +169,8 @@ read_bootstrap_mat <- function(fname,
   for (i in 1:nrow(bs_mat)) {
     bs_mat[i, ] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1)) / est_count_sf
   }
+  target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  colnames(bs_mat) <- target_id
 
   bs_mat
 }
@@ -402,4 +404,31 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
   }
 
   invisible(kal)
+}
+
+#' save a sleuth object
+#'
+#' save a sleuth object
+#'
+#' @param obj a \code{sleuth} object
+#' @param the location to save the object to
+#' @seealso \code{\link{sleuth_load}}, \code{\link{sleuth_deploy}}
+#' @export
+sleuth_save <- function(obj, file) {
+  if (!is(obj, 'sleuth')) {
+    stop('please provide a sleuth object')
+  }
+  saveRDS(obj, file=file)
+}
+
+#' load a sleuth object
+#'
+#' load a sleuth object previously saved with \code{sleuth_save}
+#'
+#' @param file the file to load
+#' @return a \code{sleuth} object
+#' @seealso \code{\link{sleuth_save}}, \code{\link{sleuth_deploy}}
+#' @export
+sleuth_load <- function(file) {
+  readRDS(file)
 }

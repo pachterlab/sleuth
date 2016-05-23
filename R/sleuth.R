@@ -322,12 +322,15 @@ sleuth_prep <- function(
 
       if (extra_bootstrap_summary) {
         bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
+        colnames(bs_quant_est_counts) <- c("min", "lower", "mid", "upper",
+          "max")
         ret$bs_quants[[samp_name]] <- list(est_counts = bs_quant_est_counts)
       }
 
       if (read_bootstrap_tpm) {
         bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+        colnames(bs_quant_tpm) <- c("min", "lower", "mid", "upper", "max")
         ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
       }
 

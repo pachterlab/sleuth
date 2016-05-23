@@ -606,41 +606,32 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
 
 #' Plot bootstrap summary
 #'
-#' Get a d
-#' @param bs_df a bootstrap summary data.frame from \code{summarize_bootstrap}
-#' @param ... additional arguments to `geom_point`
+#' Plot the normalized bootstraps across all samples.
+#'
+#' @param obj a sleuth object that contains a bootstrap summary (see \code{\link{get_bootstrap_summary}})
+#' @param target_id a character vector of length 1 indicating the target_id (transcript or gene name depending on aggregation mode)
+#' @param units a character vector of either 'est_counts' or 'tpm'
+#' @param color_by a column in the sample to covariates to color by
+#' @param x_axis_angle the angle of the x-axis labels
 #' @return a ggplot2 object
 #' @export
 plot_bootstrap <- function(obj,
-  transcript,
+  target_id,
   units = 'est_counts',
   color_by = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   x_axis_angle = 50
   ) {
+  stopifnot( is(obj, 'sleuth') )
 
-  #df <- get_bootstraps(obj, transcript)
-  #
-  #if (nrow(df) == 0) {
-  #  stop("Couldn't find transcript ", transcript)
-  #}
-  #p <- ggplot(df, aes_string('sample', units))
-  #p <- p + geom_boxplot(aes_string(fill = color_by))
-  #p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
-  #p <- p + ggtitle(transcript)
-  #p
-  tr_index <- which(obj$target_id == transcript)
-  df <- as_df(do.call(rbind, lapply(seq_along(obj$bs_quants), function(i) {
-    obj$bs_quants[[i]][[units]][tr_index, ]
-  })))
+  df <- get_bootstrap_summary(obj, target_id, units)
 
-  colnames(df) <- c("min", "lower", "mid", "upper", "max")
-  df <- data.frame(df, obj$sample_to_covariates)
-
-  p <- ggplot(df, aes(x=sample, ymin=min, lower=lower, middle=mid, upper=upper, ymax=max))
+  p <- ggplot(df, aes(x = sample, ymin = min, lower = lower, middle = mid,
+    upper = upper, ymax = max))
   p <- p + geom_boxplot(stat = "identity", aes_string(fill = color_by))
   p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
   p <- p + ylab(units)
-  p <- p + ggtitle(transcript)
+  p <- p + ggtitle(target_id)
+
   p
 }
 
