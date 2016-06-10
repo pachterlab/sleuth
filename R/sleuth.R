@@ -157,6 +157,7 @@ sleuth_prep <- function(
     stop("norm_fun_tpm must be a function")
   }
 
+
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
 
@@ -168,6 +169,13 @@ sleuth_prep <- function(
 
   kal_dirs <- sample_to_covariates$path
   sample_to_covariates$path <- NULL
+
+  msg('dropping unused factor levels')
+  for(col in colnames(sample_to_covariates)) {
+    if(is(sample_to_covariates[, col], "factor")) {
+      sample_to_covariates[, col] = droplevels(sample_to_covariates[, col])
+    }
+  }
   nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
