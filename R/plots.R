@@ -99,9 +99,8 @@ plot_pca <- function(obj,
       obj$sample_to_covariates$sample)
   }
 
-  pca_res <- prcomp(mat)
-
-  pcs <- as_df(pca_res$rotation[, c(pc_x, pc_y)])
+  pca_res <- prcomp(t(mat))
+  pcs <- as_df(pca_res$x[, c(pc_x, pc_y)])
   pcs$sample <- rownames(pcs)
   rownames(pcs) <- NULL
 

@@ -1237,7 +1237,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$table_type <- renderUI({
       if(!is.null(obj$target_mapping)) {
         selectInput('pop_genes', label = 'table type: ',
-          choices = list('transcript table' = 1, 'gene table' = 2),
+          choices = list('target table' = 1, 'gene table' = 2),
           selected = 1)
       }
     })

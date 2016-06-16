@@ -292,7 +292,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if (show_all) {
+  if (show_all && !obj$gene_mode) {
     tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
     res <- dplyr::left_join(
       data.table::as.data.table(tids),
@@ -301,7 +301,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if ( !is.null(obj$target_mapping) ) {
+  if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
     res <- dplyr::left_join(
       data.table::as.data.table(res),
       data.table::as.data.table(obj$target_mapping),

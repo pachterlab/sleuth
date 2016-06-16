@@ -331,6 +331,9 @@ sleuth_prep <- function(
     ret$bs_summary <- bs_summary
   }
 
+  ret$gene_mode <- !is.null(gene_mode)
+  ret$gene_column <- gene_mode
+
   class(ret) <- 'sleuth'
 
   ret
@@ -678,6 +681,10 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
 #' @export
 transcripts_from_gene <- function(obj, test, test_type,
   which_model, gene_colname, gene_name) {
+
+  # FIXME: this is a work around
+  obj$gene_mode <- FALSE
+
   table <- sleuth_results(obj, test, test_type, which_model)
   table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
   table <- dplyr::arrange_(table, gene_colname, ~qval)
