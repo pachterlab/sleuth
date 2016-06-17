@@ -371,7 +371,7 @@ reads_per_base_transform <- function(reads_table, scale_factor_input,
   norm_by_length = TRUE) {
 
   if (is(scale_factor_input, 'data.frame')) {
-    message('USING NORMALIZATION BY EFFECTIVE LENGTH')
+    # message('USING NORMALIZATION BY EFFECTIVE LENGTH')
     # browser()
     reads_table <- dplyr::left_join(
       data.table::as.data.table(reads_table),
@@ -415,6 +415,7 @@ reads_per_base_transform <- function(reads_table, scale_factor_input,
 
 gene_summary <- function(obj, which_column, transform = identity, norm_by_length = TRUE) {
   # stopifnot(is(obj, 'sleuth'))
+  msg(paste0('aggregating by column: ', which_column))
   obj_mod <- obj
   if (norm_by_length) {
     tmp <- obj$obs_raw
@@ -437,11 +438,11 @@ gene_summary <- function(obj, which_column, transform = identity, norm_by_length
   obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
   obs_counts <- transform(obs_counts)
 
-  obj_mod$kal <- lapply(seq_along(obj_mod$kal),
+  obj_mod$kal <- parallel::mclapply(seq_along(obj_mod$kal),
     function(i) {
       k <- obj_mod$kal[[i]]
       current_sample <- obj_mod$sample_to_covariates$sample[i]
-      print(current_sample)
+      msg(paste('aggregating across sample: ', current_sample))
       k$bootstrap <- lapply(k$bootstrap, function(b) {
         b <- dplyr::mutate(b, sample = current_sample)
         reads_per_base_transform(b, scale_factor, which_column,

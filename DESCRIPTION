@@ -18,6 +18,7 @@ Imports:
     tidyr,
     reshape2,
     rhdf5,
+    parallel,
     lazyeval,
     shiny
 Suggests:

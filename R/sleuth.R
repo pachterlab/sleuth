@@ -83,6 +83,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param ... additional arguments passed to the filter function
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
+#' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
@@ -96,7 +97,7 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
-  gene_mode = NULL,
+  aggregation_column = NULL,
   ...) {
 
   ##############################
@@ -153,6 +154,9 @@ sleuth_prep <- function(
     stop("norm_fun_tpm must be a function")
   }
 
+  if ( !is.null(aggregation_column) && is.null(target_mapping) ) {
+    stop("You provided a 'aggregation_column' to aggregate by, but not a 'target_mapping'. Please provided a 'target_mapping'.")
+  }
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
@@ -301,24 +305,29 @@ sleuth_prep <- function(
 
     msg('summarizing bootstraps')
     bs_summary <- NULL
-    if (is.null(gene_mode)) {
+    if (is.null(aggregation_column)) {
       bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
       # if no target ids were specified for the filter, use the ones generated here
       bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
       bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
     } else {
-      bs_summary <- gene_summary(ret, gene_mode, function(x) log(x + 0.5))
+      bs_summary <- gene_summary(ret, aggregation_column, function(x) log(x + 0.5))
 
         tmp <- ret$obs_raw
         tmp <- dplyr::group_by(tmp, target_id)
         tmp <- dplyr::summarize(tmp, pass_filter = basic_filter(est_counts))
+
+        w_pass <- dplyr::distinct(dplyr::select_(tmp, 'pass_filter',
+          aggregation_column))
+
+        msg(paste0(sum(w_pass$pass_filter), ' genes passed the filter.'))
         tmp <- data.table::data.table(tmp)
         target_mapping <- data.table::data.table(target_mapping)
         tmp <- dplyr::inner_join(tmp, target_mapping, by = 'target_id')
 
         sleuth_gene_filter <- dplyr::filter(tmp, pass_filter)
         sleuth_gene_filter <- dplyr::select_(sleuth_gene_filter,
-          target_id = gene_mode)
+          target_id = aggregation_column)
         sleuth_gene_filter <- dplyr::distinct(sleuth_gene_filter)
         filter_target_id <- sleuth_gene_filter$target_id
 
@@ -331,8 +340,8 @@ sleuth_prep <- function(
     ret$bs_summary <- bs_summary
   }
 
-  ret$gene_mode <- !is.null(gene_mode)
-  ret$gene_column <- gene_mode
+  ret$gene_mode <- !is.null(aggregation_column)
+  ret$gene_column <- aggregation_column
 
   class(ret) <- 'sleuth'
 
