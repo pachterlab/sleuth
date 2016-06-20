@@ -18,7 +18,7 @@ __sleuth__ is a tool for the analysis and comparison of multiple related RNA-Seq
 2. Implemention of a flexible response error measurement model for inference that allows for a multitude of experimental designs.
 3. Interactive plots that enable real-time exploratory data analysis.
 
-To use __sleuth__, RNA-Seq data must first be quantified with [__kallisto__](http://pachterlab.github.io/kallisto/), which is a program for _very_ fast RNA-Seq quantification based on pseudo-alignment. An important feature of __kallisto__ is that it outputs bootstraps along with the estimates of transcript abundances. These can serve as proxies for technical replicates, allowing for an ascertainment of the variability in estimates due to the random processes underlying RNA-Seq as well as the statistical procedure of read assignment. __kallisto__ can quantify 30 million human reads in less than 3 minutes on a Mac desktop computer using only the read sequences and a transcriptome index that itself takes less than 10 minutes to build. __sleuth__ has also been designed to be lightweight and fast, and therefore RNA-Seq analysis with __kallisto__ and  __sleuth__ is tractable on a laptop computer in a matter of minutes.  
+To use __sleuth__, RNA-Seq data must first be quantified with [__kallisto__](http://pachterlab.github.io/kallisto/), which is a program for _very_ fast RNA-Seq quantification based on pseudo-alignment. An important feature of __kallisto__ is that it outputs bootstraps along with the estimates of transcript abundances. These can serve as proxies for technical replicates, allowing for an ascertainment of the variability in estimates due to the random processes underlying RNA-Seq as well as the statistical procedure of read assignment. __kallisto__ can quantify 30 million human reads in less than 3 minutes on a Mac desktop computer using only the read sequences and a transcriptome index that itself takes less than 10 minutes to build. __sleuth__ has also been designed to be lightweight and fast, and therefore RNA-Seq analysis with __kallisto__ and  __sleuth__ is tractable on a laptop computer in a matter of minutes.
 
 The model __sleuth__ uses for performing differential analysis is a general linear model where there is error in the response. Formally, in the case of two conditions being assayed, for a transcript $t$ in a sample $i$, the (log) "true" unobserved abundance $y_i$ measured in read counts is modeled by
 
@@ -119,7 +119,7 @@ In this case, the kallisto output is correctly matched with the sample identifie
 print(s2c)
 ```
 
-Now the "sleuth object" can be constructed. This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the __sleuth__ response error measurement model and (3) perform differential analysis (testing). On a laptop the three steps should take about 2 minutes altogether.
+Now the "sleuth object" can be constructed. This requires four commands that (1) load the kallisto processed data into the object (2) estimate parameters for the __sleuth__ response error measurement (full) model (3) estimate parameters for the __sleuth__ reduced model, and (4) perform differential analysis (testing). On a laptop the four steps should take about a few minutes altogether.
 
 First type
 
@@ -127,23 +127,33 @@ First type
 so <- sleuth_prep(s2c, ~ condition)
 ```
 
-then
+then fit the full model
 
 ```{r eval=TRUE}
 so <- sleuth_fit(so)
 ```
 
-and finally
+Next, we fit the reduced model.
+In this case, the reduced model is the intercept-only model:
 
-```{r eval=TRUE}
-so <- sleuth_wt(so, 'conditionscramble')
+```{r}
+so <- sleuth_fit(so, ~1, 'reduced')
 ```
 
-In general, one can see the possible tests that could be performed using the `which_beta` parameter in `sleuth_wt` and examining the coefficients:
+and finally perform the test:
+
+```{r eval=TRUE}
+so <- sleuth_lrt(so, 'reduced', 'full')
+```
+
+In general, we can test models that are nested using the likelihood ratio test.
+Viewing models which have been fit can be done using the `models()` function.
 
 ```{r eval=TRUE}
 models(so)
 ```
+
+### Including gene names into transcript-level analysis
 
 At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the __kallisto__ estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. There is, however, one piece of information that can be useful to add in, but that is optional. In reading the kallisto output __sleuth__ has no information about _genes_, but this can be added allowing for searching and analysis by gene instead of transcript.
 
@@ -159,7 +169,9 @@ biocLite("biomaRt")
 Then collect gene names with
 
 ```{r eval=TRUE}
-mart <- biomaRt::useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl")
+mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
+  dataset = "hsapiens_gene_ensembl",
+  host = 'ensembl.org')
 ```
 
 and add them into the __sleuth__ table with
@@ -171,7 +183,8 @@ t2g <- dplyr::rename(t2g, target_id = ensembl_transcript_id,
   ens_gene = ensembl_gene_id, ext_gene = external_gene_name)
 so <- sleuth_prep(s2c, ~ condition, target_mapping = t2g)
 so <- sleuth_fit(so)
-so <- sleuth_wt(so, which_beta = 'conditionscramble')
+so <- sleuth_fit(so, ~1, 'reduced')
+so <- sleuth_lrt(so, 'reduced', 'full')
 ```
 
 This addition of metadata to transcript IDs is very general, and can be used to add in other information.
@@ -183,6 +196,35 @@ sleuth_live(so)
 ```
 
 To generate a table of results for analysis within R type
+
 ```{r}
-results_table <- sleuth_results(so, 'conditionscramble')
+results_table <- sleuth_results(so, 'reduced:full', test_type = 'lrt')
+```
+
+### Gene level analysis
+
+Assuming `biomaRt` has been installed as in the previous step, we can also run sleuth in the 'gene aggregation' mode.
+In addition to requiring a `target_mapping`, we also require a string which references a column to aggregate by, `aggregation_column`.
+In our example, we could use `ens_gene` or `ext_gene`.
+We typically prefer `ens_gene` as `ext_gene` tends to be a bit redundant.
+
+The modified sleuth prep command looks as follows:
+
+```{r}
+so <- sleuth_prep(s2c, ~condition, target_mapping = t2g,
+  aggregation_column = 'ens_gene')
+```
+
+The remainder of the pipeline is unchanged.
+When you run `sleuth_live` or `sleuth_results`, the gene column you selected will be listed as `target_id`, rather than the transcript name.
+
+`sleuth_prep` might take a bit longer here because aggregation has to be done amongst all of the bootstraps as well.
+We are currently working to speed this up and expect to release it along with several memory improvements in the next version (0.28.2).
+One way to speed this up is to use more processes (assuming you have more cores).
+Internally, `sleuth` uses the function `parallel::mclapply`.
+You can set the number of cores as follows:
+
+```{r,eval=FALSE}
+# set the number of available cores to 4
+options(mc.cores = 4L)
 ```

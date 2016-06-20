@@ -71,7 +71,10 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
   if ( length(target_id) != length(unique(target_id))) {
     tid_counts <- table(target_id)
-    warning('Some target_ids in your kallisto index are exactly the same. We will make these unique but strongly suggest you change the names of the FASTA and recreate the index.',
+    warning(
+      'Some target_ids in your kallisto index are exactly the same.',
+      ' We will make these unique but strongly suggest you change the names',
+      ' of the FASTA and recreate the index.',
       ' These are the repeats: ',
       paste(names(tid_counts[which(tid_counts > 1)]), collapse = ', '))
     rm(tid_counts)
@@ -84,13 +87,13 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   abund$eff_len <- as.numeric(rhdf5::h5read(fname, "aux/eff_lengths"))
   abund$len <- as.numeric(rhdf5::h5read(fname, "aux/lengths"))
 
-  num_processed <- if ( h5check(fname, '/aux', 'num_processed') ) {
+  num_processed <- if ( h5check(fname, '/aux', 'num_processed') ) { # nolint
     as.integer(rhdf5::h5read(fname, 'aux/num_processed'))
   } else {
     NA_integer_
   }
 
-  fld <- if ( h5check(fname, '/aux', 'fld') ) {
+  fld <- if ( h5check(fname, '/aux', 'fld') ) { # nolint
     as.integer(rhdf5::h5read(fname, 'aux/fld'))
   } else {
     NA_integer_
@@ -98,7 +101,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
 
   bias_observed <- NA
   bias_normalized <- NA
-  if ( h5check(fname, '/aux', 'bias_observed') ) {
+  if ( h5check(fname, '/aux', 'bias_observed') ) { # nolint
     bias_observed <- rhdf5::h5read(fname, 'aux/bias_observed')
     bias_normalized <- rhdf5::h5read(fname, 'aux/bias_normalized')
   }
@@ -112,8 +115,8 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
         msg("Only reading ", max_bootstrap, " bootstrap samples")
         num_bootstrap <- max_bootstrap
       }
-      bs_samples <- lapply(0:(num_bootstrap[1]-1), function(i)
-        {
+      bs_samples <- lapply(0:(num_bootstrap[1] - 1),
+      function(i) {
           .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {
@@ -155,6 +158,7 @@ h5check <- function(fname, group, name) {
   bs <- adf( target_id = main_est$target_id )
   bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
   bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
+  bs$eff_len <- main_est$eff_len
 
   bs
 }
@@ -272,12 +276,12 @@ gtf_gene_names <- function(gtf_attr) {
     while ((nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
       j <= length(all_attr[[i]]) ) {
       if (all_attr[[i]][j] == "gene_id") {
-        gene_id[i] <- all_attr[[i]][j+1] %>%
+        gene_id[i] <- all_attr[[i]][j + 1] %>%
           gsub('"', "", .) %>%
           sub(";", "", .)
         j <- j + 2
       } else if (all_attr[[i]][j] == "transcript_id") {
-        trans_id[i] <- all_attr[[i]][j+1] %>%
+        trans_id[i] <- all_attr[[i]][j + 1] %>%
           gsub('"', "", .) %>%
           sub(";", "", .)
         j <- j + 2

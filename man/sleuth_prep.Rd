@@ -6,7 +6,8 @@
 \usage{
 sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
   target_mapping = NULL, max_bootstrap = NULL,
-  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors, ...)
+  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
+  aggregation_column = NULL, ...)
 }
 \arguments{
 \item{sample_to_covariates}{a \code{data.frame} which contains a mapping
@@ -35,6 +36,8 @@ transcript.}
 \item{norm_fun_counts}{a function to perform between sample normalization on the estimated counts.}
 
 \item{norm_fun_tpm}{a function to perform between sample normalization on the TPM}
+
+\item{aggregation_column}{a string of the column name in \code{\link{target_mapping}} to aggregate targets}
 
 \item{...}{additional arguments passed to the filter function}
 }

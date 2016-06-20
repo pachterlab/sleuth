@@ -78,8 +78,9 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     X <- formula
   }
   rownames(X) <- obj$sample_to_covariates$sample
-  A <- solve( t(X) %*% X )
+  A <- solve(t(X) %*% X)
 
+  msg("fitting measurement error models")
   mes <- me_model_by_row(obj, X, obj$bs_summary)
   tid <- names(mes)
 
@@ -109,13 +110,12 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
-
   msg('computing variance of betas')
   beta_covars <- lapply(1:nrow(l_smooth),
     function(i) {
       row <- l_smooth[i,]
       with(row,
-        covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
+          covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
         )
     })
   names(beta_covars) <- l_smooth$target_id
@@ -266,8 +266,7 @@ me_model_by_row <- function(obj, design, bs_summary) {
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
-    function(i)
-    {
+    function(i) {
       me_model(design, bs_summary$obs_counts[i,], bs_summary$sigma_q_sq[i])
     })
   names(models) <- rownames(bs_summary$obs_counts)
@@ -305,7 +304,7 @@ me_heteroscedastic_by_row <- function(obj, design, samp_bs_summary, obs_counts) 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
       res <- me_white_model(design, obs_counts[i,], sigma_q_sq[i,], A)
-      res$df$target_id = rownames(obs_counts)[i]
+      res$df$target_id <- rownames(obs_counts)[i]
       res
     })
   names(models) <- rownames(obs_counts)
@@ -354,8 +353,14 @@ me_white_var <- function(df, sigma_col, sigma_q_col, X, tXX_inv) {
   res
 }
 
+
+
 #' @export
-bs_sigma_summary <- function(obj, transform = identity) {
+bs_sigma_summary <- function(obj, transform = identity, norm_by_length = FALSE) {
+  # if (norm_by_length) {
+  #   scaling_factor <- get_scaling_factors(obj$obs_raw)
+  #   reads_per_base_transform()
+  # }
   obs_counts <- obs_to_matrix(obj, "est_counts")
   obs_counts <- transform( obs_counts )
 
@@ -373,8 +378,114 @@ bs_sigma_summary <- function(obj, transform = identity) {
   list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
 }
 
-me_model <- function(X, y, sigma_q_sq)
-{
+# transform reads into reads per base
+#
+#
+reads_per_base_transform <- function(reads_table, scale_factor_input,
+  collapse_column = NULL,
+  mapping = NULL,
+  norm_by_length = TRUE) {
+
+  if (is(scale_factor_input, 'data.frame')) {
+    # message('USING NORMALIZATION BY EFFECTIVE LENGTH')
+    # browser()
+    reads_table <- dplyr::left_join(
+      data.table::as.data.table(reads_table),
+      data.table::as.data.table(dplyr::select(scale_factor_input, target_id, sample, scale_factor)),
+      by = c('sample', 'target_id'))
+  } else {
+    reads_table <- dplyr::mutate(reads_table, scale_factor = scale_factor_input)
+  }
+  # browser()
+  reads_table <- dplyr::mutate(reads_table,
+    reads_per_base = est_counts / eff_len,
+    scaled_reads_per_base = scale_factor * reads_per_base
+    )
+
+  reads_table <- data.table::as.data.table(reads_table)
+
+  if (!is.null(collapse_column)) {
+    mapping <- data.table::as.data.table(mapping)
+    # old stuff
+    if (!(collapse_column %in% colnames(reads_table))) {
+      reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
+    }
+    # browser()
+    # reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
+
+    rows_to_remove <- !is.na(reads_table[[collapse_column]])
+    reads_table <- dplyr::filter(reads_table, rows_to_remove)
+    if ('sample' %in% colnames(reads_table)) {
+      reads_table <- dplyr::group_by_(reads_table, 'sample', collapse_column)
+    } else {
+      reads_table <- dplyr::group_by_(reads_table, collapse_column)
+    }
+
+    reads_table <- dplyr::summarize(reads_table,
+      scaled_reads_per_base = sum(scaled_reads_per_base))
+    data.table::setnames(reads_table, collapse_column, 'target_id')
+  }
+
+  as_df(reads_table)
+}
+
+gene_summary <- function(obj, which_column, transform = identity, norm_by_length = TRUE) {
+  # stopifnot(is(obj, 'sleuth'))
+  msg(paste0('aggregating by column: ', which_column))
+  obj_mod <- obj
+  if (norm_by_length) {
+    tmp <- obj$obs_raw
+    # tmp <- as.data.table(tmp)
+    tmp <- dplyr::left_join(
+      data.table::as.data.table(tmp),
+      data.table::as.data.table(obj$target_mapping),
+      by = 'target_id')
+    tmp <- dplyr::group_by_(tmp, 'sample', which_column)
+    scale_factor <- dplyr::mutate(tmp, scale_factor = median(eff_len))
+  } else {
+    scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
+  }
+  # scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
+  obj_mod$obs_norm_filt <- reads_per_base_transform(obj_mod$obs_norm_filt,
+    scale_factor, which_column, obj$target_mapping, norm_by_length)
+  obj_mod$obs_norm <- reads_per_base_transform(obj_mod$obs_norm,
+    scale_factor, which_column, obj$target_mapping, norm_by_length)
+
+  obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
+  obs_counts <- transform(obs_counts)
+
+  obj_mod$kal <- parallel::mclapply(seq_along(obj_mod$kal),
+    function(i) {
+      k <- obj_mod$kal[[i]]
+      current_sample <- obj_mod$sample_to_covariates$sample[i]
+      msg(paste('aggregating across sample: ', current_sample))
+      k$bootstrap <- lapply(k$bootstrap, function(b) {
+        b <- dplyr::mutate(b, sample = current_sample)
+        reads_per_base_transform(b, scale_factor, which_column,
+          obj$target_mapping, norm_by_length)
+      })
+
+      k
+    })
+
+  bs_summary <- sleuth_summarize_bootstrap_col(obj_mod, "scaled_reads_per_base",
+    transform)
+
+  bs_summary <- dplyr::group_by(bs_summary, target_id)
+  # FIXME: the column name 'bs_var_est_counts' is incorrect. should actually rename it above
+  bs_summary <- dplyr::summarise(bs_summary,
+    sigma_q_sq = mean(bs_var_scaled_reads_per_base))
+
+  bs_summary <- as_df(bs_summary)
+
+  bs_sigma <- bs_summary$sigma_q_sq
+  names(bs_sigma) <- bs_summary$target_id
+  bs_sigma <- bs_sigma[rownames(obs_counts)]
+
+  list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
+}
+
+me_model <- function(X, y, sigma_q_sq) {
   n <- nrow(X)
   degrees_free <- n - ncol(X)
 

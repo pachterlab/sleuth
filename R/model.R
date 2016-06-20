@@ -111,7 +111,9 @@ get_test <- function(obj, label, type, model) {
   }
 
   if (is.null(res)) {
-    stop("'", label, "' is not a valid label for a test. Please see valid models and tests using the functions 'models' and 'tests'. Remember to also correctly specify the test type.")
+    stop("'", label, "' is not a valid label for a test.",
+      " Please see valid models and tests using the functions 'models' and 'tests'.",
+      " Remember to also correctly specify the test type.")
   }
 
   res
@@ -125,7 +127,9 @@ test_exists <- function(obj, label, type, model) {
     temp <- get_test(obj, label, type, model)
   }, error = function(e) {
     return(FALSE)
-  }, finally = function(x) {})
+  }, finally = function(x) {
+      # intentionally empty
+    })
 
   TRUE
 }
@@ -198,7 +202,7 @@ tests <- function(obj) {
 #' @export
 tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
   if ( lrt ) {
-    cat('~likelihood ratio tests:\n')
+    cat('~likelihood ratio tests:\n') # nolint
     cur_tests <- list_tests(obj, 'lrt')
     if (length(cur_tests) > 0) {
       for (test in cur_tests) {
@@ -214,7 +218,7 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
   }
 
   if ( wt ) {
-    cat('~wald tests:\n')
+    cat('~wald tests:\n') # nolint
     cur_tests <- list_tests(obj, 'wt')
     if (length(cur_tests) > 0) {
       for (i in 1:length(cur_tests)) {
@@ -311,7 +315,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if (show_all) {
+  if (show_all && !obj$gene_mode) {
     tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
     res <- dplyr::left_join(
       data.table::as.data.table(tids),
@@ -320,7 +324,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if ( !is.null(obj$target_mapping) ) {
+  if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
     res <- dplyr::left_join(
       data.table::as.data.table(res),
       data.table::as.data.table(obj$target_mapping),
