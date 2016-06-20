@@ -317,13 +317,14 @@ sleuth_prep <- function(
         tmp <- dplyr::group_by(tmp, target_id)
         tmp <- dplyr::summarize(tmp, pass_filter = basic_filter(est_counts))
 
-        w_pass <- dplyr::distinct(dplyr::select_(tmp, 'pass_filter',
-          aggregation_column))
-
-        msg(paste0(sum(w_pass$pass_filter), ' genes passed the filter.'))
         tmp <- data.table::data.table(tmp)
         target_mapping <- data.table::data.table(target_mapping)
         tmp <- dplyr::inner_join(tmp, target_mapping, by = 'target_id')
+
+        w_pass <- dplyr::distinct(dplyr::select_(tmp, 'pass_filter',
+          aggregation_column))
+
+        msg(paste0(sum(w_pass$pass_filter), ' genes passed the filter'))
 
         sleuth_gene_filter <- dplyr::filter(tmp, pass_filter)
         sleuth_gene_filter <- dplyr::select_(sleuth_gene_filter,

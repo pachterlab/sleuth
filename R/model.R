@@ -233,7 +233,8 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #'
 #' @param obj a \code{sleuth} object
 #' @param test a character denoting the test to extract
-#' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
+#' @param test_type a character string denoting 'lrt' for likelihood ratio test or 'wt' for Wald test.
+#' @param which_model a character string denoting the model. If extracting a wald test, use the model name.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
 #' consistent with vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
