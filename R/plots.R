@@ -256,7 +256,7 @@ plot_pc_variance <- function(obj,
   # }
   mat <- spread_abundance_by(obj$obs_norm_filt, units)
 
-  pca_calc <- prcomp(mat, scale = scale) #PCA calculations
+  pca_calc <- prcomp(t(mat), scale. = scale) #PCA calculations
 
   #computation
   eigenvalues <- (pca_calc$sdev) ^ 2
@@ -286,6 +286,7 @@ plot_pc_variance <- function(obj,
   p <- ggplot(pc_df, aes(x = PC_count, y = var)) + geom_bar(stat = "identity")
   p <- p + scale_x_continuous(breaks = 1:length(eigenvalues))
   p <- p + ylab("% of variance") + xlab("principal components")
+  p <- p + ylim(0, 100)
 
   p
 
