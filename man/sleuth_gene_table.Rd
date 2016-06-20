@@ -19,10 +19,29 @@ sleuth_gene_table(obj, test, test_type = "lrt", which_model = "full",
 \item{which_group}{a character string denoting which gene group to use}
 }
 \value{
-a \code{data.frame} containing gene names, transcript names, and significance
+a \code{data.frame} with the following columns
+
+gene name; if ext_gene name specified, it will be legible gene name.
+        If ens_gene name, it will be an Ensemble gene (assuming user followed the vignette)
+
+most_sig_trancript: Most significant transcript for the given gene
+
+pval: p-value for the test chosen
+
+qval: False discovery rate normalized p-value (Benjamini-Hochberg, see: \code{\link{p.adjust}})
+
+num_transcripts: Total number of transcripts for the given gene
+
+list_of_transcripts: All transcripts associated with this gene
 }
 \description{
 Take in a sleuth object with added genes, and return a data table in which genes
 list the most significant transcript mapping to themselves
+}
+\examples{
+sleuth_genes <- sleuth_gene_table(so, 'conditionIP', test_type ='wt',
+                                  which_group = 'ext_gene')
+head(sleuth_genes) # show info for first 5 genes
+sleuth_genes[1:5, 6] # show transcripts for first 5 genes
 }
 

@@ -907,16 +907,16 @@ plot_transcript_heatmap <- function(obj,
 }
 
 
-#' Heatmap of expression
-#'
-#' Plot all of the points in an expression matrix
-#'
-#' @param exMat the expression matrix
-#' @param clustRows if TRUE, cluster the rows by hierarchical clustering.
-#' @param clustCols if TRUE, cluster the columns by hierarchical clustering.
-#' @param rowNames if TRUE, print the row names on the plot
-#' @param colNames if TRUE, print the column names on the plot
-#' @return a ggplot object
+# Heatmap of expression
+#
+# Plot all of the points in an expression matrix
+#
+# @param exMat the expression matrix
+# @param clustRows if TRUE, cluster the rows by hierarchical clustering.
+# @param clustCols if TRUE, cluster the columns by hierarchical clustering.
+# @param rowNames if TRUE, print the row names on the plot
+# @param colNames if TRUE, print the column names on the plot
+# @return a ggplot object
 ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
                              rowNames = TRUE, colNames = TRUE) {
     if (is(exMat, 'matrix')) {
@@ -963,10 +963,10 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
     #list(plot = p, rowOrder = rowOrder, colOrder = colOrder)
 }
 
-#' Order by dendrogram
-#'
-#' @param mat a matrix where the rows are observations and the columns are different dimensions on the matrix
-#' @return a vector of label orderings
+# Order by dendrogram
+#
+# @param mat a matrix where the rows are observations and the columns are different dimensions on the matrix
+# @return a vector of label orderings
 orderByDendrogram <- function(mat) {
     hc <- hclust(dist(mat))
     dc <- as.dendrogram(hc)

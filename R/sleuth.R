@@ -62,15 +62,15 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' accounting for covariates, sequencing depth, technical and biological
 #' variance.
 #'
-#' @param sample_to_covariates is a \code{data.frame} which contains a mapping
+#' @param sample_to_covariates a \code{data.frame} which contains a mapping
 #' from \code{sample} (a column) to some set of experimental conditions or
 #' covariates. The column \code{path} is also required, which is a character
 #' vector where each element points to the corresponding kallisto output directory. The column
 #' \code{sample} should be in the same order as the corresponding entry in
 #' \code{path}.
-#' @param full_model is a \code{formula} which explains the full model (design)
+#' @param full_model an R \code{formula} which explains the full model (design)
 #' of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
-#' \code{sample_to_covariates}.
+#' \code{sample_to_covariates}. You can fit multiple covariates by joining them with '+' (see example)
 #' @param filter_fun the function to use when filtering.
 #' @param target_mapping a \code{data.frame} that has at least one column
 #' 'target_id' and others that denote the mapping for each target. if it is not
@@ -86,8 +86,13 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
-#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
-#' test whether a coeffient in the model is zero or \code{\link{sleuth_lrt}} to compare different models
+#' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
+#' genotype and drug.
+#' colnames(s2c)
+#' # [1] "sample"  "genotype"  "drug"  "path"
+#' so <- sleuth_prep(s2c, ~genotype + drug)
+#' @seealso \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} or
+#' \code{\link{sleuth_lrt}} to perform hypothesis testing
 #' @export
 sleuth_prep <- function(
   sample_to_covariates,
@@ -640,7 +645,19 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' @param test_type either 'wt' for Wald test or 'lrt' for likelihood ratio test
 #' @param which_model a character string denoting which model to use
 #' @param which_group a character string denoting which gene group to use
-#' @return a \code{data.frame} containing gene names, transcript names, and significance
+#' @return a \code{data.frame} with the following columns
+#'
+#' @return gene name; if ext_gene name specified, it will be legible gene name.
+#'         If ens_gene name, it will be an Ensemble gene (assuming user followed the vignette)
+#' @return most_sig_trancript: Most significant transcript for the given gene
+#' @return pval: p-value for the test chosen
+#' @return qval: False discovery rate normalized p-value (Benjamini-Hochberg, see: \code{\link{p.adjust}})
+#' @return num_transcripts: Total number of transcripts for the given gene
+#' @return list_of_transcripts: All transcripts associated with this gene
+#' @examples sleuth_genes <- sleuth_gene_table(so, 'conditionIP', test_type ='wt',
+#'                                   which_group = 'ext_gene')
+#' head(sleuth_genes) # show info for first 5 genes
+#' sleuth_genes[1:5, 6] # show transcripts for first 5 genes
 #' @export
 sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full', which_group = 'ens_gene') {
 

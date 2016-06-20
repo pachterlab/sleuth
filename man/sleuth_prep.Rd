@@ -10,16 +10,16 @@ sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
   aggregation_column = NULL, ...)
 }
 \arguments{
-\item{sample_to_covariates}{is a \code{data.frame} which contains a mapping
+\item{sample_to_covariates}{a \code{data.frame} which contains a mapping
 from \code{sample} (a column) to some set of experimental conditions or
 covariates. The column \code{path} is also required, which is a character
 vector where each element points to the corresponding kallisto output directory. The column
 \code{sample} should be in the same order as the corresponding entry in
 \code{path}.}
 
-\item{full_model}{is a \code{formula} which explains the full model (design)
+\item{full_model}{an R \code{formula} which explains the full model (design)
 of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
-\code{sample_to_covariates}.}
+\code{sample_to_covariates}. You can fit multiple covariates by joining them with '+' (see example)}
 
 \item{filter_fun}{the function to use when filtering.}
 
@@ -51,8 +51,15 @@ a group of kallisto results, and can then operate on them while
 accounting for covariates, sequencing depth, technical and biological
 variance.
 }
+\examples{
+# Assume we have run kallisto on a set of samples, and have two treatments,
+genotype and drug.
+colnames(s2c)
+# [1] "sample"  "genotype"  "drug"  "path"
+so <- sleuth_prep(s2c, ~genotype + drug)
+}
 \seealso{
-\code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
-test whether a coeffient in the model is zero or \code{\link{sleuth_lrt}} to compare different models
+\code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} or
+\code{\link{sleuth_lrt}} to perform hypothesis testing
 }
 

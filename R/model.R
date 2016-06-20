@@ -33,9 +33,17 @@ print.sleuth_model <- function(obj) {
 
 #' View which models have been fit
 #'
-#' View which models have been fit
+#' @description  View which models have been fit. sleuth fits data using R formulas
 #'
-#' @param obj a sleuth object
+#' @param obj a sleuth object, containing kallisto results, usually made by sleuth_prep
+#' @return an R formula showing what has been fit
+#' @examples # imagine you have a set of samples from input and IP, and input has been set to intercept
+#' models(so)
+#' # [full]
+#' # formula: ~condition
+#' # coefficients:
+#' #      (Intercept)
+#' #      conditionIP
 #' @export
 models <- function(obj, ...) {
   UseMethod('models')
@@ -232,17 +240,31 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' This function extracts Wald test results from a sleuth object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param test a character denoting the test to extract
-#' @param test_type a character string denoting 'lrt' for likelihood ratio test or 'wt' for Wald test.
-#' @param which_model a character string denoting the model. If extracting a wald test, use the model name.
+#' @param test a character string denoting the test to extract. Possible tests can be found by using \code{models(obj)}.
+#' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
 #' consistent with vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
-#' @return a \code{data.frame}
-#' @seealso \code{\link{sleuth_wt}}/\code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
+#' @return a \code{data.frame} with the following columns:
+#' @return target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
+#' @return pval: p-value of the chosen model
+#' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
+#' @return b: 'beta' value (effect size). Technically a biased estimator of the fold change
+#' @return se_b: standard error of the beta
+#' @return mean_obs: mean of natural log counts of observations
+#' @return var_obs: variance of observation
+#' @return tech_var: technical variance of observation from the bootstraps
+#' @return sigma_sq: raw estimator of the variance once the technical variance has been removed
+#' @return smooth_sigma_sq: smooth regression fit for the shrinkage estimation
+#' @return final_simga_sq: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
+#' @seealso \code{\link{sleuth_wt}} and \code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
+#' @examples
+#' models(sleuth_obj) # for this example, assume the formula is ~condition,
+#'                      and a coefficient is IP
+#' results_table <- sleuth_results(sleuth_obj, 'conditionIP')
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
   which_model = 'full', rename_cols = TRUE, show_all = TRUE) {

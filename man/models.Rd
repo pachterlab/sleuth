@@ -7,9 +7,21 @@
 models(obj, ...)
 }
 \arguments{
-\item{obj}{a sleuth object}
+\item{obj}{a sleuth object, containing kallisto results, usually made by sleuth_prep}
+}
+\value{
+an R formula showing what has been fit
 }
 \description{
-View which models have been fit
+View which models have been fit. sleuth fits data using R formulas
+}
+\examples{
+# imagine you have a set of samples from input and IP, and input has been set to intercept
+models(so)
+# [full]
+# formula: ~condition
+# coefficients:
+#      (Intercept)
+#      conditionIP
 }
 
