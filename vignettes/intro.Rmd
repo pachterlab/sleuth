@@ -203,10 +203,10 @@ results_table <- sleuth_results(so, 'reduced:full', test_type = 'lrt')
 
 ### Gene level analysis
 
-Assuming `biomaRt` has been installed as in the previous step, we can also run sleuth in the 'gene aggregation' mode.
-In addition to requiring a `target_mapping`, we also require a string which references a column to aggregate by, `aggregation_column`.
+Assuming `biomaRt` has been installed as in the previous step, sleuth can also be run in the 'gene aggregation' mode.
+In addition to requiring a `target_mapping`, a string which references a column to aggregate by, (`aggregation_column`).
 In our example, we could use `ens_gene` or `ext_gene`.
-We typically prefer `ens_gene` as `ext_gene` tends to be a bit redundant.
+It is preferable to use `ens_gene` as `ext_gene` tends to be a bit redundant.
 
 The modified sleuth prep command looks as follows:
 
@@ -216,7 +216,7 @@ so <- sleuth_prep(s2c, ~condition, target_mapping = t2g,
 ```
 
 The remainder of the pipeline is unchanged.
-When you run `sleuth_live` or `sleuth_results`, the gene column you selected will be listed as `target_id`, rather than the transcript name.
+When running `sleuth_live` or `sleuth_results`, the gene column you selected will be listed as `target_id`, rather than the transcript name.
 
 `sleuth_prep` might take a bit longer here because aggregation has to be done amongst all of the bootstraps as well.
 We are currently working to speed this up and expect to release it along with several memory improvements in the next version (0.28.2).

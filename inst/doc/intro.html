@@ -215,8 +215,6 @@ s2c</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mart &lt;-<span class="st"> </span>biomaRt::<span class="kw">useMart</span>(<span class="dt">biomart =</span> <span class="st">&quot;ENSEMBL_MART_ENSEMBL&quot;</span>,
   <span class="dt">dataset =</span> <span class="st">&quot;hsapiens_gene_ensembl&quot;</span>,
   <span class="dt">host =</span> <span class="st">'ensembl.org'</span>)</code></pre></div>
-<pre><code>## Note: the specification for S3 class &quot;AsIs&quot; in package 'BiocGenerics' seems equivalent to one from package 'DBI': not turning on duplicate class definitions for this class.</code></pre>
-<pre><code>## Creating a generic function for 'nchar' from package 'base' in package 'S4Vectors'</code></pre>
 <p>and add them into the <strong>sleuth</strong> table with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">t2g &lt;-<span class="st"> </span>biomaRt::<span class="kw">getBM</span>(<span class="dt">attributes =</span> <span class="kw">c</span>(<span class="st">&quot;ensembl_transcript_id&quot;</span>, <span class="st">&quot;ensembl_gene_id&quot;</span>,
     <span class="st">&quot;external_gene_name&quot;</span>), <span class="dt">mart =</span> mart)
@@ -249,7 +247,7 @@ so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(s2c, ~<span
 </div>
 <div id="gene-level-analysis" class="section level3">
 <h3>Gene level analysis</h3>
-<p>Assuming <code>biomaRt</code> has been installed as in the previous step, we can also run sleuth in the ‘gene aggregation’ mode. In addition to requiring a <code>target_mapping</code>, we also require a string which references a column to aggregate by, <code>aggregation_column</code>. In our example, we could use <code>ens_gene</code> or <code>ext_gene</code>. We typically prefer <code>ens_gene</code> as <code>ext_gene</code> tends to be a bit redundant.</p>
+<p>Assuming <code>biomaRt</code> has been installed as in the previous step, sleuth can also be run in the ‘gene aggregation’ mode. In addition to requiring a <code>target_mapping</code>, a string which references a column to aggregate by, (<code>aggregation_column</code>). In our example, we could use <code>ens_gene</code> or <code>ext_gene</code>. It is preferable to use <code>ens_gene</code> as <code>ext_gene</code> tends to be a bit redundant.</p>
 <p>The modified sleuth prep command looks as follows:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(s2c, ~condition, <span class="dt">target_mapping =</span> t2g,
   <span class="dt">aggregation_column =</span> <span class="st">'ens_gene'</span>)</code></pre></div>
@@ -264,7 +262,7 @@ so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(s2c, ~<span
 <pre><code>## summarizing bootstraps</code></pre>
 <pre><code>## aggregating by column: ens_gene</code></pre>
 <pre><code>## 14412 genes passed the filter</code></pre>
-<p>The remainder of the pipeline is unchanged. When you run <code>sleuth_live</code> or <code>sleuth_results</code>, the gene column you selected will be listed as <code>target_id</code>, rather than the transcript name.</p>
+<p>The remainder of the pipeline is unchanged. When running <code>sleuth_live</code> or <code>sleuth_results</code>, the gene column you selected will be listed as <code>target_id</code>, rather than the transcript name.</p>
 <p><code>sleuth_prep</code> might take a bit longer here because aggregation has to be done amongst all of the bootstraps as well. We are currently working to speed this up and expect to release it along with several memory improvements in the next version (0.28.2). One way to speed this up is to use more processes (assuming you have more cores). Internally, <code>sleuth</code> uses the function <code>parallel::mclapply</code>. You can set the number of cores as follows:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># set the number of available cores to 4</span>
 <span class="kw">options</span>(<span class="dt">mc.cores =</span> 4L)</code></pre></div>
