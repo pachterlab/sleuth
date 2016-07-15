@@ -9,8 +9,7 @@ group: navigation
 - I'm having trouble with __sleuth__. Can I get help?
   - Yes. If you think you have discovered a bug that needs to be fixed please
     file a report on the GitHub page. If you have a question about installing
-    or running the program please ask on the [kallisto-sleuth-users Google user
-    group](https://groups.google.com/forum/#!forum/kallisto-sleuth-users).
+    or running the program, please ask on the [kallisto-sleuth-users Google user group](https://groups.google.com/forum/#!forum/kallisto-sleuth-users).
 
 - Where can I get announcements about new releases?
   - You can get announcements via the [kallisto-sleuth-announcements Google
@@ -19,7 +18,7 @@ group: navigation
     a major version is released.
 
 - __sleuth__ is spiffy but is it as accurate as other differential expression tools?
-  - Yes. __sleuth__ takes advantage of the boostraps of kallisto, thereby effectively leveraging technical replicates in the determination of differential expression. In our tests on both real and simulated data we find that __sleuth__ is _more_ accurate than currently popular differential expression tools such as Cuffdiff2, DESeq2 and edgeR.
+  - Yes. __sleuth__ takes advantage of the boostraps of kallisto, thereby effectively leveraging technical replicates in the determination of differential expression. In the tests performed on both real and simulated data in the [sleuth paper](http://biorxiv.org/content/early/2016/06/10/058164), we find that __sleuth__ is _more_ accurate than currently popular differential expression tools such as Cuffdiff2, DESeq2 and edgeR.
 
 - Can __sleuth__  be used for quantifying abundances of transcripts or genes from RNA-Seq data?
   - No. __sleuth__ is used _after_ transcripts have been quantified using [__kallisto__](http://pachterlab.github.io/kallisto/).

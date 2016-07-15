@@ -6,10 +6,6 @@ group: navigation
 
 {% include JB/setup %} 
 
-#### Repository
-
-The __sleuth__ GitHub repository is [here](http://github.com/pachterlab/sleuth).
-
 #### Installation
 
 To install __sleuth__ start [R](https://www.r-project.org) and first install `rhdf5` by typing: 
@@ -42,4 +38,8 @@ Next load __sleuth__ with
 ~~~
 library("sleuth")
 ~~~
+
+#### Repository
+
+The __sleuth__ GitHub repository is [here](http://github.com/pachterlab/sleuth).
 
