@@ -15,4 +15,4 @@ A preprint with more details about the program is available from the bioRxiv:
 
 Harold J. Pimentel, Nicolas Bray, Suzette Puente, P&aacute;ll Melsted and Lior Pachter, [Differential analysis of RNA-Seq incorporating quantification uncertainty](http://biorxiv.org/content/early/2016/06/10/058164), bioRxiv (2016), http://dx.doi.org/10.1101/058164.
 
-To use __sleuth__ [download the software](download.html) and visit the <a href="https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html" target="_blank">Getting started</a> page for a quick tutorial.
+To use __sleuth__ [download the software](download.html) and visit the <a href="https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html" target="_blank">getting started</a> page for a quick tutorial.
