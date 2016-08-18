@@ -171,11 +171,7 @@ sleuth_prep <- function(
   sample_to_covariates$path <- NULL
 
   msg('dropping unused factor levels')
-  for(col in colnames(sample_to_covariates)) {
-    if(is(sample_to_covariates[, col], "factor")) {
-      sample_to_covariates[, col] = droplevels(sample_to_covariates[, col])
-    }
-  }
+  samples_to_covariates = droplevels(sample_to_covariates)
   nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
