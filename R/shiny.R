@@ -243,8 +243,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       fluidRow(
         column(12,
           p(h3('test table'),
-            'Table of transcript names, gene names (if supplied),',
-            'sleuth parameter estimates, tests, and summary statistics.' )
+            HTML('Table of transcript names, gene names (if supplied),',
+            'sleuth parameter estimates, tests, and summary statistics.',
+            '<button onclick="tableType()">What do the column names mean?</button>',
+            '<script> function tableType() {',
+            'alert("Explain column names here--------------");',
+            '} </script>'))
           ),
           offset = 1),
         conditionalPanel(condition = 'input.settings_test_type == "wt"',
@@ -296,10 +300,18 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                 offset = 1),
           fluidRow(
             column(4,
-              textInput('bs_var_input', label = 'transcript: ', value = '')
+              textInput('bs_var_input', label = HTML('transcript: ',
+              '<button onclick="bs_var_input()">?</button>',
+              '<script> function bs_var_input() {',
+              'alert("Enter the target_id of a transcript here to view a boxplot of its technical variation. You can find target_ids in the test table under Analyses.");',
+              '} </script>'), value = '')
             ),
             column(4,
-              selectInput('bs_var_color_by', label = 'color by: ',
+              selectInput('bs_var_color_by', label = HTML('color by: ',
+              '<button onclick="bs_var_color_by()">?</button>',
+              '<script> function bs_var_color_by() {',
+              'alert("Explain color by here.");',
+              '} </script>'),
                 choices = c(NULL, poss_covars), selected = NULL)
             ),
             column(3,
@@ -1267,7 +1279,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
     output$table_type <- renderUI({
       if(!is.null(obj$target_mapping)) {
-        selectInput('pop_genes', label = 'table type: ',
+        selectInput('pop_genes', label = HTML('table type: ',
+        '<button onclick="tableType()">?</button>',
+        '<script> function tableType() {',
+        'alert("Explain transcript vs. gene table");',
+        '} </script>'),
           choices = list('transcript table' = 1, 'gene table' = 2),
           selected = 1)
       }
@@ -1276,7 +1292,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$group_by <- renderUI({
       if(!is.null(input$pop_genes) && input$pop_genes == 2) {
         selectInput('mappingGroup',
-          label = 'group by: ',
+          label = HTML('group by: ',
+          '<button onclick="mappingGroup()">?</button>',
+          '<script> function mappingGroup() {',
+          'alert("ext_gene vs. ens_gene ");',
+          '} </script>'),
           choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
       }
     })
@@ -1333,7 +1353,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     output$table_type_lrt <- renderUI({
       if(!is.null(obj$target_mapping)) {
-        selectInput('pop_genes_lrt', label = 'table type: ',
+        selectInput('pop_genes_lrt', label = HTML('table type: ',
+        '<button onclick="tableType()">?</button>',
+        '<script> function tableType() {',
+        'alert("Explain transcript vs. gene table");',
+        '} </script>'),
           choices = list('transcript table' = 1, 'gene table' = 2),
           selected = 1)
       }
@@ -1341,7 +1365,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$group_by_lrt <- renderUI({
       if(!is.null(input$pop_genes_lrt) && input$pop_genes_lrt == 2) {
         selectInput('mapping_group_lrt',
-          label = 'group by: ',
+          label = HTML('group by: ',
+          '<button onclick="mappingGroup()">?</button>',
+          '<script> function mappingGroup() {',
+          'alert("ext_gene vs. ens_gene ");',
+          '} </script>'),
           choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
       }
     })
