@@ -140,23 +140,48 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('heat map',
         fluidRow(
           column(12,
-              p(h3('heat map'), 'Plot of select abundances in a clustered heat map.',
-                'Enter space-separated values.')
+              p(h3('heat map'),
+              HTML('Plot of select abundances in a clustered heat map using the',
+              'R <a target="_blank" href="https://stat.ethz.ch/R-manual/R-devel/library/stats/html/hclust.html">',
+              'hclust function</a>. The heat map iteratively groups together transcripts with',
+              'similar expression patterns, highlighting similarities among the transcripts themselves.',
+              'For a more in-depth discussion of hierarchical clustering, see',
+              '<a target="_blank" href="http://link.springer.com/article/10.1007/BF02289588">10.1007/BF02289588</a>.',
+              '</br>Enter space-separated values (10 transcripts with lowest q-values',
+              'are already entered. Click view to see them!).'))
               ),
           offset = 1
         ),
         fluidRow(
           column(3,
-            textInput('hm_transcripts', label = 'enter target ids: ', value = '')
+            textInput('hm_transcripts', label = HTML('enter target ids: ',
+            '<button onclick="hm_transcripts()">?</button>',
+            '<script> function hm_transcripts() {',
+            'alert("Enter a space-separated list of transcript names here to view a hierarchical clustering of those transcripts.");',
+            '} </script>'),
+            value = paste((obj$tests[[1]][[1]])[order(so$tests[[1]][[1]]$qval),]$target_id[1:10], collapse=" "))
               ),
           column(3,
-            selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
+            selectInput('hm_units', label = HTML('units: ',
+            '<button onclick="hm_units()">?</button>',
+            '<script> function hm_units() {',
+            'alert("For a better understanding of the units tpm (Transcripts Per Million) and est_counts (Counts), see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+            '} </script>'),
+            choices = c('est_counts','tpm'), selected = 'tpm')
               ),
           column(3,
-            textInput('hm_trans', label = 'tranform: ', value = 'log')
+            textInput('hm_trans', label = HTML('transform: ',
+            '<button onclick="hm_trans()">?</button>',
+            '<script> function hm_trans() {',
+            'alert("A transformation to be applied to the raw data before clustering.");',
+            '} </script>'), value = 'log')
               ),
           column(2,
-            numericInput('hm_offset', label = 'offset: ', value = 1)),
+            numericInput('hm_offset', label = HTML('offset: ',
+            '<button onclick="hm_trans()">?</button>',
+            '<script> function hm_trans() {',
+            'alert("A constant amount to be added to the raw data before the transformation and clustering.");',
+            '} </script>'), value = 1)),
           column(1,
             actionButton('hm_go', 'view')
           )
@@ -242,7 +267,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             dataTableOutput('de_dt'),
             fluidRow(
               div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                  downloadButton("download_test_table", "Download Table")))
+                  downloadButton("download_test_table",  "Download Table")))
           ),
         conditionalPanel(condition = 'input.settings_test_type == "lrt"',
           fluidRow(
