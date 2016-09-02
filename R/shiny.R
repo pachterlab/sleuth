@@ -326,8 +326,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               textInput('bs_var_input', label = HTML('transcript: ',
               '<button onclick="bs_var_input()">?</button>',
               '<script> function bs_var_input() {',
-              'alert("Enter the target_id of a transcript here to view a boxplot of its technical variation. You can find target_ids in the test table under Analyses.");',
-              '} </script>'), value = '')
+              'alert("Enter the target_id of a transcript here to view a boxplot of its technical variation.',
+              'You can find target_ids in the test table under Analyses. The most significant transcript',
+              'by q-value is already entered.");',
+              '} </script>'), value = (obj$tests[[1]][[1]])[order(so$tests[[1]][[1]]$qval),]$target_id[1])
             ),
             column(4,
               selectInput('bs_var_color_by', label = HTML('color by: ',
