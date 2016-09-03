@@ -159,7 +159,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             '<script> function hm_transcripts() {',
             'alert("Enter a space-separated list of transcript names here to view a hierarchical clustering of those transcripts.");',
             '} </script>'),
-            value = paste( (obj$tests[[1]][[1]])[order(so$tests[[1]][[1]]$qval),]$target_id[1:10], collapse=" ") )
+            value = paste( (obj$tests[[1]][[1]])[order(obj$tests[[1]][[1]]$qval),]$target_id[1:10], collapse=" ") )
               ),
           column(3,
             selectInput('hm_units', label = HTML('units: ',
@@ -327,7 +327,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               'alert("Enter the target_id of a transcript here to view a boxplot of its technical variation.',
               'You can find target_ids in the test table under Analyses. The most significant transcript',
               'by q-value is already entered.");',
-              '} </script>'), value = (obj$tests[[1]][[1]])[order(so$tests[[1]][[1]]$qval),]$target_id[1])
+              '} </script>'), value = (obj$tests[[1]][[1]])[order(obj$tests[[1]][[1]]$qval),]$target_id[1])
             ),
             column(4,
               selectInput('bs_var_color_by', label = HTML('color by: ',
