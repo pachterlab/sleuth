@@ -159,7 +159,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             '<script> function hm_transcripts() {',
             'alert("Enter a space-separated list of transcript names here to view a hierarchical clustering of those transcripts.");',
             '} </script>'),
-            value = paste((obj$tests[[1]][[1]])[order(so$tests[[1]][[1]]$qval),]$target_id[1:10], collapse=" "))
+            value = paste( (obj$tests[[1]][[1]])[order(so$tests[[1]][[1]]$qval),]$target_id[1:10], collapse=" ") )
               ),
           column(3,
             selectInput('hm_units', label = HTML('units: ',
@@ -408,7 +408,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         column(12,
           p(
             h3('principal component analysis'),
-            'PCA projections of sample abundances onto any pair of components.')
+            'PCA projections of sample abundances onto any pair of components.',
+              ' PCA is computed on the transcript expression.',
+              ' Each sample is a vector with dimension equal to the number of transcripts.',
+              ' See',
+            a(href="https://liorpachter.wordpress.com/2014/05/26/what-is-principal-component-analysis/",
+              target="_blank", 'this blog post'),
+            'for an overview of PCA.')
           ),
           offset = 1),
         fluidRow(
@@ -492,7 +498,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('sample heatmap',
       fluidRow(
         column(12,
-          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
+          p(h3('sample heatmap'),
+            a(href='https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence',
+              target='_blank', 'Jensen-Shannon divergence'),
+            'between pairs of samples computed at the transcript level.',
+            ' The larger this value, the more dissimilar the samples are.')
           ),
           offset = 1),
         fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
@@ -579,7 +589,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           column(12,
             p(
               h3('fragment length distribution plot'),
-              'Plot fragment length distribution used by kallisto in a particular sample')
+              'Plot fragment length distribution used by kallisto in a particular sample.',
+              ' In paired-end data, kallisto learns this fragment length distribution by looking at the beginning coordinate and at the end coordinate of unique pseudoalignments.',
+              ' In single-end data, the fragment length distribution is provided by the user.')
             )
         ),
         fluidRow(
@@ -621,9 +633,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('kallisto table',
 
         fluidRow(
-        column(12, p(h3('kallisto abundance table'), "All of the abundance
-            estimates pulled in from kallisto results into the sleuth
-            object."))
+        column(12, p(h3('kallisto abundance table'),
+          "All of the abundance estimates pulled in from kallisto results into the
+           sleuth object.",
+           ' The covariates button will include covariates from the `sample_to_covariates` table defined in `sleuth_prep`.',
+           ' `eff_len` and `len` are the effective length and true length of the transcript (`target_id`).',
+           ' An overview of these units can be found ',
+           a(href = 'https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/',
+            target = '_blank', 'here'), '.'
+           ))
           ),
 
         fluidRow(
@@ -651,7 +669,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('bias weights',
         fluidRow(
           column(12,
-            p(h3('bias weights'), "View the bias parameters modeled by kallisto.")
+            p(h3('bias weights'),
+            "View the bias parameters modeled by kallisto.")
             )
           ),
 
@@ -676,7 +695,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           p(
             h3('mean-variance plot'),
             'Plot of abundance versus square root of standard deviation which is used for shrinkage estimation.',
-            'The blue dots are in the interquartile range and the red curve is the fit used by sleuth.'
+            'The blue dots are in the interquartile range and the red curve is the fit used by sleuth.',
+            ' Any points at y = 0 have inferential variance greater than observed total raw variance.'
             )
           ),
           offset = 1),
@@ -740,6 +760,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
       tabPanel('Q-Q plot',
         ####
+        fluidRow(
+          column(12,
+            p(
+              h3('Q-Q plot'),
+              "Select the test and view the appropriate quantile-quantile plot.",
+              'Points that are color red are considered "significant" at the selected fdr-level.')
+            ),
+          offset = 1
+          ),
         fluidRow(
           column(2,
             numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
