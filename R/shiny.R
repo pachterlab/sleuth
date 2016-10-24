@@ -54,9 +54,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     valid_test_types <- c(valid_test_types, c('likelihood ratio' = 'lrt'))
   }
 
-  if (length(valid_test_types) == 0) {
-    stop("We found no valid tests. Please add some tests and rerun sleuth_live()")
-  }
+  # if (length(valid_test_types) == 0) {
+  #   stop("We found no valid tests. Please add some tests and rerun sleuth_live()")
+  # }
 
   p_layout <- navbarPage(
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
