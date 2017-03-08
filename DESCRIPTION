@@ -18,6 +18,7 @@ Imports:
     reshape2,
     rhdf5,
     lazyeval,
+    matrixStats,
     shiny
 Suggests:
     MASS,

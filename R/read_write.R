@@ -115,7 +115,8 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
         msg("Only reading ", max_bootstrap, " bootstrap samples")
         num_bootstrap <- max_bootstrap
       }
-      bs_samples <- lapply(0:(num_bootstrap[1] - 1), function(i) {
+      bs_samples <- lapply(0:(num_bootstrap[1] - 1),
+        function(i) {
           .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {

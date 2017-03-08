@@ -177,7 +177,8 @@ sleuth_prep <- function(
       nsamp <- dot(nsamp)
       path <- kal_dirs[i]
       suppressMessages({
-        kal <- read_kallisto(path, read_bootstrap = FALSE, max_bootstrap = max_bootstrap)
+        kal <- read_kallisto(path, read_bootstrap = FALSE,
+          max_bootstrap = max_bootstrap)
         })
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
@@ -270,13 +271,6 @@ sleuth_prep <- function(
     # add in eff_len and len
     obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
 
-    msg("normalizing bootstrap samples")
-
-    ret$kal <- lapply(seq_along(ret$kal), function(i) {
-      normalize_bootstrap(ret$kal[[i]],
-      tpm_size_factor = tpm_sf[i],
-      est_counts_size_factor = est_counts_sf[i])
-    })
 
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
@@ -339,7 +333,9 @@ sleuth_prep <- function(
       # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
       # variability in sample i
       # NOTE: we are only keeping the ones that pass the filter
-      all_sample_bootstrap[, i] <- apply(bs_mat[, which_target_id], 2, var)
+      all_sample_bootstrap[, i] <- matrixStats::colVars(
+        bs_mat[, which_target_id]
+        )
     } # end summarize bootstraps
     msg('')
 
