@@ -84,6 +84,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
+#' @param num_cores an integer of the number of computer cores mclapply should use to aggregate targets
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
@@ -103,6 +104,7 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   aggregation_column = NULL,
+  num_cores = 2,
   ...) {
 
   ##############################
@@ -161,6 +163,10 @@ sleuth_prep <- function(
 
   if ( !is.null(aggregation_column) && is.null(target_mapping) ) {
     stop("You provided a 'aggregation_column' to aggregate by, but not a 'target_mapping'. Please provided a 'target_mapping'.")
+  }
+
+  if ( !is.integer(num_cores) || num_cores < 1 || num_cores > parallel::detectCores()) {
+    stop("num_cores must be an integer between 1 and the number of cores on your machine")
   }
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
@@ -316,7 +322,8 @@ sleuth_prep <- function(
       bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
       bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
     } else {
-      bs_summary <- gene_summary(ret, aggregation_column, function(x) log(x + 0.5))
+      bs_summary <- gene_summary(ret, aggregation_column, 
+                                 function(x) log(x + 0.5), num_cores=num_cores)
 
         tmp <- ret$obs_raw
         tmp <- dplyr::group_by(tmp, target_id)

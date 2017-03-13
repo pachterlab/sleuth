@@ -429,7 +429,8 @@ reads_per_base_transform <- function(reads_table, scale_factor_input,
   as_df(reads_table)
 }
 
-gene_summary <- function(obj, which_column, transform = identity, norm_by_length = TRUE) {
+gene_summary <- function(obj, which_column, transform = identity, 
+                         norm_by_length = TRUE, num_cores=2) {
   # stopifnot(is(obj, 'sleuth'))
   msg(paste0('aggregating by column: ', which_column))
   obj_mod <- obj
@@ -454,16 +455,21 @@ gene_summary <- function(obj, which_column, transform = identity, norm_by_length
   obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
   obs_counts <- transform(obs_counts)
 
-  obj_mod$kal <- parallel::mclapply(seq_along(obj_mod$kal),
+  # NEW CODE: Switched mclapply to be on second lapply
+  # This means that it's applied on the order of one bootstrap
+  # This creates a much smaller memory footprint
+  msg("starting mclapply process now")
+  obj_mod$kal <- lapply(seq_along(obj_mod$kal),
     function(i) {
       k <- obj_mod$kal[[i]]
       current_sample <- obj_mod$sample_to_covariates$sample[i]
       msg(paste('aggregating across sample: ', current_sample))
-      k$bootstrap <- lapply(k$bootstrap, function(b) {
+      k$bootstrap <- parallel::mclapply(seq_along(k$bootstrap), function(j) {
+        b <- k$bootstrap[[j]]
         b <- dplyr::mutate(b, sample = current_sample)
         reads_per_base_transform(b, scale_factor, which_column,
           obj$target_mapping, norm_by_length)
-      })
+      }, mc.cores=num_cores)
 
       k
     })
