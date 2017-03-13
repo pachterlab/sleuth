@@ -34,7 +34,7 @@ filter_df_all_groups <- function(df, fun, group_df, ...) {
   grps <- setdiff(colnames(group_df), 'sample')
   res <- sapply(unique(grps),
     function(g) {
-      apply(filter_df_by_groups(df, fun, group_df[,c('sample', g)], ...), 1, any)
+      apply(filter_df_by_groups(df, fun, group_df[, c('sample', g)], ...), 1, any)
     })
 
   vals <- apply(res, 1, any)
@@ -51,7 +51,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
     function(g) {
       valid_samps <- grps %in% g
       valid_samps <- group_df$sample[valid_samps]
-      apply(df[,valid_samps], 1, fun, ...)
+      apply(df[, valid_samps], 1, fun, ...)
     })
 }
 
@@ -84,6 +84,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
+#' @param num_cores an integer of the number of computer cores mclapply should use to aggregate targets
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
@@ -103,6 +104,7 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   aggregation_column = NULL,
+  num_cores = 2L,
   ...) {
 
   ##############################
@@ -110,12 +112,12 @@ sleuth_prep <- function(
 
   # data types
 
-  if ( !is(sample_to_covariates, "data.frame") ) {
+  if (!is(sample_to_covariates, "data.frame")) {
     stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
   if (!is(full_model, "formula") && !is(full_model, "matrix")) {
-    stop(paste0("'",substitute(full_model), "' (full_model) must be a formula or a matrix"))
+    stop(paste0("'", substitute(full_model), "' (full_model) must be a formula or a matrix"))
   }
 
   if (!("sample" %in% colnames(sample_to_covariates))) {
@@ -128,7 +130,7 @@ sleuth_prep <- function(
       "' (sample_to_covariates) must contain a column named 'path'")
   }
 
-  if ( !is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
+  if (!is.null(target_mapping) && !is(target_mapping, 'data.frame')) {
     stop(paste0("'", substitute(target_mapping),
         "' (target_mapping) must be a data.frame or NULL"))
   } else if (is(target_mapping, 'data.frame')){
@@ -138,29 +140,35 @@ sleuth_prep <- function(
     }
   }
 
-  if ( !is.null(max_bootstrap) && max_bootstrap <= 0 ) {
+  if (!is.null(max_bootstrap) && max_bootstrap <= 0 ) {
     stop("max_bootstrap must be > 0")
   }
 
-  if ( any(is.na(sample_to_covariates)) ) {
+  if (any(is.na(sample_to_covariates))) {
     warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
   }
 
-  if ( is(full_model, "matrix") &&
-      nrow(full_model) != nrow(sample_to_covariates) ) {
+  if (is(full_model, "matrix") &&
+      nrow(full_model) != nrow(sample_to_covariates)) {
     stop("The design matrix number of rows are not equal to the number of rows in the sample_to_covariates argument.")
   }
 
-  if ( !is(norm_fun_counts, 'function') ) {
+  if (!is(norm_fun_counts, 'function')) {
     stop("norm_fun_counts must be a function")
   }
 
-  if ( !is(norm_fun_tpm, 'function') ) {
+  if (!is(norm_fun_tpm, 'function')) {
     stop("norm_fun_tpm must be a function")
   }
 
-  if ( !is.null(aggregation_column) && is.null(target_mapping) ) {
-    stop("You provided a 'aggregation_column' to aggregate by, but not a 'target_mapping'. Please provided a 'target_mapping'.")
+  if (!is.null(aggregation_column) && is.null(target_mapping)) {
+    stop(paste("You provided a 'aggregation_column' to aggregate by,",
+               "but not a 'target_mapping'. Please provided a 'target_mapping'."))
+  }
+
+  if (is.null(num_cores) || is.na(suppressWarnings(as.integer(num_cores))) ||
+       num_cores < 1 || num_cores > parallel::detectCores()) {
+    stop("num_cores must be an integer between 1 and the number of cores on your machine")
   }
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
@@ -174,6 +182,10 @@ sleuth_prep <- function(
 
   kal_dirs <- sample_to_covariates$path
   sample_to_covariates$path <- NULL
+
+  msg('dropping unused factor levels')
+  samples_to_covariates <- droplevels(sample_to_covariates)
+
   nsamp <- 0
   # append sample column to data
   kal_list <- lapply(seq_along(kal_dirs),
@@ -191,7 +203,7 @@ sleuth_prep <- function(
   msg('')
 
   check_result <- check_kal_pack(kal_list)
-  if ( length(check_result$no_bootstrap) > 0 ) {
+  if (length(check_result$no_bootstrap) > 0 ) {
     stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
       paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
   }
@@ -201,10 +213,10 @@ sleuth_prep <- function(
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
   design_matrix <- NULL
-  if ( is(full_model, 'formula') ) {
+  if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
   } else {
-    if ( is.null(colnames(full_model)) ) {
+    if (is.null(colnames(full_model))) {
       stop("If matrix is supplied, column names must also be supplied.")
     }
     design_matrix <- full_model
@@ -236,7 +248,7 @@ sleuth_prep <- function(
 
   # TODO: eventually factor this out
   normalize <- TRUE
-  if ( normalize ) {
+  if (normalize ) {
 
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
@@ -245,7 +257,7 @@ sleuth_prep <- function(
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
-    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool,])
+    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool, ])
 
     filter_df <- adf(target_id = names(filter_true))
 
@@ -263,7 +275,7 @@ sleuth_prep <- function(
     msg("normalizing tpm")
     tpm_spread <- spread_abundance_by(obs_raw, "tpm",
       sample_to_covariates$sample)
-    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool,])
+    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool, ])
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
     tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
@@ -274,12 +286,12 @@ sleuth_prep <- function(
     obs_norm <- dplyr::arrange(obs_norm, target_id, sample)
     tpm_norm <- dplyr::arrange(tpm_norm, target_id, sample)
 
-    stopifnot( all.equal(obs_raw$target_id, obs_norm$target_id) &&
-      all.equal(obs_raw$sample, obs_norm$sample) )
+    stopifnot(all.equal(obs_raw$target_id, obs_norm$target_id) &&
+      all.equal(obs_raw$sample, obs_norm$sample))
 
     suppressWarnings({
-      if ( !all.equal(dplyr::select(obs_norm, target_id, sample),
-          dplyr::select(tpm_norm, target_id, sample)) ) {
+      if (!all.equal(dplyr::select(obs_norm, target_id, sample),
+          dplyr::select(tpm_norm, target_id, sample))) {
         stop('Invalid column rows. In principle, can simply join. Please report error.')
       }
 
@@ -316,7 +328,8 @@ sleuth_prep <- function(
       bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
       bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
     } else {
-      bs_summary <- gene_summary(ret, aggregation_column, function(x) log(x + 0.5))
+      bs_summary <- gene_summary(ret, aggregation_column,
+                                 function(x) log(x + 0.5), num_cores = num_cores)
 
         tmp <- ret$obs_raw
         tmp <- dplyr::group_by(tmp, target_id)
@@ -360,14 +373,14 @@ check_kal_pack <- function(kal_list) {
 
   versions <- sapply(kal_list, function(x) attr(x, 'kallisto_version'))
   u_versions <- unique(versions)
-  if ( length(u_versions) > 1) {
+  if (length(u_versions) > 1) {
     warning('More than one version of kallisto was used: ',
       paste(u_versions, collapse = "\n"))
   }
 
   ntargs <- sapply(kal_list, function(x) attr(x, 'num_targets'))
   u_ntargs <- unique(ntargs)
-  if ( length(u_ntargs) > 1 ) {
+  if (length(u_ntargs) > 1 ) {
     stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
   }
 
@@ -428,9 +441,9 @@ check_target_mapping <- function(t_id, target_mapping) {
 #' @export
 norm_factors <- function(mat) {
   nz <- apply(mat, 1, function(row) !any(round(row) == 0))
-  mat_nz <- mat[nz,]
+  mat_nz <- mat[nz, ]
   p <- ncol(mat)
-  geo_means <- exp(apply(mat_nz, 1, function(row) mean(log(row)) ))
+  geo_means <- exp(apply(mat_nz, 1, function(row) mean(log(row))))
   s <- sweep(mat_nz, 1, geo_means, `/`)
 
   sf <- apply(s, 2, median)
@@ -510,7 +523,7 @@ spread_abundance_by <- function(abund, var, which_order) {
 
   result <- as.matrix(var_spread)
 
-  result[, which_order]
+  result[, which_order, drop = FALSE]
 }
 
 #' @export
@@ -661,7 +674,7 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' @export
 sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full', which_group = 'ens_gene') {
 
-  if(is.null(obj$target_mapping)) {
+  if (is.null(obj$target_mapping)) {
     stop("This sleuth object doesn't have added gene names.")
   }
   popped_gene_table <- sleuth_results(obj, test, test_type, which_model)
@@ -684,9 +697,9 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
   filter_empty <- !filter_empty
   popped_gene_table <- popped_gene_table[filter_empty, ]
 
-  # popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "",]
-  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]),] #gene_id
-  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval),]
+  # popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "", ]
+  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]), ] #gene_id
+  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval), ]
 
   popped_gene_table
 }
@@ -715,8 +728,8 @@ transcripts_from_gene <- function(obj, test, test_type,
   table <- sleuth_results(obj, test, test_type, which_model)
   table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
   table <- dplyr::arrange_(table, gene_colname, ~qval)
-  if(!(gene_name %in% table[,2])) {
+  if (!(gene_name %in% table[, 2])) {
       stop("Couldn't find gene ", gene_name)
   }
-  table$target_id[table[,2] == gene_name]
+  table$target_id[table[, 2] == gene_name]
 }

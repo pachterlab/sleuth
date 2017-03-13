@@ -23,10 +23,13 @@ test_that("normalization factors", {
 
 test_that("give a design matrix", {
   design_matrix <- matrix(c(0, 0, 0, 1, 1, 1), ncol = 1)
+  expect_error(sleuth_prep(study_mapping, design_matrix))
+
+  dimnames(design_matrix) <- list(sample_ids, "condition")
   result <- sleuth_prep(study_mapping, design_matrix)
 
   expect_equal(result$design_matrix, design_matrix)
   expect_equal(result$design_matrix, result$full_formula)
 
-  expect_error(sleuth_prep(study_mapping, design_matrix[1:5,]))
+  expect_error(sleuth_prep(study_mapping, design_matrix[1:5, ]))
 })

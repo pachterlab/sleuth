@@ -273,7 +273,7 @@ gtf_gene_names <- function(gtf_attr) {
 
   for (i in 1:length(all_attr)) {
     j <- 1
-    while ((nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
+    while ( (nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
       j <= length(all_attr[[i]]) ) {
       if (all_attr[[i]][j] == "gene_id") {
         gene_id[i] <- all_attr[[i]][j + 1] %>%
