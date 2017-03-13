@@ -523,7 +523,7 @@ spread_abundance_by <- function(abund, var, which_order) {
 
   result <- as.matrix(var_spread)
 
-  result[, which_order]
+  result[, which_order, drop = FALSE]
 }
 
 #' @export
