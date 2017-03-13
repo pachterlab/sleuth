@@ -145,7 +145,7 @@ aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
 
   if ( any(!complete.cases(mapping)) ) {
     warning("Found some NAs in mapping. Removing them.")
-    mapping <- mapping[complete.cases(mapping),]
+    mapping <- mapping[complete.cases(mapping), ]
   }
 
   m_bs <- melt_bootstrap(kal, column)
@@ -275,8 +275,8 @@ sample_bootstrap <- function(obj, n_samples = 100L) {
   # matrix sample
   for (s in 1:n_samples) {
     for (idx in 1:nrow(which_samp)) {
-      b <- which_samp[idx,s]
-      sample_mat[[s]][,idx] <- obj$kal[[idx]]$bootstrap[[b]]$est_counts
+      b <- which_samp[idx, s]
+      sample_mat[[s]][, idx] <- obj$kal[[idx]]$bootstrap[[b]]$est_counts
     }
   }
 
@@ -318,7 +318,7 @@ dcast_bootstrap.kallisto <- function(obj, units, nsamples = NULL) {
   mat <- matrix(NA_real_, nrow = n_features, ncol = length(which_bs))
 
   for (j in seq_along(which_bs)) {
-    mat[ ,j] <- obj[[ "bootstrap" ]][[which_bs[j]]][[ units ]]
+    mat[, j] <- obj[[ "bootstrap" ]][[which_bs[j]]][[ units ]]
   }
   rownames(mat) <- obj[["bootstrap"]][[1]][["target_id"]]
 

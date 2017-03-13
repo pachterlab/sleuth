@@ -113,7 +113,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   msg('computing variance of betas')
   beta_covars <- lapply(1:nrow(l_smooth),
     function(i) {
-      row <- l_smooth[i,]
+      row <- l_smooth[i, ]
       with(row,
           covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
         )
@@ -267,7 +267,7 @@ me_model_by_row <- function(obj, design, bs_summary) {
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
-      me_model(design, bs_summary$obs_counts[i,], bs_summary$sigma_q_sq[i])
+      me_model(design, bs_summary$obs_counts[i, ], bs_summary$sigma_q_sq[i])
     })
   names(models) <- rownames(bs_summary$obs_counts)
 
@@ -303,7 +303,7 @@ me_heteroscedastic_by_row <- function(obj, design, samp_bs_summary, obs_counts) 
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
-      res <- me_white_model(design, obs_counts[i,], sigma_q_sq[i,], A)
+      res <- me_white_model(design, obs_counts[i, ], sigma_q_sq[i, ], A)
       res$df$target_id <- rownames(obs_counts)[i]
       res
     })
@@ -429,7 +429,7 @@ reads_per_base_transform <- function(reads_table, scale_factor_input,
   as_df(reads_table)
 }
 
-gene_summary <- function(obj, which_column, transform = identity, 
+gene_summary <- function(obj, which_column, transform = identity,
                          norm_by_length = TRUE, num_cores=2) {
   # stopifnot(is(obj, 'sleuth'))
   msg(paste0('aggregating by column: ', which_column))
@@ -469,7 +469,7 @@ gene_summary <- function(obj, which_column, transform = identity,
         b <- dplyr::mutate(b, sample = current_sample)
         reads_per_base_transform(b, scale_factor, which_column,
           obj$target_mapping, norm_by_length)
-      }, mc.cores=num_cores)
+      }, mc.cores = num_cores)
 
       k
     })
