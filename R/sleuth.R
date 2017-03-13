@@ -112,7 +112,7 @@ sleuth_prep <- function(
 
   # data types
 
-  if (!is(sample_to_covariates, "data.frame") ) {
+  if (!is(sample_to_covariates, "data.frame")) {
     stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
@@ -144,24 +144,24 @@ sleuth_prep <- function(
     stop("max_bootstrap must be > 0")
   }
 
-  if (any(is.na(sample_to_covariates)) ) {
+  if (any(is.na(sample_to_covariates))) {
     warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
   }
 
   if (is(full_model, "matrix") &&
-      nrow(full_model) != nrow(sample_to_covariates) ) {
+      nrow(full_model) != nrow(sample_to_covariates)) {
     stop("The design matrix number of rows are not equal to the number of rows in the sample_to_covariates argument.")
   }
 
-  if (!is(norm_fun_counts, 'function') ) {
+  if (!is(norm_fun_counts, 'function')) {
     stop("norm_fun_counts must be a function")
   }
 
-  if (!is(norm_fun_tpm, 'function') ) {
+  if (!is(norm_fun_tpm, 'function')) {
     stop("norm_fun_tpm must be a function")
   }
 
-  if (!is.null(aggregation_column) && is.null(target_mapping) ) {
+  if (!is.null(aggregation_column) && is.null(target_mapping)) {
     stop(paste("You provided a 'aggregation_column' to aggregate by,",
                "but not a 'target_mapping'. Please provided a 'target_mapping'."))
   }
@@ -209,10 +209,10 @@ sleuth_prep <- function(
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
   design_matrix <- NULL
-  if (is(full_model, 'formula') ) {
+  if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
   } else {
-    if (is.null(colnames(full_model)) ) {
+    if (is.null(colnames(full_model))) {
       stop("If matrix is supplied, column names must also be supplied.")
     }
     design_matrix <- full_model
@@ -283,11 +283,11 @@ sleuth_prep <- function(
     tpm_norm <- dplyr::arrange(tpm_norm, target_id, sample)
 
     stopifnot(all.equal(obs_raw$target_id, obs_norm$target_id) &&
-      all.equal(obs_raw$sample, obs_norm$sample) )
+      all.equal(obs_raw$sample, obs_norm$sample))
 
     suppressWarnings({
       if (!all.equal(dplyr::select(obs_norm, target_id, sample),
-          dplyr::select(tpm_norm, target_id, sample)) ) {
+          dplyr::select(tpm_norm, target_id, sample))) {
         stop('Invalid column rows. In principle, can simply join. Please report error.')
       }
 
@@ -439,7 +439,7 @@ norm_factors <- function(mat) {
   nz <- apply(mat, 1, function(row) !any(round(row) == 0))
   mat_nz <- mat[nz, ]
   p <- ncol(mat)
-  geo_means <- exp(apply(mat_nz, 1, function(row) mean(log(row)) ))
+  geo_means <- exp(apply(mat_nz, 1, function(row) mean(log(row))))
   s <- sweep(mat_nz, 1, geo_means, `/`)
 
   sf <- apply(s, 2, median)
