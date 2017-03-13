@@ -104,7 +104,7 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   aggregation_column = NULL,
-  num_cores = 2,
+  num_cores = 2L,
   ...) {
 
   ##############################
@@ -165,7 +165,8 @@ sleuth_prep <- function(
     stop("You provided a 'aggregation_column' to aggregate by, but not a 'target_mapping'. Please provided a 'target_mapping'.")
   }
 
-  if ( !is.integer(num_cores) || num_cores < 1 || num_cores > parallel::detectCores()) {
+  if ( is.null(num_cores) || is.na(suppressWarnings(as.integer(num_cores)) || 
+       num_cores < 1 || num_cores > parallel::detectCores()) {
     stop("num_cores must be an integer between 1 and the number of cores on your machine")
   }
 
