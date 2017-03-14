@@ -54,7 +54,7 @@ models.sleuth <- function(obj, verbose = TRUE) {
   # TODO: output a new in between models for readability
   if (verbose) {
     for (x in names(obj$fits)) {
-      cat('[ ', x,' ]\n')
+      cat('[ ', x, ' ]\n')
       models(obj$fits[[x]])
     }
   }

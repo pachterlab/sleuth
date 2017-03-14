@@ -174,7 +174,7 @@ plot_loadings <- function(obj,
   #given a sample
   if (!is.null(sample)) {
     toggle <- TRUE
-    loadings <- pca_calc$x[sample,]
+    loadings <- pca_calc$x[sample, ]
     if (pca_loading_abs) {
       loadings <- abs(loadings)
       loadings <- sort(loadings, decreasing = TRUE)
@@ -185,7 +185,7 @@ plot_loadings <- function(obj,
 
   #given a PC, which samples contribute the most?
   if (!toggle) {
-    loadings <- pca_calc$x[,pc_input]
+    loadings <- pca_calc$x[, pc_input]
     if (pca_loading_abs) {
       loadings <- abs(loadings)
       loadings <- sort(loadings, decreasing = TRUE)
@@ -272,14 +272,14 @@ plot_pc_variance <- function(obj,
   }
   pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) #order here matters
 
-  if(!is.null(PC_relative)) {
+  if (!is.null(PC_relative)) {
     pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2)
-    pc_df <- pc_df[PC_relative:nrow(pc_df),]
+    pc_df <- pc_df[PC_relative:nrow(pc_df), ]
 
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) {
-      pc_df <- pc_df[1:pca_number,]
+      pc_df <- pc_df[1:pca_number, ]
     } else if (PC_relative + 5 >= length(eigenvalues)) {
-      pc_df <- pc_df[1:nrow(pc_df),]
+      pc_df <- pc_df[1:nrow(pc_df), ]
     }
   }
 
@@ -874,15 +874,15 @@ plot_transcript_heatmap <- function(obj,
   units = 'tpm',
   trans = 'log',
   offset = 1) {
-  if(!all(transcripts %in% obj$obs_norm$target_id)) {
+  if (!all(transcripts %in% obj$obs_norm$target_id)) {
     stop("Couldn't find the following transcripts: ",
       paste(transcripts[!(transcripts %in% obj$obs_norm$target_id)], collapse = ", "),
       "\n\tIt is highly likely that some of them were filtered out.")
   }
 
-  tabd_df <- obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
+  tabd_df <- obj$obs_norm[obj$obs_norm$target_id %in% transcripts, ]
 
-  if(units == 'tpm') {
+  if (units == 'tpm') {
     tabd_df <- dplyr::select(tabd_df, target_id, sample, tpm)
     tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
   } else if (units == 'est_counts') {
@@ -948,16 +948,16 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
      legend.direction = 'vertical',
      legend.position = 'top',
      legend.background = element_rect(fill = "gray95", colour = "black", size = 0.5, linetype = 1),
-     axis.title=element_blank())
+     axis.title = element_blank())
     if (rowNames)
-        p <- p + theme(axis.text.x=element_text(angle = 90, size=14))
+        p <- p + theme(axis.text.x = element_text(angle = 90, size = 14))
     else
-        p <- p + theme(axis.text.x=element_text(size=0))
+        p <- p + theme(axis.text.x = element_text(size = 0))
 
     if (colNames)
-        p <- p + theme(axis.text.y=element_text(size=14))
+        p <- p + theme(axis.text.y = element_text(size = 14))
     else
-        p <- p + theme(axis.text.y=element_text(size=0))
+        p <- p + theme(axis.text.y = element_text(size = 0))
 
     p
     #list(plot = p, rowOrder = rowOrder, colOrder = colOrder)
