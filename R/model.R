@@ -330,6 +330,22 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       data.table::as.data.table(obj$target_mapping),
       by = 'target_id')
   }
+
+  if (!is.null(obj$target_mapping) && obj$gene_mode) {
+    # after removing the target_id column
+    # there are several redundant columns for each gene
+    # this line gets the unique line for each gene
+    target_mapping <- unique(dplyr::select(
+                               obj$target_mapping,
+                               -target_id))
+    # this line uses dplyr's "left_join" syntax for "by"
+    # to match "target_id" from the "res" table,
+    # and the gene_column from the target_mapping table.
+    res <- dplyr::left_join(data.table::as.data.table(res),
+                            data.table::as.data.table(target_mapping),
+                            by = c("target_id" = obj$gene_column))
+  }
+
   res <- as_df(res)
 
   dplyr::arrange(res, qval)
