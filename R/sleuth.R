@@ -435,6 +435,28 @@ sleuth_prep <- function(
 
       if (read_bootstrap_tpm) {
         bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
+
+        # gene level code is analogous here to above
+        if(!is.null(aggregation_column)) {
+          colnames(bs_quant_tpm) <- target_id
+          bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
+                                        bs_quant_tpm)
+          tidy_tpm <- data.table::melt(bs_tpm_df, id.vars="bootstrap_num",
+                                       variable.name="target_id",
+                                       value.name="tpm")
+          tidy_tpm$target_id <- as.character(tidy_tpm$target_id)
+          tidy_tpm <- dplyr::left_join(tidy_tpm,
+                                       data.table::as.data.table(mappings),
+                                       by = "target_id")
+          tidy_tpm <- dplyr::group_by_(tidy_tpm, "bootstrap_num", aggregation_column)
+          tidy_tpm <- dplyr::summarize(tidy_tpm, tpm=sum(tpm))
+          # THE FOLLOWING STEP IS STILL SLOW; ANY WAY TO SPEED IT UP?
+          bs_quant_tpm <- tidyr::spread_(tidy_tpm, aggregation_column, "tpm")
+          bs_quant_tpm <- dplyr::ungroup(bs_quant_tpm) %>% 
+            dplyr::select(-bootstrap_num)
+          bs_quant_tpm <- as.matrix(bs_quant_tpm)
+        }
+
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
         colnames(bs_quant_tpm) <- c("min", "lower", "mid", "upper", "max")
         ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
