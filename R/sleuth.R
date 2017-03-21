@@ -384,6 +384,48 @@ sleuth_prep <- function(
         num_transcripts = num_transcripts,
         est_count_sf = est_counts_sf[[i]])
 
+      if (!is.null(aggregation_column)) {
+        # I can combine target_id and eff_len
+        # I assume the order is the same, since it's read from the same kallisto file
+        # and each kallisto file has the same order
+        eff_len_df <- data.frame(target_id, 
+                                 eff_len, stringsAsFactors = F)
+        # make bootstrap number an explicit column to facilitate melting
+        bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap), bs_mat)
+        # data.table melt function is much faster than tidyr's gather function
+        # output is a long table with each bootstrap's value for each target_id
+        tidy_bs <- data.table::melt(bs_df, id.vars="bootstrap_num",
+                                    variable.name="target_id",
+                                    value.name="est_counts")
+        # not sure why, but the melt function always returns a factor,
+        # even when setting variable.factor = F, so I coerce target_id
+        tidy_bs$target_id <- as.character(tidy_bs$target_id)
+        # combine the long tidy table with eff_len and aggregation mappings
+        # note that bootstrap number is treated as "sample" here for backwards compatibility
+        tidy_bs <- dplyr::select(tidy_bs, target_id, est_counts, sample=bootstrap_num)
+        tidy_bs <- dplyr::left_join(data.table::as.data.table(tidy_bs),
+                                    data.table::as.data.table(eff_len_df),
+                                    by = "target_id")
+        tidy_bs <- dplyr::left_join(tidy_bs,
+                                    data.table::as.data.table(mappings),
+                                    by = "target_id")
+        # create the median effective length scaling factor for each gene
+        scale_factor <- dplyr::group_by_(tidy_bs, aggregation_column)
+        scale_factor <- dplyr::mutate(scale_factor, scale_factor=median(eff_len))
+        # use the old reads_per_base_transform method to get gene scaled counts
+        scaled_bs <- reads_per_base_transform(tidy_bs, scale_factor$scale_factor, 
+                                                       aggregation_column,
+                                                       target_mapping)
+        # this step undoes the tidying to get back a matrix format
+        # target_ids here are now the aggregation column ids
+        bs_mat <- dplyr::group_by(scaled_bs, sample) %>% 
+          tidyr::spread(target_id, scaled_reads_per_base)
+        bs_mat <- dplyr::ungroup(bs_mat) %>% dplyr::select(-sample)
+        # this now has the same format as the transcript matrix
+        # but it uses gene ids
+        bs_mat <- as.matrix(bs_mat)
+      }
+
       if (extra_bootstrap_summary) {
         bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
         colnames(bs_quant_est_counts) <- c("min", "lower", "mid", "upper",
