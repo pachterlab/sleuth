@@ -463,28 +463,39 @@ sleuth_prep <- function(
       }
 
       bs_mat <- transformation_function(bs_mat)
-      colnames(bs_mat) <- target_id
+      if(is.null(aggregation_column)) {
+        colnames(bs_mat) <- target_id
+      }
+      
       # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
       # variability in sample i
       # NOTE: we are only keeping the ones that pass the filter
-      all_sample_bootstrap[, i] <- matrixStats::colVars(
-        bs_mat[, which_target_id]
+      if (!is.null(aggregation_column)) {
+        all_sample_bootstrap[, i] <- matrixStats::colVars(
+          bs_mat[, which_agg_id]
         )
+      } else {
+        all_sample_bootstrap[, i] <- matrixStats::colVars(
+          bs_mat[, which_target_id]
+        )
+      }
     } # end summarize bootstraps
     msg('')
 
     sigma_q_sq <- rowMeans(all_sample_bootstrap)
-    names(sigma_q_sq) <- which_target_id
-    sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
 
     # This is the rest of the gene_summary code
     if (!is.null(aggregation_column)) {
-      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")
+      names(sigma_q_sq) <- which_agg_id
+      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, ]
     } else {
+      names(sigma_q_sq) <- which_target_id
       obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
     }
 
+    sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
     obs_counts <- transformation_function(obs_counts)
+    obs_counts <- obs_counts[order(rownames(obs_counts)),]
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
   }
