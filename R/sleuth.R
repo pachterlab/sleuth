@@ -280,6 +280,7 @@ sleuth_prep <- function(
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
 
+    #### This code through the for loop is a candidate for moving to another function
     path <- kal_dirs[1]
     kal_path <- get_kallisto_path(path)
     target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
@@ -287,9 +288,78 @@ sleuth_prep <- function(
     ret$bs_quants <- list()
 
     which_target_id <- ret$filter_df$target_id
-    all_sample_bootstrap <- matrix(NA_real_,
-      nrow = length(which_target_id),
-      ncol = length(ret$kal))
+
+    if (!is.null(aggregation_column)) {
+      msg(paste0("aggregating by column: ", aggregation_column))
+
+      # Get list of IDs to aggregate on (usually genes)
+      # Also get the filtered list and update the "filter_df" and "filter_bool"
+      # variables for the sleuth object
+      agg_id <- unique(target_mapping[, aggregation_column, with = F])
+      agg_id <- agg_id[[1]]
+      mappings <- dplyr::select_(target_mapping, "target_id", aggregation_column)
+      which_tms <- which(target_mapping$target_id %in% which_target_id)
+      which_agg_id <- unique(target_mapping[which_tms, aggregation_column, with = F])
+      which_agg_id <- which_agg_id[[1]]
+      filter_df <- adf(target_id = which_agg_id)
+      filter_bool <- agg_id %in% which_agg_id
+
+      msg(paste0(length(which_agg_id), " genes passed the filter"))
+
+      # Taken from gene_summary; scale normalized observed counts to "reads/base"
+      norm_by_length <- TRUE
+      tmp <- ret$obs_raw
+      tmp <- dplyr::left_join(data.table::as.data.table(tmp),
+          target_mapping, by = "target_id")
+      tmp <- dplyr::group_by_(tmp, "sample", aggregation_column)
+      scale_factor <- dplyr::mutate(tmp, scale_factor = median(eff_len))
+      obs_norm <- reads_per_base_transform(obs_norm,
+          scale_factor, aggregation_column, target_mapping, norm_by_length)
+
+      # New code: get gene-level TPM (simple sum of normalized transcript TPM)
+      tmp <- tpm_norm
+      tmp <- dplyr::left_join(data.table::as.data.table(tmp),
+          target_mapping, by = "target_id")
+      tpm_norm <- dplyr::group_by_(tmp, "sample", aggregation_column) %>%
+           summarize(sum(tpm))
+      tpm_norm <- dplyr::ungroup(tpm_norm)
+      tpm_norm <- data.table::setnames(tpm_norm, aggregation_column, "target_id")
+      tpm_norm <- as_df(tpm_norm)
+
+      # Same steps as above to add TPM column to "obs_norm" table
+      obs_norm <- dplyr::arrange(obs_norm, target_id, sample)
+      tpm_norm <- dplyr::arrange(tpm_norm, target_id, sample)
+
+      stopifnot( all.equal(obs_raw$target_id, obs_norm$target_id) &&
+        all.equal(obs_raw$sample, obs_norm$sample) )
+
+      suppressWarnings({
+        if ( !all.equal(dplyr::select(obs_norm, target_id, sample),
+            dplyr::select(tpm_norm, target_id, sample)) ) {
+              stop('Invalid column rows. In principle, can simply join. Please report error.')
+            }
+
+        # obs_norm <- dplyr::left_join(obs_norm, data.table::as.data.table(tpm_norm),
+        #   by = c('target_id', 'sample'))
+        obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
+      })
+
+      # These are the updated gene-level variables
+      ret$filter_df <- adf(target_id = which_agg_id)
+      ret$filter_bool <- agg_id %in% which_agg_id
+      ret$obs_norm <- obs_norm
+      ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
+
+      # This is the gene-level version of the matrix
+      all_sample_bootstrap <- matrix(NA_real_,
+                                     nrow = length(which_agg_id),
+                                     ncol = length(obj$kal))
+    } else {
+      all_sample_bootstrap <- matrix(NA_real_,
+                                     nrow = length(which_target_id),
+                                     ncol = length(obj$kal))
+    }
+
     transformation_function <- function(x) log(x + 0.5)
 
     msg('summarizing bootstraps')
@@ -343,7 +413,13 @@ sleuth_prep <- function(
     names(sigma_q_sq) <- which_target_id
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
 
-    obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
+    # This is the rest of the gene_summary code
+    if (!is.null(aggregation_column)) {
+      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")
+    } else {
+      obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
+    }
+
     obs_counts <- transformation_function(obs_counts)
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
