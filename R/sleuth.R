@@ -392,8 +392,11 @@ sleuth_prep <- function(
         # gene level code is analogous here to below code
         if (ret$gene_mode) {
           colnames(bs_quant_tpm) <- target_id
+          # Make bootstrap_num an explicit column; each is treated as a "sample"
           bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
                                         bs_quant_tpm)
+          # Make long tidy table; this step is much faster
+          # using data.table melt rather than tidyr gather
           tidy_tpm <- data.table::melt(bs_tpm_df, id.vars="bootstrap_num",
                                        variable.name="target_id",
                                        value.name="tpm")
@@ -401,13 +404,17 @@ sleuth_prep <- function(
           tidy_tpm <- dplyr::left_join(tidy_tpm,
                                        data.table::as.data.table(mappings),
                                        by = "target_id")
+          # Data.table dcast uses non-standard evaluation
+          # So quote the full casting formula to make sure
+          # "aggregation_column" is interpreted as a variable
+          # see: http://stackoverflow.com/a/31295592
           quant_tpm_formula <- paste("bootstrap_num ~",
                                      aggregation_column)
           bs_quant_tpm <- data.table::dcast(tidy_tpm, quant_tpm_formula,
                                             value.var="tpm",
                                             fun.aggregate=sum)
           bs_quant_tpm <- as.matrix(bs_quant_tpm[,-1])
-          rm(tidy_tpm, bs_tpm_df)
+          rm(tidy_tpm, bs_tpm_df) # these tables are very large
         }
 
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
