@@ -212,7 +212,9 @@ sleuth_prep <- function(
       bootstrap_summary = NA,
       full_formula = full_model,
       design_matrix = design_matrix,
-      target_mapping = target_mapping
+      target_mapping = target_mapping,
+      gene_mode = !is.null(aggregation_column),
+      gene_column = aggregation_column
     )
 
   # TODO: eventually factor this out
@@ -289,7 +291,7 @@ sleuth_prep <- function(
 
     which_target_id <- ret$filter_df$target_id
 
-    if (!is.null(aggregation_column)) {
+    if (ret$gene_mode) {
       msg(paste0("aggregating by column: ", aggregation_column))
 
       # Get list of IDs to aggregate on (usually genes)
@@ -388,7 +390,7 @@ sleuth_prep <- function(
         bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
 
         # gene level code is analogous here to below code
-        if(!is.null(aggregation_column)) {
+        if (ret$gene_mode) {
           colnames(bs_quant_tpm) <- target_id
           bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
                                         bs_quant_tpm)
@@ -413,7 +415,7 @@ sleuth_prep <- function(
         ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
       }
 
-      if (!is.null(aggregation_column)) {
+      if (ret$gene_mode) {
         # I can combine target_id and eff_len
         # I assume the order is the same, since it's read from the same kallisto file
         # and each kallisto file has the same order
@@ -463,14 +465,16 @@ sleuth_prep <- function(
       }
 
       bs_mat <- transformation_function(bs_mat)
-      if(is.null(aggregation_column)) {
+      # If bs_mat was made at gene-level, already has column names
+      # If at transcript-level, need to add target_ids
+      if(!ret$gene_mode) {
         colnames(bs_mat) <- target_id
       }
       
       # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
       # variability in sample i
       # NOTE: we are only keeping the ones that pass the filter
-      if (!is.null(aggregation_column)) {
+      if (ret$gene_mode) {
         all_sample_bootstrap[, i] <- matrixStats::colVars(
           bs_mat[, which_agg_id]
         )
@@ -485,7 +489,7 @@ sleuth_prep <- function(
     sigma_q_sq <- rowMeans(all_sample_bootstrap)
 
     # This is the rest of the gene_summary code
-    if (!is.null(aggregation_column)) {
+    if (ret$gene_mode) {
       names(sigma_q_sq) <- which_agg_id
       obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, ]
     } else {
