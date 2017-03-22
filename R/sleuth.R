@@ -399,13 +399,13 @@ sleuth_prep <- function(
           tidy_tpm <- dplyr::left_join(tidy_tpm,
                                        data.table::as.data.table(mappings),
                                        by = "target_id")
-          tidy_tpm <- dplyr::group_by_(tidy_tpm, "bootstrap_num", aggregation_column)
-          tidy_tpm <- dplyr::summarize(tidy_tpm, tpm=sum(tpm))
-          # THE FOLLOWING STEP IS STILL SLOW; ANY WAY TO SPEED IT UP?
-          bs_quant_tpm <- tidyr::spread_(tidy_tpm, aggregation_column, "tpm")
-          bs_quant_tpm <- dplyr::ungroup(bs_quant_tpm) %>%
-            dplyr::select(-bootstrap_num)
-          bs_quant_tpm <- as.matrix(bs_quant_tpm)
+          quant_tpm_formula <- paste("bootstrap_num ~",
+                                     aggregation_column)
+          bs_quant_tpm <- data.table::dcast(tidy_tpm, quant_tpm_formula,
+                                            value.var="tpm",
+                                            fun.aggregate=sum)
+          bs_quant_tpm <- as.matrix(bs_quant_tpm[,-1])
+          rm(tidy_tpm, bs_tpm_df)
         }
 
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
@@ -447,12 +447,12 @@ sleuth_prep <- function(
                                                        target_mapping)
         # this step undoes the tidying to get back a matrix format
         # target_ids here are now the aggregation column ids
-        bs_mat <- dplyr::group_by(scaled_bs, sample) %>% 
-          tidyr::spread(target_id, scaled_reads_per_base)
-        bs_mat <- dplyr::ungroup(bs_mat) %>% dplyr::select(-sample)
+        bs_mat <- dplyr::group_by(scaled_bs, sample) %>%
+          data.table::dcast(sample ~ target_id, value.var="scaled_reads_per_base")
         # this now has the same format as the transcript matrix
         # but it uses gene ids
-        bs_mat <- as.matrix(bs_mat)
+        bs_mat <- as.matrix(bs_mat[,-1])
+        rm(tidy_bs, scaled_bs)
       }
 
       if (extra_bootstrap_summary) {
