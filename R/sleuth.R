@@ -29,6 +29,18 @@ basic_filter <- function(row, min_reads = 5, min_prop = 0.47) {
   mean(row >= min_reads) >= min_prop
 }
 
+#' Natural log and offset transformation
+#'
+#' The default transformation function for converting the normalized counts.
+#'
+#' @param x numeric that must be >=0. represents an individual observed count (one transcript in one sample).
+#' @param offset numeric offset to prevent taking the log of 0.
+#' @return log(x + offset)
+#' @export
+log_transform <- function(x, offset=0.5) {
+  log(x + offset)
+}
+
 # currently defunct
 filter_df_all_groups <- function(df, fun, group_df, ...) {
   grps <- setdiff(colnames(group_df), 'sample')
@@ -89,6 +101,9 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
 #' statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
 #' NOTE: Unnecessary for typical analyses
+#' @param transformation_function the transformation that should be applied
+#' to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
+#' NOTE: be sure you know what you're doing before you change this.
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
@@ -111,6 +126,7 @@ sleuth_prep <- function(
   gene_mode = FALSE,
   read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE,
+  transformation_function = log_transform,
   ...) {
 
   ##############################
@@ -247,7 +263,8 @@ sleuth_prep <- function(
       design_matrix = design_matrix,
       target_mapping = target_mapping,
       gene_mode = !is.null(aggregation_column),
-      gene_column = aggregation_column
+      gene_column = aggregation_column,
+      transform_fxn = transformation_function
     )
 
   # TODO: eventually factor this out
@@ -396,8 +413,6 @@ sleuth_prep <- function(
                                      ncol = length(ret$kal))
     }
 
-    transformation_function <- function(x) log(x + 0.5)
-
     msg('summarizing bootstraps')
     for(i in 1:length(kal_dirs)) {
       dot(i)
@@ -505,7 +520,7 @@ sleuth_prep <- function(
         ret$bs_quants[[samp_name]] <- list(est_counts = bs_quant_est_counts)
       }
 
-      bs_mat <- transformation_function(bs_mat)
+      bs_mat <- ret$transform_fxn(bs_mat)
       # If bs_mat was made at gene-level, already has column names
       # If at transcript-level, need to add target_ids
       if(!ret$gene_mode) {
@@ -539,7 +554,7 @@ sleuth_prep <- function(
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
-    obs_counts <- transformation_function(obs_counts)
+    obs_counts <- ret$transform_fxn(obs_counts)
     obs_counts <- obs_counts[order(rownames(obs_counts)),]
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
