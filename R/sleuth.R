@@ -930,3 +930,50 @@ transcripts_from_gene <- function(obj, test, test_type,
   }
   table$target_id[table[, 2] == gene_name]
 }
+
+#' Change sleuth transform function
+#'
+#' Replace the transformation function of a sleuth object
+#'
+#' NOTE: if you change the transformation function after having done a fit,
+#' the fit(s) will have to be redone using the new transformation.
+#' @export
+#' @examples transform_fxn(x) <- function(x) log2(x+0.5)
+`transform_fxn<-` <- function(obj, fxn) {
+  stopifnot(is.function(fxn))
+  obj$transform_fxn <- fxn
+  if(!is.null(obj$fits)) {
+    warning(paste("Your sleuth object has fits based on the old transform function.",
+                  "Please rerun sleuth_fit."))
+    obj$fits <- lapply(obj$fits, function(x) {
+                         x$transform_synced <- FALSE
+                         x
+                       })
+  }
+  obj
+}
+
+
+#' Extend internal '$<-' for sleuth object
+#'
+#' This extension is mainly to address case where
+#' transform_fxn is changed by user.
+#' This function informs user that the fits need to be redone
+#' and updates those fits.
+#' Otherwise it acts normally.
+#' @export
+#' examples obj$transform_fxn <- function(x) log2(x+0.5)
+`$<-.sleuth` <- function(obj, name, value) {
+  obj[[name]] <- value
+  if(name=="transform_fxn") {
+    if(!is.null(obj$fits)) {
+      warning(paste("Your sleuth object has fits based on the old transform function.",
+                    "Please rerun sleuth_fit."))
+      obj$fits <- lapply(obj$fits, function(x) {
+                           x$transform_synced <- FALSE
+                           x
+                         })
+    }
+  }
+  obj
+}
