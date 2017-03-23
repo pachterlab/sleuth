@@ -103,6 +103,7 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   aggregation_column = NULL,
+  gene_mode = FALSE,
   read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE,
   ...) {
