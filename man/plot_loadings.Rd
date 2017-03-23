@@ -15,7 +15,7 @@ plot_loadings(obj, use_filtered = TRUE, sample = NULL, pc_input = NULL,
 
 \item{sample}{user input on which sample and which PC's contribute the most}
 
-\item{units}{either 'est_counts' or 'tpm'}
+\item{units}{either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'}
 
 \item{pc_count}{# of PC's}
 
@@ -31,4 +31,3 @@ a ggplot object
 \description{
 give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
 }
-

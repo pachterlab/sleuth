@@ -17,7 +17,7 @@ plot_pca(obj, pc_x = 1L, pc_y = 2L, use_filtered = TRUE,
 
 \item{use_filtered}{if TRUE, use filtered data. otherwise, use all data}
 
-\item{units}{either 'est_counts' or 'tpm'}
+\item{units}{either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'}
 
 \item{text_labels}{if TRUE, use text labels instead of points}
 
@@ -29,4 +29,3 @@ a gpplot object
 \description{
 Plot projections of samples onto the principal components for a set of RNA-Seq experiments
 }
-

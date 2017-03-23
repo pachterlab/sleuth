@@ -12,7 +12,7 @@ plot_transcript_heatmap(obj, transcripts, units = "tpm", trans = "log",
 
 \item{transcripts}{a vector of strings containing a list of transcripts to be plotted in a heatmap}
 
-\item{units}{a string specifying which units to use, either tpm or est_counts}
+\item{units}{a string specifying which units to use, either tpm or est_counts (scaled_reads_per_base for gene_mode)}
 
 \item{trans}{a string specifying a function to transform the data by}
 }
@@ -22,4 +22,3 @@ a \code{ggplot} object
 \description{
 Plot a clustered heatmap. The clustering is done by the hclust function.
 }
-

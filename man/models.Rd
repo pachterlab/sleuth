@@ -7,9 +7,8 @@
 models(obj, ...)
 }
 \arguments{
-\item{obj}{}
+\item{obj}{a \code{'sleuth'} or \code{'sleuth_model'} object}
 }
 \description{
 View which models have been fit
 }
-
