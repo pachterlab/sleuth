@@ -129,7 +129,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     summary = l_smooth,
     beta_covars = beta_covars,
     formula = formula,
-    design_matrix = X)
+    design_matrix = X,
+    transform_synced = TRUE)
 
   class(obj$fits[[fit_name]]) <- 'sleuth_model'
 
@@ -182,6 +183,11 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   if ( !model_exists(obj, which_model) ) {
     stop("'", which_model, "' is not a valid model. Please see models(",
       substitute(obj), ") for a list of fitted models")
+  }
+
+  if(!obj$fits[[which_model]]$transform_synced) {
+    stop("Model '", which_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
   }
 
   d_matrix <- obj$fits[[which_model]]$design_matrix
@@ -265,9 +271,10 @@ me_model_by_row <- function(obj, design, bs_summary) {
   stopifnot( all.equal(names(bs_summary$sigma_q_sq), rownames(bs_summary$obs_counts)) )
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
 
-  models <- lapply(1:nrow(bs_summary$obs_counts),
+  obs_counts <- obj$transform_fxn(bs_summary$obs_counts)
+  models <- lapply(1:nrow(obs_counts),
     function(i) {
-      me_model(design, bs_summary$obs_counts[i, ], bs_summary$sigma_q_sq[i])
+      me_model(design, obs_counts[i, ], bs_summary$sigma_q_sq[i])
     })
   names(models) <- rownames(bs_summary$obs_counts)
 

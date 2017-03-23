@@ -50,6 +50,11 @@ plot_mean_var <- function(obj,
       substitute(obj), ')')
   }
 
+  if(!obj$fits[[which_model]]$transform_synced) {
+    stop("Model '", which_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
+  }
+
   df <- obj$fits[[which_model]]$summary
 
   p <- ggplot(df, aes(mean_obs, sqrt(sqrt(sigma_sq_pmax))))
@@ -569,6 +574,11 @@ plot_vars <- function(obj,
   highlight_color = 'green'
   ) {
   stopifnot( is(obj, 'sleuth') )
+
+  if(!obj$fits[[which_model]]$transform_synced) {
+    stop("Model '", which_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
+  }
 
   cur_summary <- NULL
 

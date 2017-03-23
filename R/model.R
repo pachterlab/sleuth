@@ -68,6 +68,40 @@ models.sleuth_model <- function(obj) {
   print(obj)
 }
 
+#' Check Transform Sync Status of Sleuth Fits
+#'
+#' This method prints out the sync status for all fits of \code{sleuth} object
+#' If the sleuth object's transform function was changed after sleuth_fit was used,
+#' the user will need to redo sleuth_fit for any fits already done. 
+#'
+#' @param obj a \code{sleuth} object.
+#' @return a print out of each fit with the transform sync status.
+#' @export
+transform_status <- function(obj) {
+  useMethod('transform_status')
+}
+
+#' @export
+transform_status.sleuth <- function(obj, verbose=TRUE) {
+  if (is.null(obj$fits))
+    stop("sleuth obj has no fits.")
+
+  if (verbose) {
+    for (x in names(obj$fits)) {
+      cat('[ ', x, ' ]\n')
+      models(obj$fits[[x]]$transform_synced)
+    }
+  }
+
+
+  invisible(obj$fits)
+}
+
+#' @export
+transform_status.sleuth_model <- function(obj) {
+  print(obj$transform_synced)
+}
+
 #' Extract design matrix
 #'
 #' Getter method for extracting a design matrix from a sleuth object
