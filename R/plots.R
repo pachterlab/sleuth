@@ -73,7 +73,7 @@ plot_mean_var <- function(obj,
 #' @param pc_x integer denoting the principle component to use for the x-axis
 #' @param pc_y integer denoting the principle component to use for the y-axis
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param text_labels if TRUE, use text labels instead of points
 #' @param color_by a variable to color by. if NA, then will leave all as 'black'
 #' @return a gpplot object
@@ -89,6 +89,16 @@ plot_pca <- function(obj,
   point_alpha = 0.8,
   ...) {
   stopifnot( is(obj, 'sleuth') )
+
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
 
   mat <- NULL
   if (use_filtered) {
@@ -136,7 +146,7 @@ plot_pca <- function(obj,
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
 #' @param sample user input on which sample and which PC's contribute the most
 #' @param PC  principal component to view sample's contribution to that PC
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param pc_count # of PC's
 #' @param scale scale or not
 #' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
@@ -154,6 +164,16 @@ plot_loadings <- function(obj,
 
   stopifnot( is(obj, 'sleuth') )
   #filtering?? doesn't work right now
+
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
 
   # mat <- NULL
   # if (use_filtered) {
@@ -235,7 +255,7 @@ plot_loadings <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param pca_number user input on how many PC to display, otherwise default is 5
 #' @param scale determines scaling
 #' @param PC_relative gives the option to compare subsequent principal components and their contributions
@@ -248,6 +268,17 @@ plot_pc_variance <- function(obj,
   scale = FALSE,
   PC_relative = NULL,
   ...) {
+
+  stopifnot( is(obj, 'sleuth') )
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
 
   # mat <- NULL
   # if (use_filtered) {
@@ -299,7 +330,7 @@ plot_pc_variance <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param grouping a string from the columns of \code{sample_to_covariates} in
 #' the sleuth object for which to group and color by
@@ -314,6 +345,17 @@ plot_group_density <- function(obj,
   grouping = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   offset = 1
   ) {
+
+  stopifnot( is(obj, 'sleuth') )
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
 
   res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
   # res <- NULL
@@ -354,7 +396,7 @@ plot_group_density <- function(obj,
 #' @param which_sample a character string matching a sample in
 #' \code{obj$sample_to_covariates}
 #' @param use_filtered if TRUE, use filtered data. Otherwise use all data
-#' @param units either \code{'est_counts'} or \code{'tpm'}
+#' @param units either \code{'est_counts'} (\code{'scaled_reads_per_base'} for gene_mode) or \code{'tpm'}
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param offset the offset so that transformations such as log don't compute
 #' -Inf. If NULL, then will not add an offset
@@ -368,6 +410,18 @@ plot_sample_density <- function(obj,
   offset = 1
   ) {
   res <- NULL
+
+  stopifnot( is(obj, 'sleuth') )
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
+
   if (use_filtered) {
     res <- obj$obs_norm_filt
   } else {
@@ -398,7 +452,7 @@ plot_sample_density <- function(obj,
 #' @param sample_x the string corresponding to the sample name in \code{obj$sample_to_covariates}
 #' @param sample_y same as \code{sample_x} but for the y-axis
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param offset a linear offset to help deal with zeroes if transforming the abundances
 #' @param point_alpha the alpha on the points
 #' @param xy_line if TRUE, plot the xy_line
@@ -423,6 +477,17 @@ plot_scatter <- function(obj,
   xlim = NULL,
   ylim = NULL
   ) {
+
+  stopifnot( is(obj, 'sleuth') )
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
 
   abund <- NULL
   if (use_filtered) {
@@ -610,7 +675,7 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
 #'
 #' @param obj a sleuth object that contains a bootstrap summary (see \code{\link{get_bootstrap_summary}})
 #' @param target_id a character vector of length 1 indicating the target_id (transcript or gene name depending on aggregation mode)
-#' @param units a character vector of either 'est_counts' or 'tpm'
+#' @param units a character vector of either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param color_by a column in the sample to covariates to color by
 #' @param x_axis_angle the angle of the x-axis labels
 #' @return a ggplot2 object
@@ -622,6 +687,15 @@ plot_bootstrap <- function(obj,
   x_axis_angle = 50
   ) {
   stopifnot( is(obj, 'sleuth') )
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
 
   df <- get_bootstrap_summary(obj, target_id, units)
 
@@ -870,7 +944,7 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
 #'
 #' @param transcripts a vector of strings containing a list of transcripts to be plotted in a heatmap
 #' @param obj a \code{sleuth} object
-#' @param units a string specifying which units to use, either tpm or est_counts
+#' @param units a string specifying which units to use, either tpm or est_counts (scaled_reads_per_base for gene_mode)
 #' @param trans a string specifying a function to transform the data by
 #' @return a \code{ggplot} object
 #' @export
@@ -879,6 +953,17 @@ plot_transcript_heatmap <- function(obj,
   units = 'tpm',
   trans = 'log',
   offset = 1) {
+
+  if (obj$gene_mode & units == 'est_counts') {
+    warning(paste("your sleuth object is in gene mode,",
+                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
+    units <- 'scaled_reads_per_base'
+  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
+    warning(paste("your sleuth object is not in gene mode,",
+                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
+    units <- 'scaled_reads_per_base'
+  }
+
   if(!all(transcripts %in% obj$obs_norm$target_id)) {
     stop("Couldn't find the following transcripts: ",
       paste(transcripts[!(transcripts %in% obj$obs_norm$target_id)], collapse = ", "),
