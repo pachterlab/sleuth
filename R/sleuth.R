@@ -83,6 +83,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param ... additional arguments passed to the filter function
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
+#' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
 #' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM.
 #' NOTE: Unnecessary for typical analyses
 #' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
@@ -101,6 +102,7 @@ sleuth_prep <- function(
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
+  aggregation_column = NULL,
   read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE,
   ...) {
@@ -355,11 +357,11 @@ sleuth_prep <- function(
       # This is the gene-level version of the matrix
       all_sample_bootstrap <- matrix(NA_real_,
                                      nrow = length(which_agg_id),
-                                     ncol = length(obj$kal))
+                                     ncol = length(ret$kal))
     } else {
       all_sample_bootstrap <- matrix(NA_real_,
                                      nrow = length(which_target_id),
-                                     ncol = length(obj$kal))
+                                     ncol = length(ret$kal))
     }
 
     transformation_function <- function(x) log(x + 0.5)

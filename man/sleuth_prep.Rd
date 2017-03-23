@@ -7,7 +7,8 @@
 sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
   target_mapping = NULL, max_bootstrap = NULL,
   norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
-  read_bootstrap_tpm = FALSE, extra_bootstrap_summary = FALSE, ...)
+  aggregation_column = NULL, read_bootstrap_tpm = FALSE,
+  extra_bootstrap_summary = FALSE, gene_mode = FALSE, ...)
 }
 \arguments{
 \item{sample_to_covariates}{is a \code{data.frame} which contains a mapping
@@ -37,6 +38,8 @@ transcript.}
 
 \item{norm_fun_tpm}{a function to perform between sample normalization on the TPM}
 
+\item{aggregation_column}{a string of the column name in \code{\link{target_mapping}} to aggregate targets}
+
 \item{read_bootstrap_tpm}{read and compute summary statistics on bootstraps on the TPM.
 NOTE: Unnecessary for typical analyses}
 
@@ -60,4 +63,3 @@ variance.
 \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} to
 test whether a coeffient in the model is zero or \code{\link{sleuth_lrt}} to compare different models
 }
-
