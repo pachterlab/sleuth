@@ -7,7 +7,8 @@
 sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
   target_mapping = NULL, max_bootstrap = NULL,
   norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
-  aggregation_column = NULL, ...)
+  aggregation_column = NULL, gene_mode = FALSE,
+  read_bootstrap_tpm = FALSE, extra_bootstrap_summary = FALSE, ...)
 }
 \arguments{
 \item{sample_to_covariates}{a \code{data.frame} which contains a mapping
@@ -39,6 +40,13 @@ transcript.}
 
 \item{aggregation_column}{a string of the column name in \code{\link{target_mapping}} to aggregate targets}
 
+\item{read_bootstrap_tpm}{read and compute summary statistics on bootstraps on the TPM.
+NOTE: Unnecessary for typical analyses}
+
+\item{extra_bootstrap_summary}{if \code{TRUE}, compute extra summary
+statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
+NOTE: Unnecessary for typical analyses}
+
 \item{...}{additional arguments passed to the filter function}
 }
 \value{
@@ -62,4 +70,3 @@ so <- sleuth_prep(s2c, ~genotype + drug)
 \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} or
 \code{\link{sleuth_lrt}} to perform hypothesis testing
 }
-

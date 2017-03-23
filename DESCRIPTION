@@ -20,6 +20,7 @@ Imports:
     rhdf5,
     parallel,
     lazyeval,
+    matrixStats,
     shiny
 Suggests:
     MASS,

@@ -18,7 +18,7 @@ plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
 
 \item{use_filtered}{if TRUE, use filtered data. otherwise, use all data}
 
-\item{units}{either 'est_counts' or 'tpm'}
+\item{units}{either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'}
 
 \item{offset}{a linear offset to help deal with zeroes if transforming the abundances}
 
@@ -42,4 +42,3 @@ a ggplot object for the scatterplot
 \description{
 Make a scatter plot of transcripts from two samples. to assess correlation
 }
-

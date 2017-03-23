@@ -13,7 +13,7 @@ plot_group_density(obj, use_filtered = TRUE, units = "est_counts",
 
 \item{use_filtered}{if TRUE, use filtered data. otherwise use all data}
 
-\item{units}{either 'est_counts' or 'tpm'}
+\item{units}{either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'}
 
 \item{trans}{a string pointing to a function to use for the transformation.}
 
@@ -29,4 +29,3 @@ a \code{ggplot2} object
 \description{
 Plot the density of a some grouping
 }
-

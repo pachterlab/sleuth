@@ -24,4 +24,3 @@ models(so)
 #      (Intercept)
 #      conditionIP
 }
-

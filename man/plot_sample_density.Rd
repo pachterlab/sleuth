@@ -15,7 +15,7 @@ plot_sample_density(obj, which_sample = obj$sample_to_covariates$sample[1],
 
 \item{use_filtered}{if TRUE, use filtered data. Otherwise use all data}
 
-\item{units}{either \code{'est_counts'} or \code{'tpm'}}
+\item{units}{either \code{'est_counts'} (\code{'scaled_reads_per_base'} for gene_mode) or \code{'tpm'}}
 
 \item{trans}{a string pointing to a function to use for the transformation.}
 
@@ -28,4 +28,3 @@ a \code{ggplot2} object
 \description{
 Plot the density of one particular sample
 }
-

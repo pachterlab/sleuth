@@ -24,6 +24,6 @@ a \code{\link{shinyApp}} result
 Interactive sleuth visualization with Shiny. To exit, type \code{ESC} in R.
 }
 \seealso{
-\code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}
+\code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}, \code{\link{sleuth_deploy}}
 }
 

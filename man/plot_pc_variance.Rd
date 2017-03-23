@@ -12,7 +12,7 @@ plot_pc_variance(obj, use_filtered = TRUE, units = "est_counts",
 
 \item{use_filtered}{if TRUE, use filtered data. otherwise, use all data}
 
-\item{units}{either 'est_counts' or 'tpm'}
+\item{units}{either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'}
 
 \item{pca_number}{user input on how many PC to display, otherwise default is 5}
 
@@ -26,4 +26,3 @@ a ggplot object
 \description{
 Plot PC variances retained by percentage with option to compare specified PC
 }
-

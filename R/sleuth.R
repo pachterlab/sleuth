@@ -84,7 +84,11 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
-#' @param num_cores an integer of the number of computer cores mclapply should use to aggregate targets
+#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM.
+#' NOTE: Unnecessary for typical analyses
+#' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
+#' statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
+#' NOTE: Unnecessary for typical analyses
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
@@ -104,7 +108,9 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   aggregation_column = NULL,
-  num_cores = 2L,
+  gene_mode = FALSE,
+  read_bootstrap_tpm = FALSE,
+  extra_bootstrap_summary = FALSE,
   ...) {
 
   ##############################
@@ -193,7 +199,8 @@ sleuth_prep <- function(
       nsamp <- dot(nsamp)
       path <- kal_dirs[i]
       suppressMessages({
-        kal <- read_kallisto(path, read_bootstrap = TRUE, max_bootstrap = max_bootstrap)
+        kal <- read_kallisto(path, read_bootstrap = FALSE,
+          max_bootstrap = max_bootstrap)
         })
       kal$abundance <- dplyr::mutate(kal$abundance,
         sample = sample_to_covariates$sample[i])
@@ -203,11 +210,6 @@ sleuth_prep <- function(
   msg('')
 
   check_result <- check_kal_pack(kal_list)
-  if (length(check_result$no_bootstrap) > 0 ) {
-    stop("You must generate bootstraps on all of your samples. Here are the ones that don't contain any:\n",
-      paste('\t', kal_dirs[check_result$no_bootstrap], collapse = '\n'))
-  }
-
   kal_versions <- check_result$versions
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
@@ -243,7 +245,9 @@ sleuth_prep <- function(
       bootstrap_summary = NA,
       full_formula = full_model,
       design_matrix = design_matrix,
-      target_mapping = target_mapping
+      target_mapping = target_mapping,
+      gene_mode = !is.null(aggregation_column),
+      gene_column = aggregation_column
     )
 
   # TODO: eventually factor this out
@@ -303,13 +307,6 @@ sleuth_prep <- function(
     # add in eff_len and len
     obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(obs_raw, eff_len, len))
 
-    msg("normalizing bootstrap samples")
-    ret$kal <- lapply(seq_along(ret$kal), function(i) {
-      normalize_bootstrap(ret$kal[[i]],
-        tpm_size_factor = tpm_sf[i],
-        est_counts_size_factor = est_counts_sf[i])
-      })
-
 
     obs_norm <- as_df(obs_norm)
     ret$obs_norm <- obs_norm
@@ -319,44 +316,233 @@ sleuth_prep <- function(
     ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
     ret$tpm_sf <- tpm_sf
 
+    #### This code through the for loop is a candidate for moving to another function
+    path <- kal_dirs[1]
+    kal_path <- get_kallisto_path(path)
+    target_id <- as.character(rhdf5::h5read(kal_path$path, "aux/ids"))
+    num_transcripts <- length(target_id)
+    ret$bs_quants <- list()
 
-    msg('summarizing bootstraps')
-    bs_summary <- NULL
-    if (is.null(aggregation_column)) {
-      bs_summary <- bs_sigma_summary(ret, function(x) log(x + 0.5))
-      # if no target ids were specified for the filter, use the ones generated here
-      bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
-      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+    which_target_id <- ret$filter_df$target_id
+
+    if (ret$gene_mode) {
+      msg(paste0("aggregating by column: ", aggregation_column))
+
+      # Get list of IDs to aggregate on (usually genes)
+      # Also get the filtered list and update the "filter_df" and "filter_bool"
+      # variables for the sleuth object
+      agg_id <- unique(target_mapping[, aggregation_column, with = F])
+      agg_id <- agg_id[[1]]
+      mappings <- dplyr::select_(target_mapping, "target_id", aggregation_column)
+      which_tms <- which(target_mapping$target_id %in% which_target_id)
+      which_agg_id <- unique(target_mapping[which_tms, aggregation_column, with = F])
+      which_agg_id <- which_agg_id[[1]]
+      filter_df <- adf(target_id = which_agg_id)
+      filter_bool <- agg_id %in% which_agg_id
+
+      msg(paste0(length(which_agg_id), " genes passed the filter"))
+
+      # Taken from gene_summary; scale normalized observed counts to "reads/base"
+      norm_by_length <- TRUE
+      tmp <- ret$obs_raw
+      tmp <- dplyr::left_join(data.table::as.data.table(tmp),
+          target_mapping, by = "target_id")
+      tmp <- dplyr::group_by_(tmp, "sample", aggregation_column)
+      scale_factor <- dplyr::mutate(tmp, scale_factor = median(eff_len))
+      obs_norm <- reads_per_base_transform(obs_norm,
+          scale_factor, aggregation_column, target_mapping, norm_by_length)
+
+      # New code: get gene-level TPM (simple sum of normalized transcript TPM)
+      tmp <- tpm_norm
+      tmp <- dplyr::left_join(data.table::as.data.table(tmp),
+          target_mapping, by = "target_id")
+      tpm_norm <- dplyr::group_by_(tmp, "sample", aggregation_column) %>%
+           summarize(sum(tpm))
+      tpm_norm <- dplyr::ungroup(tpm_norm)
+      tpm_norm <- data.table::setnames(tpm_norm, aggregation_column, "target_id")
+      tpm_norm <- as_df(tpm_norm)
+
+      # Same steps as above to add TPM column to "obs_norm" table
+      obs_norm <- dplyr::arrange(obs_norm, target_id, sample)
+      tpm_norm <- dplyr::arrange(tpm_norm, target_id, sample)
+
+      stopifnot( all.equal(obs_raw$target_id, obs_norm$target_id) &&
+        all.equal(obs_raw$sample, obs_norm$sample) )
+
+      suppressWarnings({
+        if ( !all.equal(dplyr::select(obs_norm, target_id, sample),
+            dplyr::select(tpm_norm, target_id, sample)) ) {
+              stop('Invalid column rows. In principle, can simply join. Please report error.')
+            }
+
+        # obs_norm <- dplyr::left_join(obs_norm, data.table::as.data.table(tpm_norm),
+        #   by = c('target_id', 'sample'))
+        obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
+      })
+
+      # These are the updated gene-level variables
+      ret$filter_df <- adf(target_id = which_agg_id)
+      ret$filter_bool <- agg_id %in% which_agg_id
+      ret$obs_norm <- obs_norm
+      ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
+
+      # This is the gene-level version of the matrix
+      all_sample_bootstrap <- matrix(NA_real_,
+                                     nrow = length(which_agg_id),
+                                     ncol = length(ret$kal))
     } else {
-      bs_summary <- gene_summary(ret, aggregation_column,
-                                 function(x) log(x + 0.5), num_cores = num_cores)
-
-        tmp <- ret$obs_raw
-        tmp <- dplyr::group_by(tmp, target_id)
-        tmp <- dplyr::summarize(tmp, pass_filter = basic_filter(est_counts))
-
-        tmp <- data.table::data.table(tmp)
-        target_mapping <- data.table::data.table(target_mapping)
-        tmp <- dplyr::inner_join(tmp, target_mapping, by = 'target_id')
-
-        w_pass <- dplyr::distinct(dplyr::select_(tmp, 'pass_filter',
-          aggregation_column))
-
-        msg(paste0(sum(w_pass$pass_filter), ' genes passed the filter'))
-
-        sleuth_gene_filter <- dplyr::filter(tmp, pass_filter)
-        sleuth_gene_filter <- dplyr::select_(sleuth_gene_filter,
-          target_id = aggregation_column)
-        sleuth_gene_filter <- dplyr::distinct(sleuth_gene_filter)
-        filter_target_id <- sleuth_gene_filter$target_id
-
-      bs_summary$obs_counts <- bs_summary$obs_counts[filter_target_id, ]
-      bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[filter_target_id]
-      ret$filter_df <- adf(target_id = filter_target_id)
-
+      all_sample_bootstrap <- matrix(NA_real_,
+                                     nrow = length(which_target_id),
+                                     ncol = length(ret$kal))
     }
 
-    ret$bs_summary <- bs_summary
+    transformation_function <- function(x) log(x + 0.5)
+
+    msg('summarizing bootstraps')
+    for(i in 1:length(kal_dirs)) {
+      dot(i)
+      samp_name <- sample_to_covariates$sample[i]
+      kal_path <- get_kallisto_path(kal_dirs[i])
+
+      num_bootstrap <- as.integer(
+        rhdf5::h5read(kal_path$path, "aux/num_bootstrap")
+        )
+      if (num_bootstrap == 0) {
+        stop(paste0('File ', kal_path,
+          ' has no bootstraps. Please generate bootstraps using "kallisto quant -b".')
+          )
+      }
+
+      # TODO: only perform operations on filtered transcripts
+      eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
+      bs_mat <- read_bootstrap_mat(fname = kal_path$path,
+        num_bootstraps = num_bootstrap,
+        num_transcripts = num_transcripts,
+        est_count_sf = est_counts_sf[[i]])
+
+      if (read_bootstrap_tpm) {
+        bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, eff_len))
+
+        # gene level code is analogous here to below code
+        if (ret$gene_mode) {
+          colnames(bs_quant_tpm) <- target_id
+          # Make bootstrap_num an explicit column; each is treated as a "sample"
+          bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
+                                        bs_quant_tpm)
+          # Make long tidy table; this step is much faster
+          # using data.table melt rather than tidyr gather
+          tidy_tpm <- data.table::melt(bs_tpm_df, id.vars="bootstrap_num",
+                                       variable.name="target_id",
+                                       value.name="tpm")
+          tidy_tpm$target_id <- as.character(tidy_tpm$target_id)
+          tidy_tpm <- dplyr::left_join(tidy_tpm,
+                                       data.table::as.data.table(mappings),
+                                       by = "target_id")
+          # Data.table dcast uses non-standard evaluation
+          # So quote the full casting formula to make sure
+          # "aggregation_column" is interpreted as a variable
+          # see: http://stackoverflow.com/a/31295592
+          quant_tpm_formula <- paste("bootstrap_num ~",
+                                     aggregation_column)
+          bs_quant_tpm <- data.table::dcast(tidy_tpm, quant_tpm_formula,
+                                            value.var="tpm",
+                                            fun.aggregate=sum)
+          bs_quant_tpm <- as.matrix(bs_quant_tpm[,-1])
+          rm(tidy_tpm, bs_tpm_df) # these tables are very large
+        }
+
+        bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
+        colnames(bs_quant_tpm) <- c("min", "lower", "mid", "upper", "max")
+        ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
+      }
+
+      if (ret$gene_mode) {
+        # I can combine target_id and eff_len
+        # I assume the order is the same, since it's read from the same kallisto file
+        # and each kallisto file has the same order
+        eff_len_df <- data.frame(target_id, 
+                                 eff_len, stringsAsFactors = F)
+        # make bootstrap number an explicit column to facilitate melting
+        bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap), bs_mat)
+        # data.table melt function is much faster than tidyr's gather function
+        # output is a long table with each bootstrap's value for each target_id
+        tidy_bs <- data.table::melt(bs_df, id.vars="bootstrap_num",
+                                    variable.name="target_id",
+                                    value.name="est_counts")
+        # not sure why, but the melt function always returns a factor,
+        # even when setting variable.factor = F, so I coerce target_id
+        tidy_bs$target_id <- as.character(tidy_bs$target_id)
+        # combine the long tidy table with eff_len and aggregation mappings
+        # note that bootstrap number is treated as "sample" here for backwards compatibility
+        tidy_bs <- dplyr::select(tidy_bs, target_id, est_counts, sample=bootstrap_num)
+        tidy_bs <- dplyr::left_join(data.table::as.data.table(tidy_bs),
+                                    data.table::as.data.table(eff_len_df),
+                                    by = "target_id")
+        tidy_bs <- dplyr::left_join(tidy_bs,
+                                    data.table::as.data.table(mappings),
+                                    by = "target_id")
+        # create the median effective length scaling factor for each gene
+        scale_factor <- dplyr::group_by_(tidy_bs, aggregation_column)
+        scale_factor <- dplyr::mutate(scale_factor, scale_factor=median(eff_len))
+        # use the old reads_per_base_transform method to get gene scaled counts
+        scaled_bs <- reads_per_base_transform(tidy_bs, scale_factor$scale_factor, 
+                                                       aggregation_column,
+                                                       target_mapping)
+        # this step undoes the tidying to get back a matrix format
+        # target_ids here are now the aggregation column ids
+        bs_mat <- dplyr::group_by(scaled_bs, sample) %>%
+          data.table::dcast(sample ~ target_id, value.var="scaled_reads_per_base")
+        # this now has the same format as the transcript matrix
+        # but it uses gene ids
+        bs_mat <- as.matrix(bs_mat[,-1])
+        rm(tidy_bs, scaled_bs)
+      }
+
+      if (extra_bootstrap_summary) {
+        bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
+        colnames(bs_quant_est_counts) <- c("min", "lower", "mid", "upper",
+          "max")
+        ret$bs_quants[[samp_name]] <- list(est_counts = bs_quant_est_counts)
+      }
+
+      bs_mat <- transformation_function(bs_mat)
+      # If bs_mat was made at gene-level, already has column names
+      # If at transcript-level, need to add target_ids
+      if(!ret$gene_mode) {
+        colnames(bs_mat) <- target_id
+      }
+      
+      # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
+      # variability in sample i
+      # NOTE: we are only keeping the ones that pass the filter
+      if (ret$gene_mode) {
+        all_sample_bootstrap[, i] <- matrixStats::colVars(
+          bs_mat[, which_agg_id]
+        )
+      } else {
+        all_sample_bootstrap[, i] <- matrixStats::colVars(
+          bs_mat[, which_target_id]
+        )
+      }
+    } # end summarize bootstraps
+    msg('')
+
+    sigma_q_sq <- rowMeans(all_sample_bootstrap)
+
+    # This is the rest of the gene_summary code
+    if (ret$gene_mode) {
+      names(sigma_q_sq) <- which_agg_id
+      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, ]
+    } else {
+      names(sigma_q_sq) <- which_target_id
+      obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
+    }
+
+    sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
+    obs_counts <- transformation_function(obs_counts)
+    obs_counts <- obs_counts[order(rownames(obs_counts)),]
+
+    ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
   }
 
   ret$gene_mode <- !is.null(aggregation_column)
@@ -366,7 +552,6 @@ sleuth_prep <- function(
 
   ret
 }
-
 
 # check versions of kallistos and num bootstraps, etc
 check_kal_pack <- function(kal_list) {
@@ -384,9 +569,7 @@ check_kal_pack <- function(kal_list) {
     stop('Inconsistent number of transcripts. Please make sure you used the same index everywhere.')
   }
 
-  no_bootstrap <- which(sapply(kal_list, function(x) length(x$bootstrap) == 0))
-
-  list(versions = u_versions, no_bootstrap = no_bootstrap)
+  list(versions = u_versions)
 }
 
 # this function is mostly to deal with annoying ENSEMBL transcript names that
@@ -499,7 +682,6 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
       dplyr::mutate(summarize_bootstrap(obj$kal[[i]], col, transform),
         sample = cur_samp)
     })
-
   dplyr::bind_rows(res)
 }
 
