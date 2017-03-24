@@ -188,10 +188,10 @@ sleuth_prep <- function(
                "but not a 'target_mapping'. Please provided a 'target_mapping'."))
   }
 
-  if (is.null(num_cores) || is.na(suppressWarnings(as.integer(num_cores))) ||
-       num_cores < 1 || num_cores > parallel::detectCores()) {
-    stop("num_cores must be an integer between 1 and the number of cores on your machine")
-  }
+#  if (is.null(num_cores) || is.na(suppressWarnings(as.integer(num_cores))) ||
+#       num_cores < 1 || num_cores > parallel::detectCores()) {
+#    stop("num_cores must be an integer between 1 and the number of cores on your machine")
+#  }
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
@@ -937,8 +937,8 @@ transcripts_from_gene <- function(obj, test, test_type,
 #'
 #' NOTE: if you change the transformation function after having done a fit,
 #' the fit(s) will have to be redone using the new transformation.
-#' @export
 #' @examples transform_fxn(x) <- function(x) log2(x+0.5)
+#' @export
 `transform_fxn<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))
   obj$transform_fxn <- fxn
@@ -961,8 +961,8 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' This function informs user that the fits need to be redone
 #' and updates those fits.
 #' Otherwise it acts normally.
+#' @examples obj$transform_fxn <- function(x) log2(x+0.5)
 #' @export
-#' examples obj$transform_fxn <- function(x) log2(x+0.5)
 `$<-.sleuth` <- function(obj, name, value) {
   obj[[name]] <- value
   if(name=="transform_fxn") {
