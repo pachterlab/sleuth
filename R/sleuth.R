@@ -944,7 +944,7 @@ transcripts_from_gene <- function(obj, test, test_type,
   obj$transform_fxn <- fxn
   if(!is.null(obj$fits)) {
     warning(paste("Your sleuth object has fits based on the old transform function.",
-                  "Please rerun sleuth_fit."))
+                  "Please rerun sleuth_prep and sleuth_fit."))
     obj$fits <- lapply(obj$fits, function(x) {
                          x$transform_synced <- FALSE
                          x
@@ -968,7 +968,7 @@ transcripts_from_gene <- function(obj, test, test_type,
   if(name=="transform_fxn") {
     if(!is.null(obj$fits)) {
       warning(paste("Your sleuth object has fits based on the old transform function.",
-                    "Please rerun sleuth_fit."))
+                    "Please rerun sleuth_prep and sleuth_fit."))
       obj$fits <- lapply(obj$fits, function(x) {
                            x$transform_synced <- FALSE
                            x

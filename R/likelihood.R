@@ -66,8 +66,13 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
   model_exists(obj, null_model)
   model_exists(obj, alt_model)
 
-  if(!obj$fits[[which_model]]$transform_synced) {
-    stop("Model '", which_model, "' was not computed using the sleuth object's",
+  if(!obj$fits[[alt_model]]$transform_synced) {
+    stop("Model '", alt_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
+  }
+
+  if(!obj$fits[[null_model]]$transform_synced) {
+    stop("Model '", null_model, "' was not computed using the sleuth object's",
          " current transform function. Please rerun sleuth_fit for this model.")
   }
 
