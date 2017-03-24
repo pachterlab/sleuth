@@ -518,7 +518,7 @@ plot_scatter <- function(obj,
     sample_y <- paste0(sample_y, '` + ', off)
   }
 
-  if (!is.null(trans) and !is.null(offset)) {
+  if (!is.null(trans) & !is.null(offset)) {
     sample_x <- paste0(sample_x, ' )')
     sample_y <- paste0(sample_y, ' )')
   } else {
