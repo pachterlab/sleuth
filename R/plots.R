@@ -438,19 +438,22 @@ plot_scatter <- function(obj,
   abund <- dplyr::mutate(abund, target_id = rownames(abund))
 
   if (!is.null(trans)) {
-    sample_x <- paste0( trans, '( ', sample_x)
-    sample_y <- paste0( trans, '( ', sample_y)
+    sample_x <- paste0( trans, '( `', sample_x)
+    sample_y <- paste0( trans, '( `', sample_y)
   }
 
   if ( (!is.null(offset) && !is.na(offset)) && offset != 0 ) {
     off <- deparse(eval(offset))
-    sample_x <- paste0(sample_x, ' + ', off)
-    sample_y <- paste0(sample_y, ' + ', off)
+    sample_x <- paste0(sample_x, '` + ', off)
+    sample_y <- paste0(sample_y, '` + ', off)
   }
 
-  if (!is.null(trans)) {
+  if (!is.null(trans) & !is.null(offset)) {
     sample_x <- paste0(sample_x, ' )')
     sample_y <- paste0(sample_y, ' )')
+  } else {
+    sample_x <- paste0(sample_x, '` )')
+    sample_y <- paste0(sample_y, '` )')
   }
 
   p <- ggplot(abund, aes_string(sample_x, sample_y))
