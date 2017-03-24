@@ -517,7 +517,7 @@ sleuth_prep <- function(
         bs_quant_est_counts <- aperm(apply(bs_mat, 2, quantile))
         colnames(bs_quant_est_counts) <- c("min", "lower", "mid", "upper",
           "max")
-        ret$bs_quants[[samp_name]] <- list(est_counts = bs_quant_est_counts)
+        ret$bs_quants[[samp_name]]$est_counts <- bs_quant_est_counts
       }
 
       bs_mat <- ret$transform_fxn(bs_mat)
