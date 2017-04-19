@@ -366,42 +366,43 @@ sleuth_prep <- function(
           target_mapping, by = "target_id")
       tmp <- dplyr::group_by_(tmp, "sample", aggregation_column)
       scale_factor <- dplyr::mutate(tmp, scale_factor = median(eff_len))
-      obs_norm <- reads_per_base_transform(obs_norm,
+      obs_norm_gene <- reads_per_base_transform(ret$obs_norm,
           scale_factor, aggregation_column, target_mapping, norm_by_length)
-
       # New code: get gene-level TPM (simple sum of normalized transcript TPM)
       tmp <- tpm_norm
       tmp <- dplyr::left_join(data.table::as.data.table(tmp),
           target_mapping, by = "target_id")
-      tpm_norm <- dplyr::group_by_(tmp, "sample", aggregation_column) %>%
+      tpm_norm_gene <- dplyr::group_by_(tmp, "sample", aggregation_column) %>%
            summarize(sum(tpm))
-      tpm_norm <- dplyr::ungroup(tpm_norm)
-      tpm_norm <- data.table::setnames(tpm_norm, aggregation_column, "target_id")
-      tpm_norm <- as_df(tpm_norm)
+      tpm_norm_gene <- dplyr::ungroup(tpm_norm_gene)
+      tpm_norm_gene <- data.table::setnames(tpm_norm_gene, aggregation_column, "target_id")
+      tpm_norm_gene <- data.table::setnames(tpm_norm_gene, "sum(tpm)", "tpm")
+      tpm_norm_gene <- as_df(tpm_norm_gene)
 
       # Same steps as above to add TPM column to "obs_norm" table
-      obs_norm <- dplyr::arrange(obs_norm, target_id, sample)
-      tpm_norm <- dplyr::arrange(tpm_norm, target_id, sample)
+      obs_norm_gene <- dplyr::arrange(obs_norm_gene, target_id, sample)
+      tpm_norm_gene <- dplyr::arrange(tpm_norm_gene, target_id, sample)
 
-      stopifnot( all.equal(obs_raw$target_id, obs_norm$target_id) &&
-        all.equal(obs_raw$sample, obs_norm$sample) )
-
+      stopifnot(all.equal(dplyr::select(obs_norm_gene, target_id, sample),
+            dplyr::select(tpm_norm_gene, target_id, sample)))
       suppressWarnings({
-        if ( !all.equal(dplyr::select(obs_norm, target_id, sample),
-            dplyr::select(tpm_norm, target_id, sample)) ) {
+        if ( !all.equal(dplyr::select(obs_norm_gene, target_id, sample),
+            dplyr::select(tpm_norm_gene, target_id, sample), check.attributes=F) ) {
               stop('Invalid column rows. In principle, can simply join. Please report error.')
             }
 
         # obs_norm <- dplyr::left_join(obs_norm, data.table::as.data.table(tpm_norm),
         #   by = c('target_id', 'sample'))
-        obs_norm <- dplyr::bind_cols(obs_norm, dplyr::select(tpm_norm, tpm))
+        obs_norm_gene <- dplyr::bind_cols(obs_norm_gene, dplyr::select(tpm_norm_gene, tpm))
       })
 
       # These are the updated gene-level variables
       ret$filter_df <- adf(target_id = which_agg_id)
       ret$filter_bool <- agg_id %in% which_agg_id
-      ret$obs_norm <- obs_norm
-      ret$obs_norm_filt <- dplyr::semi_join(obs_norm, filter_df, by = 'target_id')
+      ret$obs_norm <- obs_norm_gene
+      ret$obs_norm_filt <- dplyr::semi_join(obs_norm_gene, filter_df, by = 'target_id')
+
+      rm(obs_norm, tpm_norm, obs_norm_gene, tpm_norm_gene)
 
       # This is the gene-level version of the matrix
       all_sample_bootstrap <- matrix(NA_real_,
