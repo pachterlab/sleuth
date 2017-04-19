@@ -351,6 +351,7 @@ sleuth_prep <- function(
       agg_id <- unique(target_mapping[, aggregation_column, with = F])
       agg_id <- agg_id[[1]]
       mappings <- dplyr::select_(target_mapping, "target_id", aggregation_column)
+      mappings <- data.table::as.data.table(mappings)
       which_tms <- which(target_mapping$target_id %in% which_target_id)
       which_agg_id <- unique(target_mapping[which_tms, aggregation_column, with = F])
       which_agg_id <- which_agg_id[[1]]
@@ -361,22 +362,20 @@ sleuth_prep <- function(
 
       # Taken from gene_summary; scale normalized observed counts to "reads/base"
       norm_by_length <- TRUE
-      tmp <- ret$obs_raw
-      tmp <- dplyr::left_join(data.table::as.data.table(tmp),
-          target_mapping, by = "target_id")
-      tmp <- dplyr::group_by_(tmp, "sample", aggregation_column)
-      scale_factor <- dplyr::mutate(tmp, scale_factor = median(eff_len))
+      tmp <- data.table::as.data.table(ret$obs_raw)
+      tmp <- merge(tmp, mappings,
+                   by = "target_id", all.x=T)
+      scale_factor <- tmp[, scale_factor := median(eff_len),
+                          by=list(sample,eval(parse(text=aggregation_column)))]
       obs_norm_gene <- reads_per_base_transform(ret$obs_norm,
           scale_factor, aggregation_column, target_mapping, norm_by_length)
       # New code: get gene-level TPM (simple sum of normalized transcript TPM)
-      tmp <- tpm_norm
-      tmp <- dplyr::left_join(data.table::as.data.table(tmp),
-          target_mapping, by = "target_id")
-      tpm_norm_gene <- dplyr::group_by_(tmp, "sample", aggregation_column) %>%
-           summarize(sum(tpm))
-      tpm_norm_gene <- dplyr::ungroup(tpm_norm_gene)
-      tpm_norm_gene <- data.table::setnames(tpm_norm_gene, aggregation_column, "target_id")
-      tpm_norm_gene <- data.table::setnames(tpm_norm_gene, "sum(tpm)", "tpm")
+      tmp <- data.table::as.data.table(tpm_norm)
+      tmp <- merge(tmp, mappings,
+                   by = "target_id", all.x = T)
+      tpm_norm_gene <- tmp[, j = list(tpm = sum(tpm)),
+                           by = list(sample, eval(parse(text = aggregation_column)))]
+      data.table::setnames(tpm_norm_gene, 'parse', 'target_id')
       tpm_norm_gene <- as_df(tpm_norm_gene)
 
       # Same steps as above to add TPM column to "obs_norm" table
@@ -450,10 +449,10 @@ sleuth_prep <- function(
           tidy_tpm <- data.table::melt(bs_tpm_df, id.vars="bootstrap_num",
                                        variable.name="target_id",
                                        value.name="tpm")
+          tidy_tpm <- data.table::as.data.table(tidy_tpm)
           tidy_tpm$target_id <- as.character(tidy_tpm$target_id)
-          tidy_tpm <- dplyr::left_join(tidy_tpm,
-                                       data.table::as.data.table(mappings),
-                                       by = "target_id")
+          tidy_tpm <- merge(tidy_tpm, mappings,
+                            by = "target_id", all.x = T)
           # Data.table dcast uses non-standard evaluation
           # So quote the full casting formula to make sure
           # "aggregation_column" is interpreted as a variable
@@ -491,23 +490,21 @@ sleuth_prep <- function(
         # combine the long tidy table with eff_len and aggregation mappings
         # note that bootstrap number is treated as "sample" here for backwards compatibility
         tidy_bs <- dplyr::select(tidy_bs, target_id, est_counts, sample=bootstrap_num)
-        tidy_bs <- dplyr::left_join(data.table::as.data.table(tidy_bs),
-                                    data.table::as.data.table(eff_len_df),
-                                    by = "target_id")
-        tidy_bs <- dplyr::left_join(tidy_bs,
-                                    data.table::as.data.table(mappings),
-                                    by = "target_id")
+        tidy_bs <- merge(data.table::as.data.table(tidy_bs),
+                         data.table::as.data.table(eff_len_df),
+                         by = "target_id", all.x = T)
+        tidy_bs <- merge(tidy_bs, mappings,
+                         by = "target_id", all.x = T)
         # create the median effective length scaling factor for each gene
-        scale_factor <- dplyr::group_by_(tidy_bs, aggregation_column)
-        scale_factor <- dplyr::mutate(scale_factor, scale_factor=median(eff_len))
+        scale_factor <- tidy_bs[, scale_factor := median(eff_len),
+                                by = eval(parse(text=aggregation_column))]
         # use the old reads_per_base_transform method to get gene scaled counts
         scaled_bs <- reads_per_base_transform(tidy_bs, scale_factor$scale_factor, 
                                                        aggregation_column,
                                                        target_mapping)
         # this step undoes the tidying to get back a matrix format
         # target_ids here are now the aggregation column ids
-        bs_mat <- dplyr::group_by(scaled_bs, sample) %>%
-          data.table::dcast(sample ~ target_id, value.var="scaled_reads_per_base")
+        bs_mat <- data.table::dcast(scaled_bs, sample ~ target_id, value.var="scaled_reads_per_base")
         # this now has the same format as the transcript matrix
         # but it uses gene ids
         bs_mat <- as.matrix(bs_mat[,-1])

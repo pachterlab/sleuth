@@ -393,44 +393,42 @@ reads_per_base_transform <- function(reads_table, scale_factor_input,
   mapping = NULL,
   norm_by_length = TRUE) {
 
+  reads_table <- data.table::as.data.table(reads_table)
+
   if (is(scale_factor_input, 'data.frame')) {
     # message('USING NORMALIZATION BY EFFECTIVE LENGTH')
     # browser()
-    reads_table <- dplyr::left_join(
-      data.table::as.data.table(reads_table),
-      data.table::as.data.table(dplyr::select(scale_factor_input, target_id, sample, scale_factor)),
-      by = c('sample', 'target_id'))
+    scale_factor_input <- data.table::as.data.table(dplyr::select(scale_factor_input, target_id,
+                                                                  sample, scale_factor))
+    reads_table <- merge(reads_table, scale_factor_input,
+      by = c('sample', 'target_id'), all.x=T)
   } else {
-    reads_table <- dplyr::mutate(reads_table, scale_factor = scale_factor_input)
+    reads_table[, scale_factor := scale_factor_input]
   }
   # browser()
-  reads_table <- dplyr::mutate(reads_table,
-    reads_per_base = est_counts / eff_len,
-    scaled_reads_per_base = scale_factor * reads_per_base
-    )
-
-  reads_table <- data.table::as.data.table(reads_table)
+  reads_table[, reads_per_base := est_counts / eff_len]
+  reads_table[, scaled_reads_per_base := scale_factor * reads_per_base]
 
   if (!is.null(collapse_column)) {
     mapping <- data.table::as.data.table(mapping)
     # old stuff
     if (!(collapse_column %in% colnames(reads_table))) {
-      reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
+      reads_table <- merge(reads_table, mapping, by = 'target_id', all.x=T)
     }
     # browser()
     # reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
 
     rows_to_remove <- !is.na(reads_table[[collapse_column]])
-    reads_table <- dplyr::filter(reads_table, rows_to_remove)
+    reads_table <- reads_table[rows_to_remove]
     if ('sample' %in% colnames(reads_table)) {
-      reads_table <- dplyr::group_by_(reads_table, 'sample', collapse_column)
+      reads_table <- reads_table[, j = list(scaled_reads_per_base = sum(scaled_reads_per_base)),
+                  by = list(sample, eval(parse(text=collapse_column)))]
     } else {
-      reads_table <- dplyr::group_by_(reads_table, collapse_column)
+      reads_table <- reads_table[, j = list(scaled_reads_per_base = sum(scaled_reads_per_base)),
+                  by = eval(parse(text=collapse_column))]
     }
 
-    reads_table <- dplyr::summarize(reads_table,
-      scaled_reads_per_base = sum(scaled_reads_per_base))
-    data.table::setnames(reads_table, collapse_column, 'target_id')
+    data.table::setnames(reads_table, 'parse', 'target_id')
   }
 
   as_df(reads_table)
