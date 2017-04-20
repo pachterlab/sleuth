@@ -373,6 +373,8 @@ sleuth_prep <- function(
       tmp <- data.table::as.data.table(tpm_norm)
       tmp <- merge(tmp, mappings,
                    by = "target_id", all.x = T)
+      rows_to_remove <- !is.na(tmp[[aggregation_column]])
+      tmp <- tmp[rows_to_remove]
       tpm_norm_gene <- tmp[, j = list(tpm = sum(tpm)),
                            by = list(sample, eval(parse(text = aggregation_column)))]
       data.table::setnames(tpm_norm_gene, 'parse', 'target_id')
