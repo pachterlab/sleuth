@@ -445,7 +445,7 @@ sleuth_prep <- function(
           colnames(bs_quant_tpm) <- target_id
           # Make bootstrap_num an explicit column; each is treated as a "sample"
           bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
-                                        bs_quant_tpm)
+                                        bs_quant_tpm, check.names = F)
           rm(bs_quant_tpm)
           # Make long tidy table; this step is much faster
           # using data.table melt rather than tidyr gather
@@ -482,7 +482,7 @@ sleuth_prep <- function(
         eff_len_df <- data.frame(target_id, 
                                  eff_len, stringsAsFactors = F)
         # make bootstrap number an explicit column to facilitate melting
-        bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap), bs_mat)
+        bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap), bs_mat, check.names = F)
         rm(bs_mat)
         # data.table melt function is much faster than tidyr's gather function
         # output is a long table with each bootstrap's value for each target_id
@@ -530,7 +530,6 @@ sleuth_prep <- function(
       if(!ret$gene_mode) {
         colnames(bs_mat) <- target_id
       }
-      
       # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
       # variability in sample i
       # NOTE: we are only keeping the ones that pass the filter
