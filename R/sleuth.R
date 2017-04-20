@@ -352,8 +352,8 @@ sleuth_prep <- function(
       agg_id <- agg_id[[1]]
       mappings <- dplyr::select_(target_mapping, "target_id", aggregation_column)
       mappings <- data.table::as.data.table(mappings)
-      which_tms <- which(target_mapping$target_id %in% which_target_id)
-      which_agg_id <- unique(target_mapping[which_tms, aggregation_column, with = F])
+      which_tms <- which(mappings$target_id %in% which_target_id)
+      which_agg_id <- unique(mappings[which_tms, aggregation_column, with = F])
       which_agg_id <- which_agg_id[[1]]
       filter_df <- adf(target_id = which_agg_id)
       filter_bool <- agg_id %in% which_agg_id
@@ -368,7 +368,7 @@ sleuth_prep <- function(
       scale_factor <- tmp[, scale_factor := median(eff_len),
                           by=list(sample,eval(parse(text=aggregation_column)))]
       obs_norm_gene <- reads_per_base_transform(ret$obs_norm,
-          scale_factor, aggregation_column, target_mapping, norm_by_length)
+          scale_factor, aggregation_column, mappings, norm_by_length)
       # New code: get gene-level TPM (simple sum of normalized transcript TPM)
       tmp <- data.table::as.data.table(tpm_norm)
       tmp <- merge(tmp, mappings,
@@ -446,12 +446,14 @@ sleuth_prep <- function(
           # Make bootstrap_num an explicit column; each is treated as a "sample"
           bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
                                         bs_quant_tpm)
+          rm(bs_quant_tpm)
           # Make long tidy table; this step is much faster
           # using data.table melt rather than tidyr gather
           tidy_tpm <- data.table::melt(bs_tpm_df, id.vars="bootstrap_num",
                                        variable.name="target_id",
                                        value.name="tpm")
           tidy_tpm <- data.table::as.data.table(tidy_tpm)
+          rm(bs_tpm_df)
           tidy_tpm$target_id <- as.character(tidy_tpm$target_id)
           tidy_tpm <- merge(tidy_tpm, mappings,
                             by = "target_id", all.x = T)
@@ -465,7 +467,7 @@ sleuth_prep <- function(
                                             value.var="tpm",
                                             fun.aggregate=sum)
           bs_quant_tpm <- as.matrix(bs_quant_tpm[,-1])
-          rm(tidy_tpm, bs_tpm_df) # these tables are very large
+          rm(tidy_tpm) # these tables are very large
         }
 
         bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, quantile))
@@ -481,11 +483,13 @@ sleuth_prep <- function(
                                  eff_len, stringsAsFactors = F)
         # make bootstrap number an explicit column to facilitate melting
         bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap), bs_mat)
+        rm(bs_mat)
         # data.table melt function is much faster than tidyr's gather function
         # output is a long table with each bootstrap's value for each target_id
         tidy_bs <- data.table::melt(bs_df, id.vars="bootstrap_num",
                                     variable.name="target_id",
                                     value.name="est_counts")
+        rm(bs_df)
         # not sure why, but the melt function always returns a factor,
         # even when setting variable.factor = F, so I coerce target_id
         tidy_bs$target_id <- as.character(tidy_bs$target_id)
@@ -503,7 +507,7 @@ sleuth_prep <- function(
         # use the old reads_per_base_transform method to get gene scaled counts
         scaled_bs <- reads_per_base_transform(tidy_bs, scale_factor$scale_factor, 
                                                        aggregation_column,
-                                                       target_mapping)
+                                                       mappings)
         # this step undoes the tidying to get back a matrix format
         # target_ids here are now the aggregation column ids
         bs_mat <- data.table::dcast(scaled_bs, sample ~ target_id, value.var="scaled_reads_per_base")
