@@ -344,7 +344,6 @@ sleuth_prep <- function(
 
     if (ret$gene_mode) {
       msg(paste0("aggregating by column: ", aggregation_column))
-
       # Get list of IDs to aggregate on (usually genes)
       # Also get the filtered list and update the "filter_df" and "filter_bool"
       # variables for the sleuth object
@@ -373,8 +372,14 @@ sleuth_prep <- function(
       tmp <- data.table::as.data.table(tpm_norm)
       tmp <- merge(tmp, mappings,
                    by = "target_id", all.x = T)
-      rows_to_remove <- !is.na(tmp[[aggregation_column]])
-      tmp <- tmp[rows_to_remove]
+      if (any(is.na(tmp[[aggregation_column]]))) {
+        rows_to_remove <- is.na(tmp[[aggregation_column]])
+        num_missing <- length(unique(tmp[rows_to_remove, target_id]))
+        warning(num_missing, " target_ids are missing annotations for the aggregation_column: ",
+                aggregation_column, ".\nThese target_ids will be dropped from the gene-level analysis.",
+                "\nIf you did not expect this, check your 'target_mapping' table for missing values.")
+        tmp <- tmp[!rows_to_remove]
+      }
       tpm_norm_gene <- tmp[, j = list(tpm = sum(tpm)),
                            by = list(sample, eval(parse(text = aggregation_column)))]
       data.table::setnames(tpm_norm_gene, 'parse', 'target_id')
