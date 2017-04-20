@@ -347,13 +347,17 @@ sleuth_prep <- function(
       # Get list of IDs to aggregate on (usually genes)
       # Also get the filtered list and update the "filter_df" and "filter_bool"
       # variables for the sleuth object
+      target_mapping[target_mapping[[aggregation_column]] == "",
+                     aggregation_column] <- NA
       agg_id <- unique(target_mapping[, aggregation_column, with = F])
       agg_id <- agg_id[[1]]
+      agg_id <- agg_id[!is.na(agg_id)]
       mappings <- dplyr::select_(target_mapping, "target_id", aggregation_column)
       mappings <- data.table::as.data.table(mappings)
       which_tms <- which(mappings$target_id %in% which_target_id)
       which_agg_id <- unique(mappings[which_tms, aggregation_column, with = F])
       which_agg_id <- which_agg_id[[1]]
+      which_agg_id <- which_agg_id[!is.na(which_agg_id)]
       filter_df <- adf(target_id = which_agg_id)
       filter_bool <- agg_id %in% which_agg_id
 
