@@ -39,7 +39,8 @@ Next load __sleuth__ with
 library("sleuth")
 ~~~
 
+
 #### Repository
 
-The __sleuth__ GitHub repository is [here](http://github.com/pachterlab/sleuth).
+The __sleuth__ GitHub repository containing the __sleuth__ source code is [here](http://github.com/pachterlab/sleuth).
 
