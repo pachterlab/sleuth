@@ -15,3 +15,6 @@ result_paths <- file.path(data_path, sample_ids, 'kallisto')
 study_mapping <- dplyr::mutate(study_mapping, path = result_paths)
 
 study_formula <- ~condition
+
+trans_test_data <- sleuth_load(file.path(data_path, 'ellahi_transcript.rda'))
+gene_test_data <- sleuth_load(file.path(data_path, 'ellahi_gene.rda'))
