@@ -5,6 +5,11 @@ data_path <- 'ellahi'
 sample_ids <- grep('^SR', dir(data_path), value = TRUE)
 sample_ids <- rev(sample_ids)
 
+target_mapping <- read.table(file.path(data_path, 'target_mappings.txt'), header = TRUE,
+  stringsAsFactors = FALSE, sep="\t", quote="")
+incomplete_mapping <- read.table(file.path(data_path, 'target_mappings_incomplete.txt'), header = TRUE,
+  stringsAsFactors = FALSE, sep="\t", quote="")
+
 study_mapping <- read.table(file.path(data_path, 'study_design.txt'), header = TRUE,
   stringsAsFactors = FALSE)
 study_mapping <- dplyr::select(study_mapping, sample = run, condition)

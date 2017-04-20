@@ -36,3 +36,11 @@ test_that("give a design matrix", {
   expect_equal(result$design_matrix, result$full_formula)
 
 })
+
+test_that("gene level", {
+  expect_error(result <- sleuth_prep(study_mapping, study_formula,
+                                     aggregation_column = "gene_name"))
+  result <- sleuth_prep(study_mapping, study_formula,
+                        target_mapping = target_mapping,
+                        aggregation_column = "gene_name")
+})
