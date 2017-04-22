@@ -418,13 +418,44 @@ sleuth_prep <- function(
       all_sample_bootstrap <- matrix(NA_real_,
                                      nrow = length(which_agg_id),
                                      ncol = length(ret$kal))
+      which_ids <- which_agg_id
     } else {
       all_sample_bootstrap <- matrix(NA_real_,
                                      nrow = length(which_target_id),
                                      ncol = length(ret$kal))
+      which_ids <- which_target_id
     }
 
     msg('summarizing bootstraps')
+    bs_results <- parallel::mclapply(seq_along(kal_dirs), function(i) {
+      samp_name <- sample_to_covariates$sample[i]
+      kal_path <- get_kallisto_path(kal_dirs[i])
+      process_bootstrap(i, samp_name, kal_path,
+                        num_transcripts, est_counts_sf[[i]],
+                        read_bootstrap_tpm, ret$gene_mode,
+                        extra_bootstrap_summary,
+                        target_id, mappings, which_ids, ret$gene_column,
+                        ret$transform_fxn)
+    }, mc.cores = num_cores)
+
+    # if mclapply results in an error (a warning is shown), then print error and stop
+    if (is(bs_results[[1]], "try-error")) {
+      print(attributes(bs_results[[1]])$condition)
+      stop("mclapply had an error. See the above error message for more details.")
+    }
+
+    # mclapply is expected to retun the bootstraps in order; this is a sanity check of that
+    indices <- sapply(bs_results, function(result) result$index)
+    stopifnot(identical(indices, order(indices))
+
+    if(read_bootstrap_tpm | extra_bootstrap_summary) {
+      ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
+      names(ret$bs_quants) <- sample_to_covariates$sample
+    }
+
+    all_sample_bootstrap <- sapply(bs_results, function(result) result$bootstrap_result)
+    rownames(all_sample_bootstrap) <- which_ids
+
     # end summarize bootstraps
     msg('')
 
@@ -445,9 +476,6 @@ sleuth_prep <- function(
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
   }
-
-  ret$gene_mode <- !is.null(aggregation_column)
-  ret$gene_column <- aggregation_column
 
   class(ret) <- 'sleuth'
 

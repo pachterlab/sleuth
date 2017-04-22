@@ -371,11 +371,12 @@ process_bootstrap <- function(i, samp_name, kal_path,
                               num_transcripts, est_count_sf,
                               read_bootstrap_tpm, gene_mode,
                               extra_bootstrap_summary,
-                              target_id, mappings, which_ids, transform_fxn)
+                              target_id, mappings, which_ids,
+                              aggregation_column, transform_fxn)
 {
   dot(i)
-  samp_name <- sample_to_covariates$sample[i]
-  kal_path <- get_kallisto_path(kal_dirs[i])
+  bs_quants <- list()
+
   num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, 
                                             "aux/num_bootstrap"))
   if (num_bootstrap == 0) {
@@ -388,14 +389,14 @@ process_bootstrap <- function(i, samp_name, kal_path,
   bs_mat <- read_bootstrap_mat(fname = kal_path$path, 
                                num_bootstraps = num_bootstrap,
                                num_transcripts = num_transcripts, 
-                               est_count_sf = est_counts_sf[[i]])
+                               est_count_sf = est_count_sf)
   
   if (read_bootstrap_tpm) {
     bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, 
                                 eff_len))
     
     # gene level code is analogous here to below code
-    if (ret$gene_mode) {
+    if (gene_mode) {
       colnames(bs_quant_tpm) <- target_id
       # Make bootstrap_num an explicit column; each is treated as a "sample"
       bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap), 
@@ -429,7 +430,8 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                 "upper", "max")
     ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
   }
-  if (ret$gene_mode) {
+
+  if (gene_mode) {
     # I can combine target_id and eff_len
     # I assume the order is the same, since it's read from the same kallisto 
     # file and each kallisto file has the same order
@@ -459,9 +461,8 @@ process_bootstrap <- function(i, samp_name, kal_path,
     tidy_bs <- merge(tidy_bs, mappings, by = "target_id", 
                      all.x = T)
     # create the median effective length scaling factor for each gene
-    scale_factor <- tidy_bs[, `:=`(scale_factor, 
-                                   median(eff_len)), 
-                            by = eval(parse(text = aggregation_column))]
+    scale_factor <- tidy_bs[, scale_factor := median(eff_len),
+                            by = eval(parse(text=aggregation_column))]
     # use the old reads_per_base_transform method to get gene scaled counts
     scaled_bs <- reads_per_base_transform(tidy_bs, 
                                           scale_factor$scale_factor, 
@@ -485,21 +486,16 @@ process_bootstrap <- function(i, samp_name, kal_path,
     ret$bs_quants[[samp_name]]$est_counts <- bs_quant_est_counts
   }
   
-  bs_mat <- ret$transform_fxn(bs_mat)
+  bs_mat <- transform_fxn(bs_mat)
   # If bs_mat was made at gene-level, already has column names
   # If at transcript-level, need to add target_ids
-  if (!ret$gene_mode) {
+  if(!gene_mode) {
     colnames(bs_mat) <- target_id
   }
   # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
   # variability in sample i
   # NOTE: we are only keeping the ones that pass the filter
-  if (ret$gene_mode) {
-    all_sample_bootstrap[, i] <- matrixStats::colVars(bs_mat[, 
-                                                             which_agg_id])
-  }
-  else {
-    all_sample_bootstrap[, i] <- matrixStats::colVars(bs_mat[, 
-                                                             which_target_id])
-  }
+  bootstrap_result <- matrixStats::colVars(bs_mat[, which_ids])
+
+  list(index = i, bs_quants = bs_quants, bootstrap_result = bootstrap_result)
 }
