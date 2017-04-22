@@ -9,7 +9,7 @@ sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
   norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
   aggregation_column = NULL, gene_mode = FALSE,
   read_bootstrap_tpm = FALSE, extra_bootstrap_summary = FALSE,
-  transformation_function = log_transform, ...)
+  transformation_function = log_transform, num_cores = 2L, ...)
 }
 \arguments{
 \item{sample_to_covariates}{a \code{data.frame} which contains a mapping
@@ -51,6 +51,9 @@ NOTE: Unnecessary for typical analyses}
 \item{transformation_function}{the transformation that should be applied
 to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
 NOTE: be sure you know what you're doing before you change this.}
+
+\item{num_cores}{an integer of the number of computer cores mclapply should use
+to speed up sleuth preparation}
 
 \item{...}{additional arguments passed to the filter function}
 }

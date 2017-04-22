@@ -104,6 +104,8 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param transformation_function the transformation that should be applied
 #' to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
 #' NOTE: be sure you know what you're doing before you change this.
+#' @param num_cores an integer of the number of computer cores mclapply should use
+#' to speed up sleuth preparation
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
@@ -127,6 +129,7 @@ sleuth_prep <- function(
   read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE,
   transformation_function = log_transform,
+  num_cores = 2L,
   ...) {
 
   ##############################
@@ -188,10 +191,10 @@ sleuth_prep <- function(
                "but not a 'target_mapping'. Please provided a 'target_mapping'."))
   }
 
-#  if (is.null(num_cores) || is.na(suppressWarnings(as.integer(num_cores))) ||
-#       num_cores < 1 || num_cores > parallel::detectCores()) {
-#    stop("num_cores must be an integer between 1 and the number of cores on your machine")
-#  }
+  if (is.null(num_cores) || is.na(suppressWarnings(as.integer(num_cores))) ||
+       num_cores < 1 || num_cores > parallel::detectCores()) {
+    stop("num_cores must be an integer between 1 and the number of cores on your machine")
+  }
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
@@ -446,7 +449,7 @@ sleuth_prep <- function(
 
     # mclapply is expected to retun the bootstraps in order; this is a sanity check of that
     indices <- sapply(bs_results, function(result) result$index)
-    stopifnot(identical(indices, order(indices))
+    stopifnot(identical(indices, order(indices)))
 
     if(read_bootstrap_tpm | extra_bootstrap_summary) {
       ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
