@@ -482,7 +482,7 @@ gene_summary <- function(obj, which_column, transform = identity, norm_by_abunda
   names(bs_sigma) <- bs_summary$target_id
   bs_sigma <- bs_sigma[rownames(obs_counts)]
 
-  list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
+  list(obs_counts = obs_counts, sigma_q_sq = bs_sigma, obj = obj_mod)
 }
 
 me_model <- function(X, y, sigma_q_sq) {

@@ -1,6 +1,6 @@
 # compute the likelihood of which_model, then return the original object with
 # new element: obj$fits[[which_model]]$likelihood
-compute_likelihood <- function(obj, which_model) {
+compute_likelihood <- function(obj, which_model, which_bio_var) {
   stopifnot(is(obj, "sleuth"))
   model_exists(obj, which_model)
 
@@ -25,7 +25,7 @@ compute_likelihood <- function(obj, which_model) {
 
       cur_summary <- obj$fits[[which_model]]$summary
 
-      cur_var <- cur_summary[i, "smooth_sigma_sq_pmax"] +
+      cur_var <- cur_summary[i, which_bio_var] +
         cur_summary[i, "sigma_q_sq"]
 
       sum(dnorm(obs, mean = cur_mu, sd = sqrt(cur_var), log = TRUE))
@@ -61,16 +61,18 @@ likelihood_exists <- function(obj, which_model) {
 #' coefficients can be tested, \code{\link{sleuth_results}} to get back
 #' a data.frame of the results
 #' @export
-sleuth_lrt <- function(obj, null_model, alt_model) {
+sleuth_lrt <- function(obj, null_model, alt_model, which_bio_var = 'smooth_sigma_sq_pmax') {
   stopifnot( is(obj, "sleuth") )
   model_exists(obj, null_model)
   model_exists(obj, alt_model)
 
+  message(paste0('using biological variance: ', which_bio_var))
+
   if ( !likelihood_exists(obj, null_model) ) {
-    obj <- compute_likelihood(obj, null_model)
+    obj <- compute_likelihood(obj, null_model, which_bio_var)
   }
   if ( !likelihood_exists(obj, alt_model) ) {
-    obj <- compute_likelihood(obj, alt_model)
+    obj <- compute_likelihood(obj, alt_model, which_bio_var)
   }
 
   n_ll <- get_likelihood(obj, null_model)

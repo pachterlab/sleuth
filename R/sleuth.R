@@ -55,6 +55,22 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
     })
 }
 
+poisson_bootstraps <- function(kal) {
+  n_bootstraps <- length(kal$bootstrap)
+  lambda <- kal$abundance$est_counts
+  poisson_samples <- matrix(rpois(n_bootstraps * length(lambda), lambda),
+    ncol = n_bootstraps)
+  kal$bootstrap <- lapply(seq_along(kal$bootstrap),
+    function(i) {
+      bs <- kal$bootstrap[[i]]
+      bs$est_counts <- poisson_samples[, i]
+      bs$tpm <- counts_to_tpm(bs$est_counts, bs$eff_len)
+      bs
+    })
+
+  kal
+}
+
 #' Constructor for a 'sleuth' object
 #'
 #' A sleuth is a group of kallistos. Borrowing this terminology, a 'sleuth' object stores
@@ -99,6 +115,8 @@ sleuth_prep <- function(
   gene_mode = NULL,
   filter_target_id = NULL,
   norm_by_abundance = FALSE,
+  zero_technical_variance = FALSE,
+  poisson_technical_variance = FALSE,
   ...) {
 
   ##############################
@@ -241,6 +259,12 @@ sleuth_prep <- function(
     }
   }
 
+  if (poisson_technical_variance) {
+    # we are going to replace the bootstraps with Poisson technical variance
+    message('poisson technical variance')
+    kal_list <- lapply(kal_list, poisson_bootstraps)
+  }
+
   ret <- list(
       kal = kal_list,
       kal_versions = kal_versions,
@@ -356,6 +380,10 @@ sleuth_prep <- function(
         # if no target ids were specified for the filter, use the ones generated here
         bs_summary$obs_counts <- bs_summary$obs_counts[ret$filter_df$target_id, ]
         bs_summary$sigma_q_sq <- bs_summary$sigma_q_sq[ret$filter_df$target_id]
+        if (zero_technical_variance) {
+          # this hack will simply remove technical variance from the estimate and do shrinkage on everything else
+          bs_summary$sigma_q_sq[1:length(bs_summary$sigma_q_sq)] <- 0
+        }
       } else {
 
         if (length(intersect(filter_target_id,
