@@ -44,3 +44,7 @@ library("sleuth")
 
 The __sleuth__ GitHub repository containing the __sleuth__ source code is [here](http://github.com/pachterlab/sleuth).
 
+#### License
+
+Sleuth is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License, version
+3<a/>.
