@@ -266,12 +266,9 @@ covar_beta <- function(sigma, X, A) {
 # @param bs_summary a list from \code{bs_sigma_summary}
 # @return a list with a bunch of objects that are useful for shrinking
 me_model_by_row <- function(obj, design, bs_summary) {
-  # stopifnot( is(obj, "sleuth") )
-
   stopifnot( all.equal(names(bs_summary$sigma_q_sq), rownames(bs_summary$obs_counts)) )
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
 
-#  obs_counts <- obj$transform_fxn(bs_summary$obs_counts)
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
       me_model(design, bs_summary$obs_counts[i, ], bs_summary$sigma_q_sq[i])
@@ -396,8 +393,6 @@ reads_per_base_transform <- function(reads_table, scale_factor_input,
   reads_table <- data.table::as.data.table(reads_table)
 
   if (is(scale_factor_input, 'data.frame')) {
-    # message('USING NORMALIZATION BY EFFECTIVE LENGTH')
-    # browser()
     scale_factor_input <- data.table::as.data.table(dplyr::select(scale_factor_input, target_id,
                                                                   sample, scale_factor))
     reads_table <- merge(reads_table, scale_factor_input,
@@ -441,7 +436,6 @@ gene_summary <- function(obj, which_column, transform = identity,
   obj_mod <- obj
   if (norm_by_length) {
     tmp <- obj$obs_raw
-    # tmp <- as.data.table(tmp)
     tmp <- dplyr::left_join(
       data.table::as.data.table(tmp),
       data.table::as.data.table(obj$target_mapping),
@@ -451,7 +445,6 @@ gene_summary <- function(obj, which_column, transform = identity,
   } else {
     scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
   }
-  # scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
   obj_mod$obs_norm_filt <- reads_per_base_transform(obj_mod$obs_norm_filt,
     scale_factor, which_column, obj$target_mapping, norm_by_length)
   obj_mod$obs_norm <- reads_per_base_transform(obj_mod$obs_norm,
@@ -460,9 +453,6 @@ gene_summary <- function(obj, which_column, transform = identity,
   obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
   obs_counts <- transform(obs_counts)
 
-  # NEW CODE: Switched mclapply to be on second lapply
-  # This means that it's applied on the order of one bootstrap
-  # This creates a much smaller memory footprint
   msg("starting mclapply process now")
   obj_mod$kal <- lapply(seq_along(obj_mod$kal),
     function(i) {

@@ -372,121 +372,121 @@ process_bootstrap <- function(i, samp_name, kal_path,
                               read_bootstrap_tpm, gene_mode,
                               extra_bootstrap_summary,
                               target_id, mappings, which_ids,
-                              aggregation_column, transform_fxn)
+                              aggregation_column, transform_fun)
 {
   dot(i)
   bs_quants <- list()
 
-  num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path, 
+  num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path,
                                             "aux/num_bootstrap"))
   if (num_bootstrap == 0) {
     stop(paste0("File ", kal_path, " has no bootstraps.",
                 "Please generate bootstraps using \"kallisto quant -b\"."))
   }
-  
+
   # TODO: only perform operations on filtered transcripts
   eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
-  bs_mat <- read_bootstrap_mat(fname = kal_path$path, 
+  bs_mat <- read_bootstrap_mat(fname = kal_path$path,
                                num_bootstraps = num_bootstrap,
-                               num_transcripts = num_transcripts, 
+                               num_transcripts = num_transcripts,
                                est_count_sf = est_count_sf)
-  
+
   if (read_bootstrap_tpm) {
-    bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm, 
+    bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm,
                                 eff_len))
-    
+
     # gene level code is analogous here to below code
     if (gene_mode) {
       colnames(bs_quant_tpm) <- target_id
       # Make bootstrap_num an explicit column; each is treated as a "sample"
-      bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap), 
+      bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
                               bs_quant_tpm, check.names = F)
       rm(bs_quant_tpm)
       # Make long tidy table; this step is much faster
       # using data.table melt rather than tidyr gather
-      tidy_tpm <- data.table::melt(bs_tpm_df, id.vars = "bootstrap_num", 
+      tidy_tpm <- data.table::melt(bs_tpm_df, id.vars = "bootstrap_num",
                                    variable.name = "target_id",
                                    value.name = "tpm")
       tidy_tpm <- data.table::as.data.table(tidy_tpm)
       rm(bs_tpm_df)
       tidy_tpm$target_id <- as.character(tidy_tpm$target_id)
-      tidy_tpm <- merge(tidy_tpm, mappings, by = "target_id", 
+      tidy_tpm <- merge(tidy_tpm, mappings, by = "target_id",
                         all.x = T)
       # Data.table dcast uses non-standard evaluation
       # So quote the full casting formula to make sure
       # "aggregation_column" is interpreted as a variable
       # see: http://stackoverflow.com/a/31295592
-      quant_tpm_formula <- paste("bootstrap_num ~", 
+      quant_tpm_formula <- paste("bootstrap_num ~",
                                  aggregation_column)
-      bs_quant_tpm <- data.table::dcast(tidy_tpm, 
-                                        quant_tpm_formula, value.var = "tpm", 
+      bs_quant_tpm <- data.table::dcast(tidy_tpm,
+                                        quant_tpm_formula, value.var = "tpm",
                                         fun.aggregate = sum)
       bs_quant_tpm <- as.matrix(bs_quant_tpm[, -1])
       rm(tidy_tpm) # these tables are very large
     }
-    bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2, 
+    bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2,
                                 quantile))
-    colnames(bs_quant_tpm) <- c("min", "lower", "mid", 
+    colnames(bs_quant_tpm) <- c("min", "lower", "mid",
                                 "upper", "max")
     ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
   }
 
   if (gene_mode) {
     # I can combine target_id and eff_len
-    # I assume the order is the same, since it's read from the same kallisto 
+    # I assume the order is the same, since it's read from the same kallisto
     # file and each kallisto file has the same order
-    eff_len_df <- data.frame(target_id, eff_len, 
+    eff_len_df <- data.frame(target_id, eff_len,
                              stringsAsFactors = F)
     # make bootstrap number an explicit column to facilitate melting
-    bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap), 
+    bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
                         bs_mat, check.names = F)
     rm(bs_mat)
     # data.table melt function is much faster than tidyr's gather function
     # output is a long table with each bootstrap's value for each target_id
-    tidy_bs <- data.table::melt(bs_df, id.vars = "bootstrap_num", 
-                                variable.name = "target_id", 
+    tidy_bs <- data.table::melt(bs_df, id.vars = "bootstrap_num",
+                                variable.name = "target_id",
                                 value.name = "est_counts")
     rm(bs_df)
     # not sure why, but the melt function always returns a factor,
     # even when setting variable.factor = F, so I coerce target_id
     tidy_bs$target_id <- as.character(tidy_bs$target_id)
     # combine the long tidy table with eff_len and aggregation mappings
-    # note that bootstrap number is treated as "sample" here 
+    # note that bootstrap number is treated as "sample" here
     # for backwards compatibility
-    tidy_bs <- dplyr::select(tidy_bs, target_id, 
+    tidy_bs <- dplyr::select(tidy_bs, target_id,
                              est_counts, sample = bootstrap_num)
-    tidy_bs <- merge(data.table::as.data.table(tidy_bs), 
-                     data.table::as.data.table(eff_len_df), by = "target_id", 
-                     all.x = T)
-    tidy_bs <- merge(tidy_bs, mappings, by = "target_id", 
-                     all.x = T)
+    tidy_bs <- merge(data.table::as.data.table(tidy_bs),
+                     data.table::as.data.table(eff_len_df), by = "target_id",
+                     all.x = TRUE)
+    tidy_bs <- merge(tidy_bs, mappings, by = "target_id",
+                     all.x = TRUE)
     # create the median effective length scaling factor for each gene
     scale_factor <- tidy_bs[, scale_factor := median(eff_len),
                             by = eval(parse(text=aggregation_column))]
     # use the old reads_per_base_transform method to get gene scaled counts
-    scaled_bs <- reads_per_base_transform(tidy_bs, 
-                                          scale_factor$scale_factor, 
-                                          aggregation_column, 
+    scaled_bs <- reads_per_base_transform(tidy_bs,
+                                          scale_factor$scale_factor,
+                                          aggregation_column,
                                           mappings)
     # this step undoes the tidying to get back a matrix format
     # target_ids here are now the aggregation column ids
-    bs_mat <- data.table::dcast(scaled_bs, sample ~ target_id, 
+    bs_mat <- data.table::dcast(scaled_bs, sample ~ target_id,
                                 value.var = "scaled_reads_per_base")
     # this now has the same format as the transcript matrix
     # but it uses gene ids
     bs_mat <- as.matrix(bs_mat[, -1])
     rm(tidy_bs, scaled_bs)
   }
-  
+
   if (extra_bootstrap_summary) {
-    bs_quant_est_counts <- aperm(apply(bs_mat, 2, 
+    bs_quant_est_counts <- aperm(apply(bs_mat, 2,
                                        quantile))
-    colnames(bs_quant_est_counts) <- c("min", "lower", 
+    colnames(bs_quant_est_counts) <- c("min", "lower",
                                        "mid", "upper", "max")
     ret$bs_quants[[samp_name]]$est_counts <- bs_quant_est_counts
   }
-  
-  bs_mat <- transform_fxn(bs_mat)
+
+  bs_mat <- transform_fun(bs_mat)
   # If bs_mat was made at gene-level, already has column names
   # If at transcript-level, need to add target_ids
   if(!gene_mode) {

@@ -125,11 +125,10 @@ sleuth_prep <- function(
   norm_fun_counts = norm_factors,
   norm_fun_tpm = norm_factors,
   aggregation_column = NULL,
-  gene_mode = FALSE,
   read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE,
   transformation_function = log_transform,
-  num_cores = 2L,
+  num_cores = max(1L, parallel::detectCores() - 1L),
   ...) {
 
   ##############################
@@ -267,7 +266,7 @@ sleuth_prep <- function(
       target_mapping = target_mapping,
       gene_mode = !is.null(aggregation_column),
       gene_column = aggregation_column,
-      transform_fxn = transformation_function
+      transform_fun = transformation_function
     )
 
   # TODO: eventually factor this out
@@ -352,13 +351,13 @@ sleuth_prep <- function(
       # variables for the sleuth object
       target_mapping[target_mapping[[aggregation_column]] == "",
                      aggregation_column] <- NA
-      agg_id <- unique(target_mapping[, aggregation_column, with = F])
+      agg_id <- unique(target_mapping[, aggregation_column, with = FALSE])
       agg_id <- agg_id[[1]]
       agg_id <- agg_id[!is.na(agg_id)]
       mappings <- dplyr::select_(target_mapping, "target_id", aggregation_column)
       mappings <- data.table::as.data.table(mappings)
       which_tms <- which(mappings$target_id %in% which_target_id)
-      which_agg_id <- unique(mappings[which_tms, aggregation_column, with = F])
+      which_agg_id <- unique(mappings[which_tms, aggregation_column, with = FALSE])
       which_agg_id <- which_agg_id[[1]]
       which_agg_id <- which_agg_id[!is.na(which_agg_id)]
       filter_df <- adf(target_id = which_agg_id)
@@ -370,7 +369,7 @@ sleuth_prep <- function(
       norm_by_length <- TRUE
       tmp <- data.table::as.data.table(ret$obs_raw)
       tmp <- merge(tmp, mappings,
-                   by = "target_id", all.x=T)
+                   by = "target_id", all.x = TRUE)
       scale_factor <- tmp[, scale_factor := median(eff_len),
                           by=list(sample,eval(parse(text=aggregation_column)))]
       obs_norm_gene <- reads_per_base_transform(ret$obs_norm,
@@ -400,7 +399,7 @@ sleuth_prep <- function(
             dplyr::select(tpm_norm_gene, target_id, sample)))
       suppressWarnings({
         if ( !all.equal(dplyr::select(obs_norm_gene, target_id, sample),
-            dplyr::select(tpm_norm_gene, target_id, sample), check.attributes=F) ) {
+            dplyr::select(tpm_norm_gene, target_id, sample), check.attributes = FALSE) ) {
               stop('Invalid column rows. In principle, can simply join. Please report error.')
             }
 
@@ -438,7 +437,7 @@ sleuth_prep <- function(
                         read_bootstrap_tpm, ret$gene_mode,
                         extra_bootstrap_summary,
                         target_id, mappings, which_ids, ret$gene_column,
-                        ret$transform_fxn)
+                        ret$transform_fun)
     }, mc.cores = num_cores)
 
     # if mclapply results in an error (a warning is shown), then print error and stop
@@ -474,7 +473,7 @@ sleuth_prep <- function(
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
-    obs_counts <- ret$transform_fxn(obs_counts)
+    obs_counts <- ret$transform_fun(obs_counts)
     obs_counts <- obs_counts[order(rownames(obs_counts)),]
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
@@ -811,10 +810,6 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
   filter_empty <- !filter_empty
   popped_gene_table <- popped_gene_table[filter_empty, ]
 
-  # popped_gene_table = popped_gene_table[!popped_gene_table[,1] == "", ]
-  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table[,1]), ] #gene_id
-  # popped_gene_table = popped_gene_table[!is.na(popped_gene_table$qval), ]
-
   popped_gene_table
 }
 
@@ -854,11 +849,11 @@ transcripts_from_gene <- function(obj, test, test_type,
 #'
 #' NOTE: if you change the transformation function after having done a fit,
 #' the fit(s) will have to be redone using the new transformation.
-#' @examples transform_fxn(x) <- function(x) log2(x+0.5)
+#' @examples transform_fun(x) <- function(x) log2(x+0.5)
 #' @export
-`transform_fxn<-` <- function(obj, fxn) {
+`transform_fun<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))
-  obj$transform_fxn <- fxn
+  obj$transform_fun <- fxn
   if(!is.null(obj$fits)) {
     warning(paste("Your sleuth object has fits based on the old transform function.",
                   "Please rerun sleuth_prep and sleuth_fit."))
@@ -874,15 +869,15 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' Extend internal '$<-' for sleuth object
 #'
 #' This extension is mainly to address case where
-#' transform_fxn is changed by user.
+#' transform_fun is changed by user.
 #' This function informs user that the fits need to be redone
 #' and updates those fits.
 #' Otherwise it acts normally.
-#' @examples obj$transform_fxn <- function(x) log2(x+0.5)
+#' @examples obj$transform_fun <- function(x) log2(x+0.5)
 #' @export
 `$<-.sleuth` <- function(obj, name, value) {
   obj[[name]] <- value
-  if(name=="transform_fxn") {
+  if(name=="transform_fun") {
     if(!is.null(obj$fits)) {
       warning(paste("Your sleuth object has fits based on the old transform function.",
                     "Please rerun sleuth_prep and sleuth_fit."))

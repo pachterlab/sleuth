@@ -95,15 +95,7 @@ plot_pca <- function(obj,
   ...) {
   stopifnot( is(obj, 'sleuth') )
 
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   mat <- NULL
   if (use_filtered) {
@@ -169,15 +161,7 @@ plot_loadings <- function(obj,
   stopifnot( is(obj, 'sleuth') )
   #filtering?? doesn't work right now
 
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   # mat <- NULL
   # if (use_filtered) {
@@ -273,16 +257,7 @@ plot_pc_variance <- function(obj,
   PC_relative = NULL,
   ...) {
 
-  stopifnot( is(obj, 'sleuth') )
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   # mat <- NULL
   # if (use_filtered) {
@@ -351,16 +326,7 @@ plot_group_density <- function(obj,
   offset = 1
   ) {
 
-  stopifnot( is(obj, 'sleuth') )
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
   # res <- NULL
@@ -416,16 +382,7 @@ plot_sample_density <- function(obj,
   ) {
   res <- NULL
 
-  stopifnot( is(obj, 'sleuth') )
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   if (use_filtered) {
     res <- obj$obs_norm_filt
@@ -483,16 +440,7 @@ plot_scatter <- function(obj,
   ylim = NULL
   ) {
 
-  stopifnot( is(obj, 'sleuth') )
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   abund <- NULL
   if (use_filtered) {
@@ -699,16 +647,7 @@ plot_bootstrap <- function(obj,
   color_by = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   x_axis_angle = 50
   ) {
-  stopifnot( is(obj, 'sleuth') )
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   df <- get_bootstrap_summary(obj, target_id, units)
 
@@ -967,15 +906,7 @@ plot_transcript_heatmap <- function(obj,
   trans = 'log',
   offset = 1) {
 
-  if (obj$gene_mode & units == 'est_counts') {
-    warning(paste("your sleuth object is in gene mode,",
-                  "but you selected 'est_counts'. Selecting 'scaled_reads_per_base'..."))
-    units <- 'scaled_reads_per_base'
-  } else if (!obj$gene_mode & units == 'scaled_reads_per_base') {
-    warning(paste("your sleuth object is not in gene mode,",
-                  "but you selected 'scaled_reads_per_base'. Selecting 'est_counts'..."))
-    units <- 'scaled_reads_per_base'
-  }
+  units <- check_quant_mode(obj, units)
 
   if(!all(transcripts %in% obj$obs_norm$target_id)) {
     stop("Couldn't find the following transcripts: ",

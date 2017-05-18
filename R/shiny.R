@@ -32,7 +32,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
   options = list(port = 42427), ...) {
   stopifnot( is(obj, 'sleuth') )
   if ( !require('shiny') ) {
-    stop("'sleuth_interact()' requires 'shiny'. Please install it using
+    stop("'sleuth_live()' requires 'shiny'. Please install it using
       install.packages('shiny')")
   }
 
