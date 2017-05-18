@@ -30,16 +30,22 @@
 #' \code{\link{models}} helpful.
 #'
 #' @param obj a \code{sleuth} object
-#' @param formula a formula specifying the design to fit OR a design matrix
-#' @param fit_name the name to store the fit in the sleuth
-#' object
+#' @param formula an R formula specifying the design to fit OR a design matrix.
+#' If you are interested in only fitting the model that was specified in \code{sleuth_prep}
+#' you do not need to specify it again (will be fit as the 'full' model).
+#' @param fit_name the name to store the fit in the sleuth object (at so$fits$fit_name).
+#' If \code{NULL}, the model will be named 'full'.
 #' @param ... additional arguments passed to \code{sliding_window_grouping} and
 #' \code{shrink_df}
-#' @return a sleuth object with updated attributes
+#' @return a sleuth object with updated attributes.
+#' @examples # If you specified the formula in sleuth_prep, you can simply run to run the full model
+#' so <- sleuth_fit(so)
+#' # The intercept only model can be fit like this
+#' so <- sleuth_fit(so, ~1, 'reduced')
 #' @seealso \code{\link{models}} for seeing which models have been fit,
 #' \code{\link{sleuth_prep}} for creating a sleuth object,
-#' \code{\link{sleuth_wt}} to test whether a coefficient is zero or
-#' \code{\link{sleuth_lrt}} to compare two different models
+#' \code{\link{sleuth_wt}} to test whether a coefficient is zero,
+#' \code{\link{sleuth_lrt}} to test nested models.
 #' @export
 sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   stopifnot( is(obj, 'sleuth') )
@@ -104,13 +110,12 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
-
   msg('computing variance of betas')
   beta_covars <- lapply(1:nrow(l_smooth),
     function(i) {
-      row <- l_smooth[i,]
+      row <- l_smooth[i, ]
       with(row,
-        covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
+          covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
         )
     })
   names(beta_covars) <- l_smooth$target_id
@@ -124,7 +129,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     summary = l_smooth,
     beta_covars = beta_covars,
     formula = formula,
-    design_matrix = X)
+    design_matrix = X,
+    transform_synced = TRUE)
 
   class(obj$fits[[fit_name]]) <- 'sleuth_model'
 
@@ -152,14 +158,24 @@ model_exists <- function(obj, which_model, fail = TRUE) {
 #' every transcript.
 #'
 #' @param obj a \code{sleuth} object
-#' @param which_beta a character string of length one denoting which beta to
-#' test
+#' @param which_beta a character string of denoting which grouping to test.
+#' For example, if you have a model fit to 'treatment,' with values of neg_ctl, pos_ctl,
+#' and drug, you would need to run \code{sleuth_wt} once each for pos_ctl and drug
 #' @param which_model a character string of length one denoting which model to
 #' use
 #' @return an updated sleuth object
+#' @examples # Assume we have a sleuth object with a model fit to both genotype and drug,
+#' models(so)
+#' # formula:  ~genotype + drug
+#' # coefficients:
+#' #   (Intercept)
+#' #   genotypeKO
+#' #   drugDMSO
+#' so <- sleuth_wt(so, 'genotypeKO')
+#' so <- sleuth_wt(so, 'drugDMSO')
 #' @seealso \code{\link{models}} to view which models have been fit and which
 #' coefficients can be tested, \code{\link{sleuth_results}} to get back
-#' a data.frame of the results
+#' a \code{data.frame} of the results
 #' @export
 sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   stopifnot( is(obj, 'sleuth') )
@@ -167,6 +183,11 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   if ( !model_exists(obj, which_model) ) {
     stop("'", which_model, "' is not a valid model. Please see models(",
       substitute(obj), ") for a list of fitted models")
+  }
+
+  if(!obj$fits[[which_model]]$transform_synced) {
+    stop("Model '", which_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
   }
 
   d_matrix <- obj$fits[[which_model]]$design_matrix
@@ -245,14 +266,12 @@ covar_beta <- function(sigma, X, A) {
 # @param bs_summary a list from \code{bs_sigma_summary}
 # @return a list with a bunch of objects that are useful for shrinking
 me_model_by_row <- function(obj, design, bs_summary) {
-  # stopifnot( is(obj, "sleuth") )
-
   stopifnot( all.equal(names(bs_summary$sigma_q_sq), rownames(bs_summary$obs_counts)) )
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
-      me_model(design, bs_summary$obs_counts[i,], bs_summary$sigma_q_sq[i])
+      me_model(design, bs_summary$obs_counts[i, ], bs_summary$sigma_q_sq[i])
     })
   names(models) <- rownames(bs_summary$obs_counts)
 
@@ -288,7 +307,7 @@ me_heteroscedastic_by_row <- function(obj, design, samp_bs_summary, obs_counts) 
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
-      res <- me_white_model(design, obs_counts[i,], sigma_q_sq[i,], A)
+      res <- me_white_model(design, obs_counts[i, ], sigma_q_sq[i, ], A)
       res$df$target_id <- rownames(obs_counts)[i]
       res
     })
@@ -338,8 +357,14 @@ me_white_var <- function(df, sigma_col, sigma_q_col, X, tXX_inv) {
   res
 }
 
+
+
 #' @export
-bs_sigma_summary <- function(obj, transform = identity) {
+bs_sigma_summary <- function(obj, transform = identity, norm_by_length = FALSE) {
+  # if (norm_by_length) {
+  #   scaling_factor <- get_scaling_factors(obj$obs_raw)
+  #   reads_per_base_transform()
+  # }
   obs_counts <- obs_to_matrix(obj, "est_counts")
   obs_counts <- transform( obs_counts )
 
@@ -347,6 +372,110 @@ bs_sigma_summary <- function(obj, transform = identity) {
   bs_summary <- dplyr::group_by(bs_summary, target_id)
   bs_summary <- dplyr::summarise(bs_summary,
     sigma_q_sq = mean(bs_var_est_counts))
+
+  bs_summary <- as_df(bs_summary)
+
+  bs_sigma <- bs_summary$sigma_q_sq
+  names(bs_sigma) <- bs_summary$target_id
+  bs_sigma <- bs_sigma[rownames(obs_counts)]
+
+  list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
+}
+
+# transform reads into reads per base
+#
+#
+reads_per_base_transform <- function(reads_table, scale_factor_input,
+  collapse_column = NULL,
+  mapping = NULL,
+  norm_by_length = TRUE) {
+
+  reads_table <- data.table::as.data.table(reads_table)
+
+  if (is(scale_factor_input, 'data.frame')) {
+    scale_factor_input <- data.table::as.data.table(dplyr::select(scale_factor_input, target_id,
+                                                                  sample, scale_factor))
+    reads_table <- merge(reads_table, scale_factor_input,
+      by = c('sample', 'target_id'), all.x=T)
+  } else {
+    reads_table[, scale_factor := scale_factor_input]
+  }
+  # browser()
+  reads_table[, reads_per_base := est_counts / eff_len]
+  reads_table[, scaled_reads_per_base := scale_factor * reads_per_base]
+
+  if (!is.null(collapse_column)) {
+    mapping <- data.table::as.data.table(mapping)
+    # old stuff
+    if (!(collapse_column %in% colnames(reads_table))) {
+      reads_table <- merge(reads_table, mapping, by = 'target_id', all.x=T)
+    }
+    # browser()
+    # reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
+
+    rows_to_remove <- !is.na(reads_table[[collapse_column]])
+    reads_table <- reads_table[rows_to_remove]
+    if ('sample' %in% colnames(reads_table)) {
+      reads_table <- reads_table[, j = list(scaled_reads_per_base = sum(scaled_reads_per_base)),
+                  by = list(sample, eval(parse(text=collapse_column)))]
+    } else {
+      reads_table <- reads_table[, j = list(scaled_reads_per_base = sum(scaled_reads_per_base)),
+                  by = eval(parse(text=collapse_column))]
+    }
+
+    data.table::setnames(reads_table, 'parse', 'target_id')
+  }
+
+  as_df(reads_table)
+}
+
+gene_summary <- function(obj, which_column, transform = identity,
+                         norm_by_length = TRUE, num_cores=2) {
+  # stopifnot(is(obj, 'sleuth'))
+  msg(paste0('aggregating by column: ', which_column))
+  obj_mod <- obj
+  if (norm_by_length) {
+    tmp <- obj$obs_raw
+    tmp <- dplyr::left_join(
+      data.table::as.data.table(tmp),
+      data.table::as.data.table(obj$target_mapping),
+      by = 'target_id')
+    tmp <- dplyr::group_by_(tmp, 'sample', which_column)
+    scale_factor <- dplyr::mutate(tmp, scale_factor = median(eff_len))
+  } else {
+    scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
+  }
+  obj_mod$obs_norm_filt <- reads_per_base_transform(obj_mod$obs_norm_filt,
+    scale_factor, which_column, obj$target_mapping, norm_by_length)
+  obj_mod$obs_norm <- reads_per_base_transform(obj_mod$obs_norm,
+    scale_factor, which_column, obj$target_mapping, norm_by_length)
+
+  obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
+  obs_counts <- transform(obs_counts)
+
+  msg("starting mclapply process now")
+  obj_mod$kal <- lapply(seq_along(obj_mod$kal),
+    function(i) {
+      k <- obj_mod$kal[[i]]
+      current_sample <- obj_mod$sample_to_covariates$sample[i]
+      msg(paste('aggregating across sample: ', current_sample))
+      k$bootstrap <- parallel::mclapply(seq_along(k$bootstrap), function(j) {
+        b <- k$bootstrap[[j]]
+        b <- dplyr::mutate(b, sample = current_sample)
+        reads_per_base_transform(b, scale_factor, which_column,
+          obj$target_mapping, norm_by_length)
+      }, mc.cores = num_cores)
+
+      k
+    })
+
+  bs_summary <- sleuth_summarize_bootstrap_col(obj_mod, "scaled_reads_per_base",
+    transform)
+
+  bs_summary <- dplyr::group_by(bs_summary, target_id)
+  # FIXME: the column name 'bs_var_est_counts' is incorrect. should actually rename it above
+  bs_summary <- dplyr::summarise(bs_summary,
+    sigma_q_sq = mean(bs_var_scaled_reads_per_base))
 
   bs_summary <- as_df(bs_summary)
 

@@ -33,9 +33,17 @@ print.sleuth_model <- function(obj) {
 
 #' View which models have been fit
 #'
-#' View which models have been fit
+#' @description  View which models have been fit. sleuth fits data using R formulas
 #'
-#' @param obj
+#' @param obj a sleuth object, containing kallisto results, usually made by sleuth_prep
+#' @return an R formula showing what has been fit
+#' @examples # imagine you have a set of samples from input and IP, and input has been set to intercept
+#' models(so)
+#' # [full]
+#' # formula: ~condition
+#' # coefficients:
+#' #      (Intercept)
+#' #      conditionIP
 #' @export
 models <- function(obj, ...) {
   UseMethod('models')
@@ -46,7 +54,7 @@ models.sleuth <- function(obj, verbose = TRUE) {
   # TODO: output a new in between models for readability
   if (verbose) {
     for (x in names(obj$fits)) {
-      cat('[ ', x,' ]\n')
+      cat('[ ', x, ' ]\n')
       models(obj$fits[[x]])
     }
   }
@@ -58,6 +66,40 @@ models.sleuth <- function(obj, verbose = TRUE) {
 #' @export
 models.sleuth_model <- function(obj) {
   print(obj)
+}
+
+#' Check Transform Sync Status of Sleuth Fits
+#'
+#' This method prints out the sync status for all fits of \code{sleuth} object
+#' If the sleuth object's transform function was changed after sleuth_fit was used,
+#' the user will need to redo sleuth_fit for any fits already done. 
+#'
+#' @param obj a \code{sleuth} object.
+#' @return a print out of each fit with the transform sync status.
+#' @export
+transform_status <- function(obj) {
+  useMethod('transform_status')
+}
+
+#' @export
+transform_status.sleuth <- function(obj, verbose=TRUE) {
+  if (is.null(obj$fits))
+    stop("sleuth obj has no fits.")
+
+  if (verbose) {
+    for (x in names(obj$fits)) {
+      cat('[ ', x, ' ]\n')
+      models(obj$fits[[x]]$transform_synced)
+    }
+  }
+
+
+  invisible(obj$fits)
+}
+
+#' @export
+transform_status.sleuth_model <- function(obj) {
+  print(obj$transform_synced)
 }
 
 #' Extract design matrix
@@ -232,16 +274,31 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' This function extracts Wald test results from a sleuth object.
 #'
 #' @param obj a \code{sleuth} object
-#' @param test a character denoting the test to extract
+#' @param test a character string denoting the test to extract. Possible tests can be found by using \code{models(obj)}.
 #' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
 #' consistent with vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
-#' @return a \code{data.frame}
-#' @seealso \code{\link{sleuth_wt}}/\code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
+#' @return a \code{data.frame} with the following columns:
+#' @return target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
+#' @return pval: p-value of the chosen model
+#' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
+#' @return b: 'beta' value (effect size). Technically a biased estimator of the fold change
+#' @return se_b: standard error of the beta
+#' @return mean_obs: mean of natural log counts of observations
+#' @return var_obs: variance of observation
+#' @return tech_var: technical variance of observation from the bootstraps
+#' @return sigma_sq: raw estimator of the variance once the technical variance has been removed
+#' @return smooth_sigma_sq: smooth regression fit for the shrinkage estimation
+#' @return final_simga_sq: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
+#' @seealso \code{\link{sleuth_wt}} and \code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
+#' @examples
+#' models(sleuth_obj) # for this example, assume the formula is ~condition,
+#'                      and a coefficient is IP
+#' results_table <- sleuth_results(sleuth_obj, 'conditionIP')
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
   which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
@@ -292,7 +349,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if (show_all) {
+  if (show_all && !obj$gene_mode) {
     tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
     res <- dplyr::left_join(
       data.table::as.data.table(tids),
@@ -301,12 +358,28 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if ( !is.null(obj$target_mapping) ) {
+  if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
     res <- dplyr::left_join(
       data.table::as.data.table(res),
       data.table::as.data.table(obj$target_mapping),
       by = 'target_id')
   }
+
+  if (!is.null(obj$target_mapping) && obj$gene_mode) {
+    # after removing the target_id column
+    # there are several redundant columns for each gene
+    # this line gets the unique line for each gene
+    target_mapping <- unique(dplyr::select(
+                               obj$target_mapping,
+                               -target_id))
+    # this line uses dplyr's "left_join" syntax for "by"
+    # to match "target_id" from the "res" table,
+    # and the gene_column from the target_mapping table.
+    res <- dplyr::left_join(data.table::as.data.table(res),
+                            data.table::as.data.table(target_mapping),
+                            by = c("target_id" = obj$gene_column))
+  }
+
   res <- as_df(res)
 
   dplyr::arrange(res, qval)

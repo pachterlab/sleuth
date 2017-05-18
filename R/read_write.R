@@ -115,7 +115,8 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
         msg("Only reading ", max_bootstrap, " bootstrap samples")
         num_bootstrap <- max_bootstrap
       }
-      bs_samples <- lapply(0:(num_bootstrap[1] - 1), function(i) {
+      bs_samples <- lapply(0:(num_bootstrap[1] - 1),
+        function(i) {
           .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {
@@ -165,10 +166,11 @@ read_bootstrap_mat <- function(fname,
   num_bootstraps,
   num_transcripts,
   est_count_sf) {
-  bs_mat <- matrix(nrow=num_bootstraps, ncol=num_transcripts)
-  for (i in 1:nrow(bs_mat)) {
-    bs_mat[i, ] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1)) / est_count_sf
+  bs_mat <- matrix(ncol = num_bootstraps, nrow = num_transcripts)
+  for (i in 1:ncol(bs_mat)) {
+    bs_mat[, i] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1)) / est_count_sf
   }
+  bs_mat <- t(bs_mat)
   target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
   colnames(bs_mat) <- target_id
 
@@ -285,7 +287,7 @@ gtf_gene_names <- function(gtf_attr) {
 
   for (i in 1:length(all_attr)) {
     j <- 1
-    while ((nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
+    while ( (nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
       j <= length(all_attr[[i]]) ) {
       if (all_attr[[i]][j] == "gene_id") {
         gene_id[i] <- all_attr[[i]][j + 1] %>%

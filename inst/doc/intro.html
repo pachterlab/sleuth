@@ -10,7 +10,7 @@
 
 <meta name="author" content="Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter" />
 
-<meta name="date" content="2015-11-02" />
+<meta name="date" content="2016-06-20" />
 
 <title>Introduction to sleuth</title>
 
@@ -72,7 +72,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="header">
 <h1 class="title">Introduction to sleuth</h1>
 <h4 class="author"><em>Harold Pimentel, Nicolas Bray, Pall Melsted and Lior Pachter</em></h4>
-<h4 class="date"><em>2015-11-02</em></h4>
+<h4 class="date"><em>2016-06-20</em></h4>
 </div>
 
 
@@ -169,61 +169,104 @@ s2c</code></pre></div>
 ## 4 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493369/kallisto
 ## 5 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493370/kallisto
 ## 6 ~/Downloads/cuffdiff2_data_kallisto_results/results/SRR493371/kallisto</code></pre>
-<p>Now the “sleuth object” can be constructed. This requires three commands that (1) load the kallisto processed data into the object (2) estimate parameters for the <strong>sleuth</strong> response error measurement model and (3) perform differential analysis (testing). On a laptop the three steps should take about 2 minutes altogether.</p>
+<p>Now the “sleuth object” can be constructed. This requires four commands that (1) load the kallisto processed data into the object (2) estimate parameters for the <strong>sleuth</strong> response error measurement (full) model (3) estimate parameters for the <strong>sleuth</strong> reduced model, and (4) perform differential analysis (testing). On a laptop the four steps should take about a few minutes altogether.</p>
 <p>First type</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(s2c, ~<span class="st"> </span>condition)</code></pre></div>
-<pre><code>## reading in kallisto results
-## ......
-## normalizing est_counts
-## 50844 targets passed the filter
-## normalizing tpm
-## merging in metadata
-## normalizing bootstrap samples
-## summarizing bootstraps</code></pre>
-<p>then</p>
+<pre><code>## reading in kallisto results</code></pre>
+<pre><code>## ......</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## normalizing est_counts</code></pre>
+<pre><code>## 50844 targets passed the filter</code></pre>
+<pre><code>## normalizing tpm</code></pre>
+<pre><code>## merging in metadata</code></pre>
+<pre><code>## normalizing bootstrap samples</code></pre>
+<pre><code>## summarizing bootstraps</code></pre>
+<p>then fit the full model</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_fit</span>(so)</code></pre></div>
-<pre><code>## shrinkage estimation
-## computing variance of betas</code></pre>
-<p>and finally</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_wt</span>(so, <span class="st">'conditionscramble'</span>)</code></pre></div>
-<p>In general, one can see the possible tests that could be performed using the <code>which_beta</code> parameter in <code>sleuth_wt</code> and examining the coefficients:</p>
+<pre><code>## fitting measurement error models</code></pre>
+<pre><code>## shrinkage estimation</code></pre>
+<pre><code>## computing variance of betas</code></pre>
+<p>Next, we fit the reduced model. In this case, the reduced model is the intercept-only model:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_fit</span>(so, ~<span class="dv">1</span>, <span class="st">'reduced'</span>)</code></pre></div>
+<pre><code>## fitting measurement error models</code></pre>
+<pre><code>## shrinkage estimation</code></pre>
+<pre><code>## computing variance of betas</code></pre>
+<p>and finally perform the test:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_lrt</span>(so, <span class="st">'reduced'</span>, <span class="st">'full'</span>)</code></pre></div>
+<p>In general, we can test models that are nested using the likelihood ratio test. Viewing models which have been fit can be done using the <code>models()</code> function.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">models</span>(so)</code></pre></div>
 <pre><code>## [  full  ]
 ## formula:  ~condition 
 ## coefficients:
 ##  (Intercept)
-##      conditionscramble</code></pre>
+##      conditionscramble
+## [  reduced  ]
+## formula:  ~1 
+## coefficients:
+##  (Intercept)</code></pre>
+<div id="including-gene-names-into-transcript-level-analysis" class="section level3">
+<h3>Including gene names into transcript-level analysis</h3>
 <p>At this point the sleuth object constructed from the kallisto runs has information about the data, the experimental design, the <strong>kallisto</strong> estimates, the model fit, and the testing. In other words it contains the entire analysis of the data. There is, however, one piece of information that can be useful to add in, but that is optional. In reading the kallisto output <strong>sleuth</strong> has no information about <em>genes</em>, but this can be added allowing for searching and analysis by gene instead of transcript.</p>
 <p>Since the example was constructed with the ENSEMBL human transcriptome, we will add gene names from ENSEMBL using biomaRt (there are other ways to do this as well):</p>
 <p>First, install biomaRt with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">source</span>(<span class="st">&quot;http://bioconductor.org/biocLite.R&quot;</span>)
 <span class="kw">biocLite</span>(<span class="st">&quot;biomaRt&quot;</span>)</code></pre></div>
 <p>Then collect gene names with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mart &lt;-<span class="st"> </span>biomaRt::<span class="kw">useMart</span>(<span class="dt">biomart =</span> <span class="st">&quot;ensembl&quot;</span>, <span class="dt">dataset =</span> <span class="st">&quot;hsapiens_gene_ensembl&quot;</span>)</code></pre></div>
-<pre><code>## Creating a generic function for 'nchar' from package 'base' in package 'S4Vectors'</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mart &lt;-<span class="st"> </span>biomaRt::<span class="kw">useMart</span>(<span class="dt">biomart =</span> <span class="st">&quot;ENSEMBL_MART_ENSEMBL&quot;</span>,
+  <span class="dt">dataset =</span> <span class="st">&quot;hsapiens_gene_ensembl&quot;</span>,
+  <span class="dt">host =</span> <span class="st">'ensembl.org'</span>)</code></pre></div>
 <p>and add them into the <strong>sleuth</strong> table with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">t2g &lt;-<span class="st"> </span>biomaRt::<span class="kw">getBM</span>(<span class="dt">attributes =</span> <span class="kw">c</span>(<span class="st">&quot;ensembl_transcript_id&quot;</span>, <span class="st">&quot;ensembl_gene_id&quot;</span>,
     <span class="st">&quot;external_gene_name&quot;</span>), <span class="dt">mart =</span> mart)
 t2g &lt;-<span class="st"> </span>dplyr::<span class="kw">rename</span>(t2g, <span class="dt">target_id =</span> ensembl_transcript_id,
   <span class="dt">ens_gene =</span> ensembl_gene_id, <span class="dt">ext_gene =</span> external_gene_name)
 so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(s2c, ~<span class="st"> </span>condition, <span class="dt">target_mapping =</span> t2g)</code></pre></div>
-<pre><code>## reading in kallisto results
-## ......
-## normalizing est_counts
-## 50844 targets passed the filter
-## normalizing tpm
-## merging in metadata
-## normalizing bootstrap samples
-## summarizing bootstraps</code></pre>
+<pre><code>## reading in kallisto results</code></pre>
+<pre><code>## ......</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## normalizing est_counts</code></pre>
+<pre><code>## 50844 targets passed the filter</code></pre>
+<pre><code>## normalizing tpm</code></pre>
+<pre><code>## merging in metadata</code></pre>
+<pre><code>## normalizing bootstrap samples</code></pre>
+<pre><code>## summarizing bootstraps</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_fit</span>(so)</code></pre></div>
-<pre><code>## shrinkage estimation
-## computing variance of betas</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_wt</span>(so, <span class="dt">which_beta =</span> <span class="st">'conditionscramble'</span>)</code></pre></div>
+<pre><code>## fitting measurement error models</code></pre>
+<pre><code>## shrinkage estimation</code></pre>
+<pre><code>## computing variance of betas</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_fit</span>(so, ~<span class="dv">1</span>, <span class="st">'reduced'</span>)</code></pre></div>
+<pre><code>## fitting measurement error models</code></pre>
+<pre><code>## shrinkage estimation</code></pre>
+<pre><code>## computing variance of betas</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_lrt</span>(so, <span class="st">'reduced'</span>, <span class="st">'full'</span>)</code></pre></div>
 <p>This addition of metadata to transcript IDs is very general, and can be used to add in other information.</p>
 <p>The best way to view the results is to generate the Shiny webpage that allows for exploratory data analysis:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sleuth_live</span>(so)</code></pre></div>
 <p>To generate a table of results for analysis within R type</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">results_table &lt;-<span class="st"> </span><span class="kw">sleuth_results</span>(so, <span class="st">'conditionscramble'</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">results_table &lt;-<span class="st"> </span><span class="kw">sleuth_results</span>(so, <span class="st">'reduced:full'</span>, <span class="dt">test_type =</span> <span class="st">'lrt'</span>)</code></pre></div>
+</div>
+<div id="gene-level-analysis" class="section level3">
+<h3>Gene level analysis</h3>
+<p>Assuming <code>biomaRt</code> has been installed as in the previous step, sleuth can also be run in the ‘gene aggregation’ mode. In addition to requiring a <code>target_mapping</code>, a string which references a column to aggregate by, (<code>aggregation_column</code>). In our example, we could use <code>ens_gene</code> or <code>ext_gene</code>. It is preferable to use <code>ens_gene</code> as <code>ext_gene</code> tends to be a bit redundant.</p>
+<p>The modified sleuth prep command looks as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">so &lt;-<span class="st"> </span><span class="kw">sleuth_prep</span>(s2c, ~condition, <span class="dt">target_mapping =</span> t2g,
+  <span class="dt">aggregation_column =</span> <span class="st">'ens_gene'</span>)</code></pre></div>
+<pre><code>## reading in kallisto results</code></pre>
+<pre><code>## ......</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## normalizing est_counts</code></pre>
+<pre><code>## 50844 targets passed the filter</code></pre>
+<pre><code>## normalizing tpm</code></pre>
+<pre><code>## merging in metadata</code></pre>
+<pre><code>## normalizing bootstrap samples</code></pre>
+<pre><code>## summarizing bootstraps</code></pre>
+<pre><code>## aggregating by column: ens_gene</code></pre>
+<pre><code>## 14412 genes passed the filter</code></pre>
+<p>The remainder of the pipeline is unchanged. When running <code>sleuth_live</code> or <code>sleuth_results</code>, the gene column you selected will be listed as <code>target_id</code>, rather than the transcript name.</p>
+<p><code>sleuth_prep</code> might take a bit longer here because aggregation has to be done amongst all of the bootstraps as well. We are currently working to speed this up and expect to release it along with several memory improvements in the next version (0.28.2). One way to speed this up is to use more processes (assuming you have more cores). Internally, <code>sleuth</code> uses the function <code>parallel::mclapply</code>. You can set the number of cores as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># set the number of available cores to 4</span>
+<span class="kw">options</span>(<span class="dt">mc.cores =</span> 4L)</code></pre></div>
+</div>
 </div>
 
 
