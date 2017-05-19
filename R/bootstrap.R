@@ -428,7 +428,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                 quantile))
     colnames(bs_quant_tpm) <- c("min", "lower", "mid",
                                 "upper", "max")
-    ret$bs_quants[[samp_name]]$tpm <- bs_quant_tpm
+    bs_quants[[samp_name]]$tpm <- bs_quant_tpm
   }
 
   if (gene_mode) {
@@ -483,7 +483,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                        quantile))
     colnames(bs_quant_est_counts) <- c("min", "lower",
                                        "mid", "upper", "max")
-    ret$bs_quants[[samp_name]]$est_counts <- bs_quant_est_counts
+    bs_quants[[samp_name]]$est_counts <- bs_quant_est_counts
   }
 
   bs_mat <- transform_fun(bs_mat)

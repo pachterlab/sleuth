@@ -72,7 +72,7 @@ models.sleuth_model <- function(obj) {
 #'
 #' This method prints out the sync status for all fits of \code{sleuth} object
 #' If the sleuth object's transform function was changed after sleuth_fit was used,
-#' the user will need to redo sleuth_fit for any fits already done. 
+#' the user will need to redo sleuth_fit for any fits already done.
 #'
 #' @param obj a \code{sleuth} object.
 #' @return a print out of each fit with the transform sync status.
@@ -365,7 +365,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       by = 'target_id')
   }
 
-  if (!is.null(obj$target_mapping) && obj$gene_mode) {
+  if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {
     # after removing the target_id column
     # there are several redundant columns for each gene
     # this line gets the unique line for each gene
