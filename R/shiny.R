@@ -36,6 +36,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       install.packages('shiny')")
   }
 
+  if (obj$gene_mode) counts_unit <- "scaled_reads_per_base" else
+    counts_unit <- "est_counts"
+
   # set up for the different types of tests
   poss_covars <- dplyr::setdiff(
     colnames(obj$sample_to_covariates),
@@ -121,8 +124,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             column(3,
                 selectInput('gv_var_units',
                   label = 'units: ',
-                  choices = c('est_counts', 'tpm'),
-                  selected = 'est_counts')),
+                  choices = c(counts_unit, 'tpm'),
+                  selected = counts_unit)),
             column(3,
                 uiOutput('gv_gene_column')
             )
@@ -150,7 +153,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             textInput('hm_transcripts', label = 'enter target ids: ', value = '')
               ),
           column(3,
-            selectInput('hm_units', label = 'units:', choices = c('est_counts', 'tpm'), selected = 'tpm')
+            selectInput('hm_units', label = 'units:', choices = c(counts_unit, 'tpm'), selected = 'tpm')
               ),
           column(3,
             textInput('hm_trans', label = 'tranform: ', value = 'log')
@@ -366,8 +369,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             numericInput('pca_point_size', label = 'size: ', value = 3)),
           column(2,
             selectInput('pca_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts'))
+              choices = c(counts_unit, 'tpm'),
+              selected = counts_unit))
         ),
         fluidRow(
           column(2,
@@ -461,7 +464,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
           column(2,
             selectInput('cond_dens_units', label = 'units: ',
-              choices = c('tpm', 'est_counts'),
+              choices = c('tpm', counts_unit),
               selected = 'tpm')),
           column(2,
             checkboxInput('cond_dens_filt', label = 'filter',
@@ -655,8 +658,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         fluidRow(
           column(2,
             selectInput('scatter_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
+              choices = c(counts_unit, 'tpm'),
+              selected = counts_unit)),
           column(2,
             checkboxInput('scatter_filt', label = 'filter',
               value = TRUE)),
