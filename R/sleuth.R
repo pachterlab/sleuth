@@ -190,10 +190,7 @@ sleuth_prep <- function(
                "but not a 'target_mapping'. Please provided a 'target_mapping'."))
   }
 
-  if (is.null(num_cores) || is.na(suppressWarnings(as.integer(num_cores))) ||
-       num_cores < 1 || num_cores > parallel::detectCores()) {
-    stop("num_cores must be an integer between 1 and the number of cores on your machine")
-  }
+  num_cores <- check_num_cores(num_cores)
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
   # kallisto index might be incorrect
