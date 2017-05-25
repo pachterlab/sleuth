@@ -429,7 +429,12 @@ sleuth_prep <- function(
     }
 
     msg('summarizing bootstraps')
-    bs_results <- parallel::mclapply(seq_along(kal_dirs), function(i) {
+    apply_function <- if (num_cores == 1) {
+      lapply
+    } else {
+      function(x, y) parallel::mclapply(x, y, mc.cores = num_cores)
+    }
+    bs_results <- apply_function(seq_along(kal_dirs), function(i) {
       samp_name <- sample_to_covariates$sample[i]
       kal_path <- get_kallisto_path(kal_dirs[i])
       process_bootstrap(i, samp_name, kal_path,
@@ -438,7 +443,7 @@ sleuth_prep <- function(
                         extra_bootstrap_summary,
                         target_id, mappings, which_ids, ret$gene_column,
                         ret$transform_fun)
-    }, mc.cores = num_cores)
+    })
 
     # if mclapply results in an error (a warning is shown), then print error and stop
     if (is(bs_results[[1]], "try-error")) {

@@ -433,6 +433,11 @@ gene_summary <- function(obj, which_column, transform = identity,
                          norm_by_length = TRUE, num_cores=2) {
   # stopifnot(is(obj, 'sleuth'))
   msg(paste0('aggregating by column: ', which_column))
+  apply_function <- if (num_cores == 1) {
+    lapply
+  } else {
+    function(x, y) parallel::mclapply(x, y, mc.cores = num_cores)
+  }
   obj_mod <- obj
   if (norm_by_length) {
     tmp <- obj$obs_raw
@@ -459,12 +464,12 @@ gene_summary <- function(obj, which_column, transform = identity,
       k <- obj_mod$kal[[i]]
       current_sample <- obj_mod$sample_to_covariates$sample[i]
       msg(paste('aggregating across sample: ', current_sample))
-      k$bootstrap <- parallel::mclapply(seq_along(k$bootstrap), function(j) {
+      k$bootstrap <- apply_function(seq_along(k$bootstrap), function(j) {
         b <- k$bootstrap[[j]]
         b <- dplyr::mutate(b, sample = current_sample)
         reads_per_base_transform(b, scale_factor, which_column,
           obj$target_mapping, norm_by_length)
-      }, mc.cores = num_cores)
+      })
 
       k
     })
