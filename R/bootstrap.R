@@ -248,7 +248,7 @@ normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
 get_bootstrap_summary <- function(obj, target_id, units = 'est_counts') {
   stopifnot( is(obj, 'sleuth') )
 
-  if (units != 'est_counts' && units != 'tpm') {
+  if (units != 'est_counts' && units != 'tpm' && units != 'scaled_reads_per_base') {
     stop(paste0("'", units, "' is invalid for 'units'. please see documentation"))
   }
 
@@ -428,7 +428,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                 quantile))
     colnames(bs_quant_tpm) <- c("min", "lower", "mid",
                                 "upper", "max")
-    bs_quants[[samp_name]]$tpm <- bs_quant_tpm
+    bs_quants$tpm <- bs_quant_tpm
   }
 
   if (gene_mode) {
@@ -483,7 +483,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                        quantile))
     colnames(bs_quant_est_counts) <- c("min", "lower",
                                        "mid", "upper", "max")
-    bs_quants[[samp_name]]$est_counts <- bs_quant_est_counts
+    bs_quants$est_counts <- bs_quant_est_counts
   }
 
   bs_mat <- transform_fun(bs_mat)
@@ -491,6 +491,10 @@ process_bootstrap <- function(i, samp_name, kal_path,
   # If at transcript-level, need to add target_ids
   if(!gene_mode) {
     colnames(bs_mat) <- target_id
+  } else {
+    # rename est_counts to scaled_reads_per_base
+    bs_quants$scaled_reads_per_base <- bs_quants$est_counts
+    bs_quants$est_counts <- NULL
   }
   # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
   # variability in sample i
