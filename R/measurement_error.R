@@ -52,6 +52,10 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   if ( is.null(formula) ) {
     formula <- obj$full_formula
+    if (is.null(formula)) {
+      stop("'formula' was not specified and the 'full' model was not specified in `sleuth_prep`.",
+        " Please specify a formula and a label.")
+    }
   } else if ( !is(formula, 'formula') && !is(formula, 'matrix') ) {
     stop("'", substitute(formula), "' is not a valid 'formula' or 'matrix'")
   }

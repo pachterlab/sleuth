@@ -118,7 +118,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @export
 sleuth_prep <- function(
   sample_to_covariates,
-  full_model,
+  full_model = NULL,
   filter_fun = basic_filter,
   target_mapping = NULL,
   max_bootstrap = NULL,
@@ -140,7 +140,7 @@ sleuth_prep <- function(
     stop(paste0("'", substitute(sample_to_covariates), "' (sample_to_covariates) must be a data.frame"))
   }
 
-  if (!is(full_model, "formula") && !is(full_model, "matrix")) {
+  if (!is(full_model, "formula") && !is(full_model, "matrix") && !is.null(full_model)) {
     stop(paste0("'", substitute(full_model), "' (full_model) must be a formula or a matrix"))
   }
 
@@ -235,13 +235,16 @@ sleuth_prep <- function(
   design_matrix <- NULL
   if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
-  } else {
+  } else if (is(full_model, 'matrix')) {
     if (is.null(colnames(full_model))) {
       stop("If matrix is supplied, column names must also be supplied.")
     }
     design_matrix <- full_model
   }
-  rownames(design_matrix) <- sample_to_covariates$sample
+
+  if (!is.null(full_model)) {
+    rownames(design_matrix) <- sample_to_covariates$sample
+  }
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
 
