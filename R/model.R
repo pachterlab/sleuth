@@ -384,3 +384,30 @@ sleuth_results <- function(obj, test, test_type = 'wt',
 
   dplyr::arrange(res, qval)
 }
+
+#' extract a model from a sleuth object
+#'
+#' This function extracts the parameter estimates from a sleuth model after it
+#' has been fit with \code{\link{sleuth_fit}}.
+#' @param obj a sleuth object.
+#' @param which_model a model fitted with \code{\link{sleuth_fit}}.
+#' @return a data frame including a column for the target_id, the term (which coefficient),
+#'         and the corresponding standard error.
+#' @export
+extract_model <- function(obj, which_model) {
+  if (!model_exists(obj, which_model)) {
+    stop("'", which_model, "' does not exist in ", substitute(obj),
+      ". Please check  models(", substitute(obj), ") for fitted models.")
+  }
+
+  res <- lapply(seq_along(obj$fits[[which_model]]$models),
+    function(i) {
+      x <- obj$fits[[which_model]]$models[[i]]
+      coefficients <- coef(x$ols_fit)
+      list(
+        target_id = rep_len(names(obj$fits[[which_model]]$models)[i], length(coefficients)),
+        term = names(coefficients), estimate = coefficients,
+        std_error = sqrt(diag(obj$fits[[which_model]]$beta_covars[[i]])))
+    })
+  dplyr::bind_rows(res)
+}

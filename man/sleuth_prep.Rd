@@ -4,8 +4,8 @@
 \alias{sleuth_prep}
 \title{Constructor for a 'sleuth' object}
 \usage{
-sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
-  target_mapping = NULL, max_bootstrap = NULL,
+sleuth_prep(sample_to_covariates, full_model = NULL,
+  filter_fun = basic_filter, target_mapping = NULL, max_bootstrap = NULL,
   norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
   aggregation_column = NULL, read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE, transformation_function = log_transform,
