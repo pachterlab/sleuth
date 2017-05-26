@@ -104,7 +104,7 @@ transform_status.sleuth_model <- function(obj) {
 
 #' Extract design matrix
 #'
-#' Getter method for extracting a design matrix from a sleuth object
+#' Better method for extracting a design matrix from a sleuth object
 #'
 #' @param obj a \code{sleuth} object
 #' @param which_model a character string of the model
@@ -385,7 +385,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   dplyr::arrange(res, qval)
 }
 
-#' extract a model from a sleuth object
+#' Extract a model from a sleuth object
 #'
 #' This function extracts the parameter estimates from a sleuth model after it
 #' has been fit with \code{\link{sleuth_fit}}.
