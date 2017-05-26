@@ -7,4 +7,4 @@ linters: with_defaults(
   single_quotes_linter = NULL,
   trailing_blank_lines_linter = NULL
   )
-exclusions: list("R/hexamers.R", "inst/doc/intro.R")
+exclusions: list("R/hexamers.R", "vignettes/intro.Rmd")

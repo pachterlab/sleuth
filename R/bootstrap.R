@@ -145,7 +145,7 @@ aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
 
   if ( any(!complete.cases(mapping)) ) {
     warning("Found some NAs in mapping. Removing them.")
-    mapping <- mapping[complete.cases(mapping),]
+    mapping <- mapping[complete.cases(mapping), ]
   }
 
   m_bs <- melt_bootstrap(kal, column)
@@ -236,6 +236,47 @@ normalize_bootstrap <- function(kal, tpm_size_factor, est_counts_size_factor) {
   kal
 }
 
+#' bootstrap summary
+#'
+#' Extract the bootstrap summary from a sleuth object that has been initialized in sleuth_prep.
+#'
+#' @param obj a \code{sleuth} object such that \code{extra_bootstrap_summary = TRUE} inside of \code{\link{sleuth_prep}}.
+#' @param target_id a character vector of length 1 indicating the target_id (transcript or gene name depending on aggregation mode)
+#' @param units a character vector of either 'est_counts' or 'tpm' (also requires \code{extra_bootstrap_summary = TRUE} in \code{\link{sleuth_prep}})
+#' @return a \code{data.frame} with the summary statistics across all samples for that particular target
+#' @export
+get_bootstrap_summary <- function(obj, target_id, units = 'est_counts') {
+  stopifnot( is(obj, 'sleuth') )
+
+  if (units != 'est_counts' && units != 'tpm' && units != 'scaled_reads_per_base') {
+    stop(paste0("'", units, "' is invalid for 'units'. please see documentation"))
+  }
+
+  if (is.null(obj$bs_quants)) {
+    if (units == 'est_counts') {
+      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE'")
+    } else {
+      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE' and 'read_bootstrap_tpm = TRUE'")
+    }
+  }
+
+  if (!(target_id %in% rownames(obj$bs_quants[[1]][[units]]))) {
+    stop(paste0("couldn't find target_id '", target_id, "'"))
+  }
+
+  df <- as_df(
+    do.call(rbind,
+      lapply(obj$bs_quants,
+      function(sample_bs) {
+        sample_bs[[units]][target_id, ]
+      })
+      )
+    )
+  df <- dplyr::bind_cols(df, obj$sample_to_covariates)
+
+  df
+}
+
 
 # Sample bootstraps
 #
@@ -275,8 +316,8 @@ sample_bootstrap <- function(obj, n_samples = 100L) {
   # matrix sample
   for (s in 1:n_samples) {
     for (idx in 1:nrow(which_samp)) {
-      b <- which_samp[idx,s]
-      sample_mat[[s]][,idx] <- obj$kal[[idx]]$bootstrap[[b]]$est_counts
+      b <- which_samp[idx, s]
+      sample_mat[[s]][, idx] <- obj$kal[[idx]]$bootstrap[[b]]$est_counts
     }
   }
 
@@ -318,9 +359,147 @@ dcast_bootstrap.kallisto <- function(obj, units, nsamples = NULL) {
   mat <- matrix(NA_real_, nrow = n_features, ncol = length(which_bs))
 
   for (j in seq_along(which_bs)) {
-    mat[ ,j] <- obj[[ "bootstrap" ]][[which_bs[j]]][[ units ]]
+    mat[, j] <- obj[[ "bootstrap" ]][[which_bs[j]]][[ units ]]
   }
   rownames(mat) <- obj[["bootstrap"]][[1]][["target_id"]]
 
   mat
+}
+
+# Function to process bootstraps for parallelization
+process_bootstrap <- function(i, samp_name, kal_path,
+                              num_transcripts, est_count_sf,
+                              read_bootstrap_tpm, gene_mode,
+                              extra_bootstrap_summary,
+                              target_id, mappings, which_ids,
+                              aggregation_column, transform_fun)
+{
+  dot(i)
+  bs_quants <- list()
+
+  num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path,
+                                            "aux/num_bootstrap"))
+  if (num_bootstrap == 0) {
+    stop(paste0("File ", kal_path, " has no bootstraps.",
+                "Please generate bootstraps using \"kallisto quant -b\"."))
+  }
+
+  # TODO: only perform operations on filtered transcripts
+  eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
+  bs_mat <- read_bootstrap_mat(fname = kal_path$path,
+                               num_bootstraps = num_bootstrap,
+                               num_transcripts = num_transcripts,
+                               est_count_sf = est_count_sf)
+
+  if (read_bootstrap_tpm) {
+    bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm,
+                                eff_len))
+
+    # gene level code is analogous here to below code
+    if (gene_mode) {
+      colnames(bs_quant_tpm) <- target_id
+      # Make bootstrap_num an explicit column; each is treated as a "sample"
+      bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
+                              bs_quant_tpm, check.names = F)
+      rm(bs_quant_tpm)
+      # Make long tidy table; this step is much faster
+      # using data.table melt rather than tidyr gather
+      tidy_tpm <- data.table::melt(bs_tpm_df, id.vars = "bootstrap_num",
+                                   variable.name = "target_id",
+                                   value.name = "tpm")
+      tidy_tpm <- data.table::as.data.table(tidy_tpm)
+      rm(bs_tpm_df)
+      tidy_tpm$target_id <- as.character(tidy_tpm$target_id)
+      tidy_tpm <- merge(tidy_tpm, mappings, by = "target_id",
+                        all.x = T)
+      # Data.table dcast uses non-standard evaluation
+      # So quote the full casting formula to make sure
+      # "aggregation_column" is interpreted as a variable
+      # see: http://stackoverflow.com/a/31295592
+      quant_tpm_formula <- paste("bootstrap_num ~",
+                                 aggregation_column)
+      bs_quant_tpm <- data.table::dcast(tidy_tpm,
+                                        quant_tpm_formula, value.var = "tpm",
+                                        fun.aggregate = sum)
+      bs_quant_tpm <- as.matrix(bs_quant_tpm[, -1])
+      rm(tidy_tpm) # these tables are very large
+    }
+    bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2,
+                                quantile))
+    colnames(bs_quant_tpm) <- c("min", "lower", "mid",
+                                "upper", "max")
+    bs_quants$tpm <- bs_quant_tpm
+  }
+
+  if (gene_mode) {
+    # I can combine target_id and eff_len
+    # I assume the order is the same, since it's read from the same kallisto
+    # file and each kallisto file has the same order
+    eff_len_df <- data.frame(target_id, eff_len,
+                             stringsAsFactors = F)
+    # make bootstrap number an explicit column to facilitate melting
+    bs_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
+                        bs_mat, check.names = F)
+    rm(bs_mat)
+    # data.table melt function is much faster than tidyr's gather function
+    # output is a long table with each bootstrap's value for each target_id
+    tidy_bs <- data.table::melt(bs_df, id.vars = "bootstrap_num",
+                                variable.name = "target_id",
+                                value.name = "est_counts")
+    rm(bs_df)
+    # not sure why, but the melt function always returns a factor,
+    # even when setting variable.factor = F, so I coerce target_id
+    tidy_bs$target_id <- as.character(tidy_bs$target_id)
+    # combine the long tidy table with eff_len and aggregation mappings
+    # note that bootstrap number is treated as "sample" here
+    # for backwards compatibility
+    tidy_bs <- dplyr::select(tidy_bs, target_id,
+                             est_counts, sample = bootstrap_num)
+    tidy_bs <- merge(data.table::as.data.table(tidy_bs),
+                     data.table::as.data.table(eff_len_df), by = "target_id",
+                     all.x = TRUE)
+    tidy_bs <- merge(tidy_bs, mappings, by = "target_id",
+                     all.x = TRUE)
+    # create the median effective length scaling factor for each gene
+    scale_factor <- tidy_bs[, scale_factor := median(eff_len),
+                            by = eval(parse(text=aggregation_column))]
+    # use the old reads_per_base_transform method to get gene scaled counts
+    scaled_bs <- reads_per_base_transform(tidy_bs,
+                                          scale_factor$scale_factor,
+                                          aggregation_column,
+                                          mappings)
+    # this step undoes the tidying to get back a matrix format
+    # target_ids here are now the aggregation column ids
+    bs_mat <- data.table::dcast(scaled_bs, sample ~ target_id,
+                                value.var = "scaled_reads_per_base")
+    # this now has the same format as the transcript matrix
+    # but it uses gene ids
+    bs_mat <- as.matrix(bs_mat[, -1])
+    rm(tidy_bs, scaled_bs)
+  }
+
+  if (extra_bootstrap_summary) {
+    bs_quant_est_counts <- aperm(apply(bs_mat, 2,
+                                       quantile))
+    colnames(bs_quant_est_counts) <- c("min", "lower",
+                                       "mid", "upper", "max")
+    bs_quants$est_counts <- bs_quant_est_counts
+  }
+
+  bs_mat <- transform_fun(bs_mat)
+  # If bs_mat was made at gene-level, already has column names
+  # If at transcript-level, need to add target_ids
+  if(!gene_mode) {
+    colnames(bs_mat) <- target_id
+  } else {
+    # rename est_counts to scaled_reads_per_base
+    bs_quants$scaled_reads_per_base <- bs_quants$est_counts
+    bs_quants$est_counts <- NULL
+  }
+  # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
+  # variability in sample i
+  # NOTE: we are only keeping the ones that pass the filter
+  bootstrap_result <- matrixStats::colVars(bs_mat[, which_ids])
+
+  list(index = i, bs_quants = bs_quants, bootstrap_result = bootstrap_result)
 }

@@ -25,7 +25,7 @@ get_quantile <- function(data, which_col, lwr, upr, ignore_zeroes = TRUE) {
   data$iqr <- valid
 
   if (ignore_zeroes) {
-    valid <- data[,which_col] > 0
+    valid <- data[, which_col] > 0
     if (sum(valid) == 0) {
       # in this case, everything in this bin is zero, so we just return the
       # entire bin
@@ -36,7 +36,7 @@ get_quantile <- function(data, which_col, lwr, upr, ignore_zeroes = TRUE) {
     data$iqr[!valid] <- FALSE
   }
 
-  data$iqr[valid] <- data[valid,which_col] %>%
+  data$iqr[valid] <- data[valid, which_col] %>%
     ecdf(.)(.) %>%
     ifelse(lwr <= . & . <= upr)
 
@@ -49,7 +49,7 @@ sliding_window_grouping <- function(data, x_col, y_col,
 
   data <- as.data.frame(data)
 
-  data <- mutate(data,x_ecdf = ecdf(data[,x_col])(data[,x_col]))
+  data <- mutate(data, x_ecdf = ecdf(data[, x_col])(data[, x_col]))
   data <- mutate(data, x_group = cut(x_ecdf, n_bins))
   data <- group_by(data, x_group)
 
@@ -63,7 +63,7 @@ sliding_window_grouping <- function(data, x_col, y_col,
 shrink_df <- function(data, shrink_formula, filter_var) {
   data <- as.data.frame(data)
   s_formula <- substitute(shrink_formula)
-  fit <- eval(loess(s_formula, data[data[,filter_var],]))
+  fit <- eval(loess(s_formula, data[data[, filter_var], ]))
   data.frame(data, shrink = predict(fit, data))
 }
 
@@ -119,17 +119,17 @@ apply_all_pairs <- function(mat, fun) {
 
   all_pairs <- utils::combn(ids, 2)
   for (i in 1:ncol(all_pairs)) {
-    j <- all_pairs[1,i]
-    k <- all_pairs[2,i]
+    j <- all_pairs[1, i]
+    k <- all_pairs[2, i]
 
-    cur <- fun(mat[,j], mat[,k])
+    cur <- fun(mat[, j], mat[, k])
 
-    res[j,k] <- cur
-    res[k,j] <- cur
+    res[j, k] <- cur
+    res[k, j] <- cur
   }
 
   for (i in 1:length(ids)) {
-    res[i,i] <- fun(mat[,i], mat[,i])
+    res[i, i] <- fun(mat[, i], mat[, i])
   }
 
 

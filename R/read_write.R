@@ -116,7 +116,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
         num_bootstrap <- max_bootstrap
       }
       bs_samples <- lapply(0:(num_bootstrap[1] - 1),
-      function(i) {
+        function(i) {
           .read_bootstrap_hdf5(fname, i, abund)
         })
     } else {
@@ -158,9 +158,23 @@ h5check <- function(fname, group, name) {
   bs <- adf( target_id = main_est$target_id )
   bs$est_counts <- as.numeric(rhdf5::h5read(fname, paste0("bootstrap/bs", i)))
   bs$tpm <- counts_to_tpm(bs$est_counts, main_est$eff_len)
-  bs$eff_len <- main_est$eff_len
-
   bs
+}
+
+# @return a matrix with each row being a bootstrap sample
+read_bootstrap_mat <- function(fname,
+  num_bootstraps,
+  num_transcripts,
+  est_count_sf) {
+  bs_mat <- matrix(ncol = num_bootstraps, nrow = num_transcripts)
+  for (i in 1:ncol(bs_mat)) {
+    bs_mat[, i] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1)) / est_count_sf
+  }
+  bs_mat <- t(bs_mat)
+  target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  colnames(bs_mat) <- target_id
+
+  bs_mat
 }
 
 #' Read kallisto plaintext output
@@ -273,7 +287,7 @@ gtf_gene_names <- function(gtf_attr) {
 
   for (i in 1:length(all_attr)) {
     j <- 1
-    while ((nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
+    while ( (nchar(gene_id[i]) < 1 || nchar(trans_id[i]) < 1) &&
       j <= length(all_attr[[i]]) ) {
       if (all_attr[[i]][j] == "gene_id") {
         gene_id[i] <- all_attr[[i]][j + 1] %>%
@@ -392,4 +406,31 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
   }
 
   invisible(kal)
+}
+
+#' save a sleuth object
+#'
+#' save a sleuth object
+#'
+#' @param obj a \code{sleuth} object
+#' @param the location to save the object to
+#' @seealso \code{\link{sleuth_load}}, \code{\link{sleuth_deploy}}
+#' @export
+sleuth_save <- function(obj, file) {
+  if (!is(obj, 'sleuth')) {
+    stop('please provide a sleuth object')
+  }
+  saveRDS(obj, file=file)
+}
+
+#' load a sleuth object
+#'
+#' load a sleuth object previously saved with \code{sleuth_save}
+#'
+#' @param file the file to load
+#' @return a \code{sleuth} object
+#' @seealso \code{\link{sleuth_save}}, \code{\link{sleuth_deploy}}
+#' @export
+sleuth_load <- function(file) {
+  readRDS(file)
 }
