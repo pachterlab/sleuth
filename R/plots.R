@@ -645,7 +645,8 @@ plot_bootstrap <- function(obj,
   target_id,
   units = 'est_counts',
   color_by = setdiff(colnames(obj$sample_to_covariates), 'sample'),
-  x_axis_angle = 50
+  x_axis_angle = 50,
+  divide_groups = TRUE
   ) {
   units <- check_quant_mode(obj, units)
 
@@ -655,8 +656,11 @@ plot_bootstrap <- function(obj,
     upper = upper, ymax = max))
   p <- p + geom_boxplot(stat = "identity", aes_string(fill = color_by))
   p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
+  p <- p + ggtitle(transcript)
   p <- p + ylab(units)
-  p <- p + ggtitle(target_id)
+  if (divide_groups) {
+    p <- p + facet_wrap(color_by, switch = 'x', scales = 'free_x')
+  }
 
   p
 }
