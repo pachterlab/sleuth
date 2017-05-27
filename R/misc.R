@@ -54,9 +54,10 @@ sliding_window_grouping <- function(data, x_col, y_col,
   data <- group_by(data, x_group)
 
   res <- do(data, get_quantile(., y_col, lwr, upr, ignore_zeroes))
+  res <- ungroup(res)
   res <- select(res, -c(x_ecdf, x_group))
 
-  ungroup(res)
+  res
 }
 
 #' @export
