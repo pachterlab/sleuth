@@ -15,6 +15,6 @@ design_matrix(obj, which_model = "full")
 the \code{model.matrix} used to fit \code{which_model}
 }
 \description{
-Getter method for extracting a design matrix from a sleuth object
+Accessor method for extracting a design matrix from a sleuth object
 }
 

@@ -6,7 +6,7 @@
 \usage{
 plot_bootstrap(obj, target_id, units = "est_counts",
   color_by = setdiff(colnames(obj$sample_to_covariates), "sample"),
-  x_axis_angle = 50)
+  x_axis_angle = 50, divide_groups = TRUE)
 }
 \arguments{
 \item{obj}{a sleuth object that contains a bootstrap summary (see \code{\link{get_bootstrap_summary}})}

@@ -104,7 +104,7 @@ transform_status.sleuth_model <- function(obj) {
 
 #' Extract design matrix
 #'
-#' Better method for extracting a design matrix from a sleuth object
+#' Accessor method for extracting a design matrix from a sleuth object
 #'
 #' @param obj a \code{sleuth} object
 #' @param which_model a character string of the model

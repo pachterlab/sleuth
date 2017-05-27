@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{extract_model}
 \alias{extract_model}
-\title{extract a model from a sleuth object}
+\title{Extract a model from a sleuth object}
 \usage{
 extract_model(obj, which_model)
 }

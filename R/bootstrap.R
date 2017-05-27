@@ -41,7 +41,11 @@ bootstrap2mat <- function(kal, column = "tpm") {
 
 #' Extract bootstrap for a specific transcript
 #'
-#' Extract bootstrap for a specific transcript
+#' Extract bootstrap for a specific transcript.
+#' CURRENTLY DEPRECATED: Will probably be re implemented in the next version.
+#' Currently not working because of a complete rewrite of the bootstrap code.
+#' If you are interested in getting the bootstraps, you can manually write some code
+#' using `read_kallisto()`. Please make sure to comment in the user group if you are using this function.
 #'
 #' @param obj an object
 #' @param ... arguments passed to other functions
