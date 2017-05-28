@@ -140,8 +140,9 @@ plot_pca <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param sample user input on which sample and which PC's contribute the most
-#' @param PC  principal component to view sample's contribution to that PC
+#' @param sample a character string representing the sample to find the loadings of.
+#' If NULL, then loadings will be computed across all samples (and `pc_input` must be specified).
+#' @param pc_input the principal components to compute loadings for.
 #' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param pc_count # of PC's
 #' @param scale scale or not
@@ -173,7 +174,7 @@ plot_loadings <- function(obj,
   pca_calc <- prcomp(mat, scale = scale)
 
   #sort of hack-y, may wish to fix
-  if (sample == '') {
+  if (!is.null(sample) && sample == '') {
     sample <- NULL
   }
 
@@ -194,24 +195,28 @@ plot_loadings <- function(obj,
 
   #given a PC, which samples contribute the most?
   if (!toggle) {
+    if (is.null(pc_input)) {
+      warning('pc_input being set to first principal component since was not specified.')
+      pc_input <- 1
+    }
     loadings <- pca_calc$x[, pc_input]
     if (pca_loading_abs) {
       loadings <- abs(loadings)
       loadings <- sort(loadings, decreasing = TRUE)
     } else {
-      loadings <-  loadings[order(abs(loadings), decreasing = TRUE)]
+      loadings <- loadings[order(abs(loadings), decreasing = TRUE)]
     }
   }
 
   label_names <- names(loadings)
 
   if (!is.null(pc_count)) {
-      loadings <- loadings[1:pc_count]
-      label_names <- label_names[1:pc_count]
-    } else {
-      loadings <- loadings[1:5]
-      label_names <- label_names[1:5]
-    }
+    loadings <- loadings[1:pc_count]
+    label_names <- label_names[1:pc_count]
+  } else {
+    loadings <- loadings[1:5]
+    label_names <- label_names[1:5]
+  }
 
   dat <- data.frame(pc = label_names, loadings = loadings)
   dat$pc <- factor(dat$pc, levels = unique(dat$pc))
