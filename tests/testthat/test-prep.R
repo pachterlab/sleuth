@@ -23,10 +23,35 @@ test_that("normalization factors", {
 
 test_that("give a design matrix", {
   design_matrix <- matrix(c(0, 0, 0, 1, 1, 1), ncol = 1)
+
+  expect_error(result <- sleuth_prep(study_mapping, design_matrix))
+  expect_error(sleuth_prep(study_mapping, design_matrix[1:5,]))
+
+  colnames(design_matrix) <- c('Intercept')
+  rownames(design_matrix) <- study_mapping$sample
+
   result <- sleuth_prep(study_mapping, design_matrix)
 
   expect_equal(result$design_matrix, design_matrix)
   expect_equal(result$design_matrix, result$full_formula)
 
-  expect_error(sleuth_prep(study_mapping, design_matrix[1:5,]))
+  expect_equal(result$bs_summary, trans_test_data$bs_summary)
+  expect_equal(result$obs_norm, trans_test_data$obs_norm)
+  expect_equal(result$obs_norm_filt, trans_test_data$obs_norm_filt)
+})
+
+test_that("gene level", {
+  expect_error(result <- sleuth_prep(study_mapping, study_formula,
+                                     aggregation_column = "gene_name"))
+  result <- sleuth_prep(study_mapping, study_formula,
+                        target_mapping = target_mapping,
+                        aggregation_column = "gene_name")
+
+  expect_equal(result$bs_summary, gene_test_data$bs_summary)
+  expect_equal(result$obs_norm, gene_test_data$obs_norm)
+  expect_equal(result$obs_norm_filt, gene_test_data$obs_norm_filt)
+
+  expect_warning(result_incomplete <- sleuth_prep(study_mapping, study_formula,
+                        target_mapping = incomplete_mapping,
+                        aggregation_column = "gene_name"))
 })

@@ -27,14 +27,17 @@
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result
 #' @export
-#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}
+#' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}, \code{\link{sleuth_deploy}}
 sleuth_live <- function(obj, settings = sleuth_live_settings(),
   options = list(port = 42427), ...) {
   stopifnot( is(obj, 'sleuth') )
   if ( !require('shiny') ) {
-    stop("'sleuth_interact()' requires 'shiny'. Please install it using
+    stop("'sleuth_live()' requires 'shiny'. Please install it using
       install.packages('shiny')")
   }
+
+  if (obj$gene_mode) counts_unit <- "scaled_reads_per_base" else
+    counts_unit <- "est_counts"
 
   # set up for the different types of tests
   poss_covars <- dplyr::setdiff(
@@ -54,9 +57,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     valid_test_types <- c(valid_test_types, c('likelihood ratio' = 'lrt'))
   }
 
-  if (length(valid_test_types) == 0) {
-    stop("We found no valid tests. Please add some tests and rerun sleuth_live()")
-  }
+  # if (length(valid_test_types) == 0) {
+  #   stop("We found no valid tests. Please add some tests and rerun sleuth_live()")
+  # }
 
   p_layout <- navbarPage(
     a('sleuth', href = 'http://pachterlab.github.io/sleuth', target = '_blank',
@@ -121,8 +124,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             column(3,
                 selectInput('gv_var_units',
                   label = 'units: ',
-                  choices = c('est_counts', 'tpm'),
-                  selected = 'est_counts')),
+                  choices = c(counts_unit, 'tpm'),
+                  selected = counts_unit)),
             column(3,
                 uiOutput('gv_gene_column')
             )
@@ -150,7 +153,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             textInput('hm_transcripts', label = 'enter target ids: ', value = '')
               ),
           column(3,
-            selectInput('hm_units', label = 'units:', choices = c('est_counts','tpm'), selected = 'tpm')
+            selectInput('hm_units', label = 'units:', choices = c(counts_unit, 'tpm'), selected = 'tpm')
               ),
           column(3,
             textInput('hm_trans', label = 'tranform: ', value = 'log')
@@ -161,7 +164,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             actionButton('hm_go', 'view')
           )
         ),
-        tags$style(type='text/css', "#hm_go {margin-top: 25px}"),
+        tags$style(type = 'text/css', "#hm_go {margin-top: 25px}"),
         fluidRow(plotOutput('hm_plot')),
         fluidRow(uiOutput("download_hm_plt_button"))
     ),
@@ -279,11 +282,17 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
             column(3,
               selectInput('bs_var_units', label = 'units: ',
-                choices = c('est_counts', 'tpm'),
-                selected = 'est_counts'))
+                choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
+                            else { names(obj$bs_quants[[1]]) } ),
+                selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
+                            else { names(obj$bs_quants[[1]])[1] })
+                ))
             ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plotOutput('bs_var_plt')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0)
+                    { HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least one of extra_bootstrap_summary or read_bootstrap_tpm to use this feature.<br>') }
+                    else { plotOutput('bs_var_plt') }
+             )),
           fluidRow(
             div(align = "right", style = "margin-right:15px; margin-bottom:10px",
               downloadButton("download_bs_var_plt", "Download Plot"))
@@ -360,8 +369,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             numericInput('pca_point_size', label = 'size: ', value = 3)),
           column(2,
             selectInput('pca_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts'))
+              choices = c(counts_unit, 'tpm'),
+              selected = counts_unit))
         ),
         fluidRow(
           column(2,
@@ -455,7 +464,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
           column(2,
             selectInput('cond_dens_units', label = 'units: ',
-              choices = c('tpm', 'est_counts'),
+              choices = c('tpm', counts_unit),
               selected = 'tpm')),
           column(2,
             checkboxInput('cond_dens_filt', label = 'filter',
@@ -649,8 +658,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         fluidRow(
           column(2,
             selectInput('scatter_units', label = 'units: ',
-              choices = c('est_counts', 'tpm'),
-              selected = 'est_counts')),
+              choices = c(counts_unit, 'tpm'),
+              selected = counts_unit)),
           column(2,
             checkboxInput('scatter_filt', label = 'filter',
               value = TRUE)),
@@ -1235,7 +1244,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       result
     })
     output$table_type <- renderUI({
-      if(!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping)) {
         selectInput('pop_genes', label = 'table type: ',
           choices = list('target table' = 1, 'gene table' = 2),
           selected = 1)
@@ -1243,7 +1252,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$group_by <- renderUI({
-      if(!is.null(input$pop_genes) && input$pop_genes == 2) {
+      if (!is.null(input$pop_genes) && input$pop_genes == 2) {
         selectInput('mappingGroup',
           label = 'group by: ',
           choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
@@ -1258,7 +1267,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         wb <- possible_tests[1]
       }
 
-      if(!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
+      if (!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
           mg <- input$mappingGroup
           test_table <- sleuth_gene_table(obj, wb, input$settings_test_type,
             input$which_model_de, mg)
@@ -1291,7 +1300,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         possible_tests <- list_tests(obj, input$settings_test_type)
         which_test <- possible_tests[1]
       }
-      if(!is.null(input$mapping_group_lrt) && (input$pop_genes_lrt == 2)) {
+      if (!is.null(input$mapping_group_lrt) && (input$pop_genes_lrt == 2)) {
           mg <- input$mapping_group_lrt
           sleuth_gene_table(obj, which_test, input$settings_test_type,
             which_group = mg)
@@ -1301,14 +1310,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$table_type_lrt <- renderUI({
-      if(!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping)) {
         selectInput('pop_genes_lrt', label = 'table type: ',
           choices = list('transcript table' = 1, 'gene table' = 2),
           selected = 1)
       }
     })
     output$group_by_lrt <- renderUI({
-      if(!is.null(input$pop_genes_lrt) && input$pop_genes_lrt == 2) {
+      if (!is.null(input$pop_genes_lrt) && input$pop_genes_lrt == 2) {
         selectInput('mapping_group_lrt',
           label = 'group by: ',
           choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
@@ -1345,13 +1354,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     ### Gene Viewer
     # the name of the gene supplied
     gv_var_text <- eventReactive(input$gv_go, {
-      if(!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping)) {
           input$gv_var_input
       }
     })
 
     output$gv_gene_column <- renderUI({
-      if(!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping)) {
         selectInput('gv_gene_colname',
           label = 'genes from: ',
           choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
@@ -1388,7 +1397,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$gv_var_plts <- renderUI({
       gv_plot_list <- lapply(1:input$gv_maxplots,
         function(i) {
-          gv_plotname <- paste("plot", i, sep="")
+          gv_plotname <- paste("plot", i, sep = "")
           plotOutput(gv_plotname)
         })
 
@@ -1398,9 +1407,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       for (i in 1:15) {
         local({
           my_i <- i
-          gv_plotname <- paste("plot", my_i, sep="")
+          gv_plotname <- paste("plot", my_i, sep = "")
             output[[gv_plotname]] <- renderPlot({
-               if(!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i])) {
+               if (!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i])) {
                  plot_bootstrap(obj,
                    gv_var_list()[my_i],
                    units = input$gv_var_units,
@@ -1411,10 +1420,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         }
 
     output$no_genes_message <- renderUI({
-      if(is.null(obj$target_mapping)) {
+      if (is.null(obj$target_mapping)) {
         HTML('&nbsp&nbsp&nbsp&nbspYou need to add genes to your sleuth object to use the gene viewer.<br>',
         '&nbsp&nbsp&nbsp&nbspTo add genes to your sleuth object, see the ',
-        '<a href = "http://pachterlab.github.io/sleuth/starting.html">sleuth getting started guide</a>.')
+        '<a href = "https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html">sleuth getting started guide</a>.')
       }
     })
 
@@ -1426,7 +1435,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     default_hm_plot_height <- 400
 
     hm_plot_height <- function() {
-        if(length(hm_transcripts()) > 5) {
+        if (length(hm_transcripts()) > 5) {
             length(hm_transcripts()) * 60
         } else {
             default_hm_plot_height
@@ -1566,7 +1575,7 @@ enclosed_brush <- function(df, brush) {
   xbool <- brush$xmin <= df[[xvar]] & df[[xvar]] <= brush$xmax
   ybool <- brush$ymin <= df[[yvar]] & df[[yvar]] <= brush$ymax
 
-  df[xbool & ybool,]
+  df[xbool & ybool, ]
 }
 
 #' settings for sleuth_live
@@ -1584,4 +1593,45 @@ sleuth_live_settings <- function(test_type = 'wt') {
   result$test_type <- test_type
 
   result
+}
+
+#' deploy a sleuth object
+#'
+#' prepare a sleuth object to be deployed in a shiny application.
+#'
+#' creates a directory \code{path} and creates a valid shiny application.
+#'
+#' \itemize{
+#'  \item saves a sleuth object using \code{\link{sleuth_save}}
+#'  \item creates a file \code{app.R} loading the sleuth object and calling \code{\link{sleuth_live}}
+#' }
+#'
+#' @param obj a \code{sleuth} object
+#' @param base_dir the base directory in which to save a shiny application
+#' @param overwrite if \code{TRUE}, overwrite everything at \code{bayes_dir}
+#' @seealso \code{\link{sleuth_save}}, \code{\link{sleuth_load}}, \code{\link{sleuth_live}}
+#' @export
+sleuth_deploy <- function(obj, base_dir, overwrite = FALSE) {
+  obj_name <- 'so.rds'
+
+  if (!overwrite) {
+    if (file.exists(file.path(base_dir, obj_name)) &&
+      file.exists(file.path(base_dir, 'app.R'))) {
+      stop('a sleuth shiny object already exists at this location. Either specify a different directory or set "overwrite = TRUE"')
+    }
+  }
+
+  dir.create(base_dir, showWarnings = FALSE, recursive = TRUE, mode = '0755')
+
+  sleuth_save(obj, file = file.path(base_dir, obj_name))
+  commands <- paste(
+    "library(sleuth)",
+    "",
+    paste0("so <- sleuth_load('", obj_name, "')"),
+    "sleuth_live(so)",
+    sep = "\n")
+
+  write(commands, file = file.path(base_dir, 'app.R'))
+
+  invisible(NULL)
 }

@@ -25,7 +25,7 @@ get_quantile <- function(data, which_col, lwr, upr, ignore_zeroes = TRUE) {
   data$iqr <- valid
 
   if (ignore_zeroes) {
-    valid <- data[,which_col] > 0
+    valid <- data[, which_col] > 0
     if (sum(valid) == 0) {
       # in this case, everything in this bin is zero, so we just return the
       # entire bin
@@ -36,7 +36,7 @@ get_quantile <- function(data, which_col, lwr, upr, ignore_zeroes = TRUE) {
     data$iqr[!valid] <- FALSE
   }
 
-  data$iqr[valid] <- data[valid,which_col] %>%
+  data$iqr[valid] <- data[valid, which_col] %>%
     ecdf(.)(.) %>%
     ifelse(lwr <= . & . <= upr)
 
@@ -49,21 +49,22 @@ sliding_window_grouping <- function(data, x_col, y_col,
 
   data <- as.data.frame(data)
 
-  data <- mutate(data,x_ecdf = ecdf(data[,x_col])(data[,x_col]))
+  data <- mutate(data, x_ecdf = ecdf(data[, x_col])(data[, x_col]))
   data <- mutate(data, x_group = cut(x_ecdf, n_bins))
   data <- group_by(data, x_group)
 
   res <- do(data, get_quantile(., y_col, lwr, upr, ignore_zeroes))
+  res <- ungroup(res)
   res <- select(res, -c(x_ecdf, x_group))
 
-  ungroup(res)
+  res
 }
 
 #' @export
 shrink_df <- function(data, shrink_formula, filter_var) {
   data <- as.data.frame(data)
   s_formula <- substitute(shrink_formula)
-  fit <- eval(loess(s_formula, data[data[,filter_var],]))
+  fit <- eval(loess(s_formula, data[data[, filter_var], ]))
   data.frame(data, shrink = predict(fit, data))
 }
 
@@ -119,19 +120,46 @@ apply_all_pairs <- function(mat, fun) {
 
   all_pairs <- utils::combn(ids, 2)
   for (i in 1:ncol(all_pairs)) {
-    j <- all_pairs[1,i]
-    k <- all_pairs[2,i]
+    j <- all_pairs[1, i]
+    k <- all_pairs[2, i]
 
-    cur <- fun(mat[,j], mat[,k])
+    cur <- fun(mat[, j], mat[, k])
 
-    res[j,k] <- cur
-    res[k,j] <- cur
+    res[j, k] <- cur
+    res[k, j] <- cur
   }
 
   for (i in 1:length(ids)) {
-    res[i,i] <- fun(mat[,i], mat[,i])
+    res[i, i] <- fun(mat[, i], mat[, i])
   }
 
 
   res
+}
+
+# Check if the number of cores is a sane number
+# Also check for situations where cores needs to be set because
+# of the user environment
+check_num_cores <- function(cores) {
+  if (is.null(cores) || is.na(suppressWarnings(as.integer(cores))) ||
+       cores < 1 || cores > parallel::detectCores()) {
+    warning("'num_cores' must be an integer between 1 and the number ",
+            "of cores on your machine. Since the value given was '", num_cores,
+            "', 'num_cores' has been set to 1 so that your analysis can run.")
+    cores <- 1
+  }
+
+  # The technique used here to test if the user is running sleuth from
+  # RStudio was taken from the following stackoverflow thread:
+  # https://stackoverflow.com/a/17804414
+  if(cores > 1 && Sys.getenv("RSTUDIO") == "1") {
+    warning("It appears that you are running Sleuth from within Rstudio.\n",
+            "Because of concerns with forking processes from a GUI, ",
+            "'num_cores' is being set to 1.\nIf you wish to take ",
+            "advantage of multiple cores, please consider running ",
+            "sleuth from the command line.")
+    cores <- 1
+  }
+
+  cores
 }

@@ -50,6 +50,11 @@ plot_mean_var <- function(obj,
       substitute(obj), ')')
   }
 
+  if(!obj$fits[[which_model]]$transform_synced) {
+    stop("Model '", which_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
+  }
+
   df <- obj$fits[[which_model]]$summary
 
   p <- ggplot(df, aes(mean_obs, sqrt(sqrt(sigma_sq_pmax))))
@@ -73,7 +78,7 @@ plot_mean_var <- function(obj,
 #' @param pc_x integer denoting the principle component to use for the x-axis
 #' @param pc_y integer denoting the principle component to use for the y-axis
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param text_labels if TRUE, use text labels instead of points
 #' @param color_by a variable to color by. if NA, then will leave all as 'black'
 #' @return a gpplot object
@@ -89,6 +94,8 @@ plot_pca <- function(obj,
   point_alpha = 0.8,
   ...) {
   stopifnot( is(obj, 'sleuth') )
+
+  units <- check_quant_mode(obj, units)
 
   mat <- NULL
   if (use_filtered) {
@@ -133,9 +140,10 @@ plot_pca <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param sample user input on which sample and which PC's contribute the most
-#' @param PC  principal component to view sample's contribution to that PC
-#' @param units either 'est_counts' or 'tpm'
+#' @param sample a character string representing the sample to find the loadings of.
+#' If NULL, then loadings will be computed across all samples (and `pc_input` must be specified).
+#' @param pc_input the principal components to compute loadings for.
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param pc_count # of PC's
 #' @param scale scale or not
 #' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
@@ -154,6 +162,8 @@ plot_loadings <- function(obj,
   stopifnot( is(obj, 'sleuth') )
   #filtering?? doesn't work right now
 
+  units <- check_quant_mode(obj, units)
+
   # mat <- NULL
   # if (use_filtered) {
   #   mat <- spread_abundance_by(obj$obs_norm_filt, units)
@@ -164,7 +174,7 @@ plot_loadings <- function(obj,
   pca_calc <- prcomp(mat, scale = scale)
 
   #sort of hack-y, may wish to fix
-  if (sample == '') {
+  if (!is.null(sample) && sample == '') {
     sample <- NULL
   }
 
@@ -174,7 +184,7 @@ plot_loadings <- function(obj,
   #given a sample
   if (!is.null(sample)) {
     toggle <- TRUE
-    loadings <- pca_calc$x[sample,]
+    loadings <- pca_calc$x[sample, ]
     if (pca_loading_abs) {
       loadings <- abs(loadings)
       loadings <- sort(loadings, decreasing = TRUE)
@@ -185,24 +195,28 @@ plot_loadings <- function(obj,
 
   #given a PC, which samples contribute the most?
   if (!toggle) {
-    loadings <- pca_calc$x[,pc_input]
+    if (is.null(pc_input)) {
+      warning('pc_input being set to first principal component since was not specified.')
+      pc_input <- 1
+    }
+    loadings <- pca_calc$x[, pc_input]
     if (pca_loading_abs) {
       loadings <- abs(loadings)
       loadings <- sort(loadings, decreasing = TRUE)
     } else {
-      loadings <-  loadings[order(abs(loadings), decreasing = TRUE)]
+      loadings <- loadings[order(abs(loadings), decreasing = TRUE)]
     }
   }
 
   label_names <- names(loadings)
 
   if (!is.null(pc_count)) {
-      loadings <- loadings[1:pc_count]
-      label_names <- label_names[1:pc_count]
-    } else {
-      loadings <- loadings[1:5]
-      label_names <- label_names[1:5]
-    }
+    loadings <- loadings[1:pc_count]
+    label_names <- label_names[1:pc_count]
+  } else {
+    loadings <- loadings[1:5]
+    label_names <- label_names[1:5]
+  }
 
   dat <- data.frame(pc = label_names, loadings = loadings)
   dat$pc <- factor(dat$pc, levels = unique(dat$pc))
@@ -234,7 +248,7 @@ plot_loadings <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param pca_number user input on how many PC to display, otherwise default is 5
 #' @param scale determines scaling
 #' @param PC_relative gives the option to compare subsequent principal components and their contributions
@@ -247,6 +261,8 @@ plot_pc_variance <- function(obj,
   scale = FALSE,
   PC_relative = NULL,
   ...) {
+
+  units <- check_quant_mode(obj, units)
 
   # mat <- NULL
   # if (use_filtered) {
@@ -272,14 +288,14 @@ plot_pc_variance <- function(obj,
   }
   pc_df <- data.frame(PC_count = 1:colsize, var = var_explained) #order here matters
 
-  if(!is.null(PC_relative)) {
+  if (!is.null(PC_relative)) {
     pc_df <- data.frame(PC_count = 1:length(eigenvalues), var = var_explained2)
-    pc_df <- pc_df[PC_relative:nrow(pc_df),]
+    pc_df <- pc_df[PC_relative:nrow(pc_df), ]
 
     if (!is.null(pca_number) && (PC_relative + pca_number <= length(eigenvalues))) {
-      pc_df <- pc_df[1:pca_number,]
+      pc_df <- pc_df[1:pca_number, ]
     } else if (PC_relative + 5 >= length(eigenvalues)) {
-      pc_df <- pc_df[1:nrow(pc_df),]
+      pc_df <- pc_df[1:nrow(pc_df), ]
     }
   }
 
@@ -299,7 +315,7 @@ plot_pc_variance <- function(obj,
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param grouping a string from the columns of \code{sample_to_covariates} in
 #' the sleuth object for which to group and color by
@@ -314,6 +330,8 @@ plot_group_density <- function(obj,
   grouping = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   offset = 1
   ) {
+
+  units <- check_quant_mode(obj, units)
 
   res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
   # res <- NULL
@@ -354,7 +372,7 @@ plot_group_density <- function(obj,
 #' @param which_sample a character string matching a sample in
 #' \code{obj$sample_to_covariates}
 #' @param use_filtered if TRUE, use filtered data. Otherwise use all data
-#' @param units either \code{'est_counts'} or \code{'tpm'}
+#' @param units either \code{'est_counts'} (\code{'scaled_reads_per_base'} for gene_mode) or \code{'tpm'}
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param offset the offset so that transformations such as log don't compute
 #' -Inf. If NULL, then will not add an offset
@@ -368,6 +386,9 @@ plot_sample_density <- function(obj,
   offset = 1
   ) {
   res <- NULL
+
+  units <- check_quant_mode(obj, units)
+
   if (use_filtered) {
     res <- obj$obs_norm_filt
   } else {
@@ -398,7 +419,7 @@ plot_sample_density <- function(obj,
 #' @param sample_x the string corresponding to the sample name in \code{obj$sample_to_covariates}
 #' @param sample_y same as \code{sample_x} but for the y-axis
 #' @param use_filtered if TRUE, use filtered data. otherwise, use all data
-#' @param units either 'est_counts' or 'tpm'
+#' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param offset a linear offset to help deal with zeroes if transforming the abundances
 #' @param point_alpha the alpha on the points
 #' @param xy_line if TRUE, plot the xy_line
@@ -424,6 +445,8 @@ plot_scatter <- function(obj,
   ylim = NULL
   ) {
 
+  units <- check_quant_mode(obj, units)
+
   abund <- NULL
   if (use_filtered) {
     abund <- spread_abundance_by(obj$obs_norm_filt, units,
@@ -438,19 +461,22 @@ plot_scatter <- function(obj,
   abund <- dplyr::mutate(abund, target_id = rownames(abund))
 
   if (!is.null(trans)) {
-    sample_x <- paste0( trans, '( ', sample_x)
-    sample_y <- paste0( trans, '( ', sample_y)
+    sample_x <- paste0( trans, '( `', sample_x)
+    sample_y <- paste0( trans, '( `', sample_y)
   }
 
   if ( (!is.null(offset) && !is.na(offset)) && offset != 0 ) {
     off <- deparse(eval(offset))
-    sample_x <- paste0(sample_x, ' + ', off)
-    sample_y <- paste0(sample_y, ' + ', off)
+    sample_x <- paste0(sample_x, '` + ', off)
+    sample_y <- paste0(sample_y, '` + ', off)
   }
 
-  if (!is.null(trans)) {
+  if (!is.null(trans) & !is.null(offset)) {
     sample_x <- paste0(sample_x, ' )')
     sample_y <- paste0(sample_y, ' )')
+  } else {
+    sample_x <- paste0(sample_x, '` )')
+    sample_y <- paste0(sample_y, '` )')
   }
 
   p <- ggplot(abund, aes_string(sample_x, sample_y))
@@ -501,6 +527,11 @@ plot_vars <- function(obj,
   highlight_color = 'green'
   ) {
   stopifnot( is(obj, 'sleuth') )
+
+  if(!obj$fits[[which_model]]$transform_synced) {
+    stop("Model '", which_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
+  }
 
   cur_summary <- NULL
 
@@ -606,27 +637,36 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
 
 #' Plot bootstrap summary
 #'
-#' Get a d
-#' @param bs_df a bootstrap summary data.frame from \code{summarize_bootstrap}
-#' @param ... additional arguments to `geom_point`
+#' Plot the normalized bootstraps across all samples.
+#'
+#' @param obj a sleuth object that contains a bootstrap summary (see \code{\link{get_bootstrap_summary}})
+#' @param target_id a character vector of length 1 indicating the target_id (transcript or gene name depending on aggregation mode)
+#' @param units a character vector of either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
+#' @param color_by a column in the sample to covariates to color by
+#' @param x_axis_angle the angle of the x-axis labels
 #' @return a ggplot2 object
 #' @export
 plot_bootstrap <- function(obj,
-  transcript,
+  target_id,
   units = 'est_counts',
   color_by = setdiff(colnames(obj$sample_to_covariates), 'sample'),
-  x_axis_angle = 50
+  x_axis_angle = 50,
+  divide_groups = TRUE
   ) {
+  units <- check_quant_mode(obj, units)
 
-  df <- get_bootstraps(obj, transcript)
+  df <- get_bootstrap_summary(obj, target_id, units)
 
-  if (nrow(df) == 0) {
-    stop("Couldn't find transcript ", transcript)
-  }
-  p <- ggplot(df, aes_string('sample', units))
-  p <- p + geom_boxplot(aes_string(fill = color_by))
+  p <- ggplot(df, aes(x = sample, ymin = min, lower = lower, middle = mid,
+    upper = upper, ymax = max))
+  p <- p + geom_boxplot(stat = "identity", aes_string(fill = color_by))
   p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
-  p <- p + ggtitle(transcript)
+  p <- p + ggtitle(target_id)
+  p <- p + ylab(units)
+  if (divide_groups) {
+    p <- p + facet_wrap(color_by, switch = 'x', scales = 'free_x')
+  }
+
   p
 }
 
@@ -865,7 +905,7 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
 #'
 #' @param transcripts a vector of strings containing a list of transcripts to be plotted in a heatmap
 #' @param obj a \code{sleuth} object
-#' @param units a string specifying which units to use, either tpm or est_counts
+#' @param units a string specifying which units to use, either tpm or est_counts (scaled_reads_per_base for gene_mode)
 #' @param trans a string specifying a function to transform the data by
 #' @return a \code{ggplot} object
 #' @export
@@ -874,15 +914,18 @@ plot_transcript_heatmap <- function(obj,
   units = 'tpm',
   trans = 'log',
   offset = 1) {
+
+  units <- check_quant_mode(obj, units)
+
   if(!all(transcripts %in% obj$obs_norm$target_id)) {
     stop("Couldn't find the following transcripts: ",
       paste(transcripts[!(transcripts %in% obj$obs_norm$target_id)], collapse = ", "),
       "\n\tIt is highly likely that some of them were filtered out.")
   }
 
-  tabd_df <- obj$obs_norm[obj$obs_norm$target_id %in% transcripts,]
+  tabd_df <- obj$obs_norm[obj$obs_norm$target_id %in% transcripts, ]
 
-  if(units == 'tpm') {
+  if (units == 'tpm') {
     tabd_df <- dplyr::select(tabd_df, target_id, sample, tpm)
     tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
   } else if (units == 'est_counts') {
@@ -948,16 +991,16 @@ ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
      legend.direction = 'vertical',
      legend.position = 'top',
      legend.background = element_rect(fill = "gray95", colour = "black", size = 0.5, linetype = 1),
-     axis.title=element_blank())
+     axis.title = element_blank())
     if (rowNames)
-        p <- p + theme(axis.text.x=element_text(angle = 90, size=14))
+        p <- p + theme(axis.text.x = element_text(angle = 90, size = 14))
     else
-        p <- p + theme(axis.text.x=element_text(size=0))
+        p <- p + theme(axis.text.x = element_text(size = 0))
 
     if (colNames)
-        p <- p + theme(axis.text.y=element_text(size=14))
+        p <- p + theme(axis.text.y = element_text(size = 14))
     else
-        p <- p + theme(axis.text.y=element_text(size=0))
+        p <- p + theme(axis.text.y = element_text(size = 0))
 
     p
     #list(plot = p, rowOrder = rowOrder, colOrder = colOrder)

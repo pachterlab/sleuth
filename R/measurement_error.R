@@ -52,6 +52,10 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   if ( is.null(formula) ) {
     formula <- obj$full_formula
+    if (is.null(formula)) {
+      stop("'formula' was not specified and the 'full' model was not specified in `sleuth_prep`.",
+        " Please specify a formula and a label.")
+    }
   } else if ( !is(formula, 'formula') && !is(formula, 'matrix') ) {
     stop("'", substitute(formula), "' is not a valid 'formula' or 'matrix'")
   }
@@ -113,7 +117,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   msg('computing variance of betas')
   beta_covars <- lapply(1:nrow(l_smooth),
     function(i) {
-      row <- l_smooth[i,]
+      row <- l_smooth[i, ]
       with(row,
           covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
         )
@@ -129,7 +133,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     summary = l_smooth,
     beta_covars = beta_covars,
     formula = formula,
-    design_matrix = X)
+    design_matrix = X,
+    transform_synced = TRUE)
 
   class(obj$fits[[fit_name]]) <- 'sleuth_model'
 
@@ -182,6 +187,11 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   if ( !model_exists(obj, which_model) ) {
     stop("'", which_model, "' is not a valid model. Please see models(",
       substitute(obj), ") for a list of fitted models")
+  }
+
+  if(!obj$fits[[which_model]]$transform_synced) {
+    stop("Model '", which_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
   }
 
   d_matrix <- obj$fits[[which_model]]$design_matrix
@@ -260,14 +270,12 @@ covar_beta <- function(sigma, X, A) {
 # @param bs_summary a list from \code{bs_sigma_summary}
 # @return a list with a bunch of objects that are useful for shrinking
 me_model_by_row <- function(obj, design, bs_summary) {
-  # stopifnot( is(obj, "sleuth") )
-
   stopifnot( all.equal(names(bs_summary$sigma_q_sq), rownames(bs_summary$obs_counts)) )
   stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
-      me_model(design, bs_summary$obs_counts[i,], bs_summary$sigma_q_sq[i])
+      me_model(design, bs_summary$obs_counts[i, ], bs_summary$sigma_q_sq[i])
     })
   names(models) <- rownames(bs_summary$obs_counts)
 
@@ -303,7 +311,7 @@ me_heteroscedastic_by_row <- function(obj, design, samp_bs_summary, obs_counts) 
 
   models <- lapply(1:nrow(bs_summary$obs_counts),
     function(i) {
-      res <- me_white_model(design, obs_counts[i,], sigma_q_sq[i,], A)
+      res <- me_white_model(design, obs_counts[i, ], sigma_q_sq[i, ], A)
       res$df$target_id <- rownames(obs_counts)[i]
       res
     })
@@ -386,56 +394,57 @@ reads_per_base_transform <- function(reads_table, scale_factor_input,
   mapping = NULL,
   norm_by_length = TRUE) {
 
+  reads_table <- data.table::as.data.table(reads_table)
+
   if (is(scale_factor_input, 'data.frame')) {
-    # message('USING NORMALIZATION BY EFFECTIVE LENGTH')
-    # browser()
-    reads_table <- dplyr::left_join(
-      data.table::as.data.table(reads_table),
-      data.table::as.data.table(dplyr::select(scale_factor_input, target_id, sample, scale_factor)),
-      by = c('sample', 'target_id'))
+    scale_factor_input <- data.table::as.data.table(dplyr::select(scale_factor_input, target_id,
+                                                                  sample, scale_factor))
+    reads_table <- merge(reads_table, scale_factor_input,
+      by = c('sample', 'target_id'), all.x=T)
   } else {
-    reads_table <- dplyr::mutate(reads_table, scale_factor = scale_factor_input)
+    reads_table[, scale_factor := scale_factor_input]
   }
   # browser()
-  reads_table <- dplyr::mutate(reads_table,
-    reads_per_base = est_counts / eff_len,
-    scaled_reads_per_base = scale_factor * reads_per_base
-    )
-
-  reads_table <- data.table::as.data.table(reads_table)
+  reads_table[, reads_per_base := est_counts / eff_len]
+  reads_table[, scaled_reads_per_base := scale_factor * reads_per_base]
 
   if (!is.null(collapse_column)) {
     mapping <- data.table::as.data.table(mapping)
     # old stuff
     if (!(collapse_column %in% colnames(reads_table))) {
-      reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
+      reads_table <- merge(reads_table, mapping, by = 'target_id', all.x=T)
     }
     # browser()
     # reads_table <- dplyr::left_join(reads_table, mapping, by = 'target_id')
 
     rows_to_remove <- !is.na(reads_table[[collapse_column]])
-    reads_table <- dplyr::filter(reads_table, rows_to_remove)
+    reads_table <- reads_table[rows_to_remove]
     if ('sample' %in% colnames(reads_table)) {
-      reads_table <- dplyr::group_by_(reads_table, 'sample', collapse_column)
+      reads_table <- reads_table[, j = list(scaled_reads_per_base = sum(scaled_reads_per_base)),
+                  by = list(sample, eval(parse(text=collapse_column)))]
     } else {
-      reads_table <- dplyr::group_by_(reads_table, collapse_column)
+      reads_table <- reads_table[, j = list(scaled_reads_per_base = sum(scaled_reads_per_base)),
+                  by = eval(parse(text=collapse_column))]
     }
 
-    reads_table <- dplyr::summarize(reads_table,
-      scaled_reads_per_base = sum(scaled_reads_per_base))
-    data.table::setnames(reads_table, collapse_column, 'target_id')
+    data.table::setnames(reads_table, 'parse', 'target_id')
   }
 
   as_df(reads_table)
 }
 
-gene_summary <- function(obj, which_column, transform = identity, norm_by_length = TRUE) {
+gene_summary <- function(obj, which_column, transform = identity,
+                         norm_by_length = TRUE, num_cores=2) {
   # stopifnot(is(obj, 'sleuth'))
   msg(paste0('aggregating by column: ', which_column))
+  apply_function <- if (num_cores == 1) {
+    lapply
+  } else {
+    function(x, y) parallel::mclapply(x, y, mc.cores = num_cores)
+  }
   obj_mod <- obj
   if (norm_by_length) {
     tmp <- obj$obs_raw
-    # tmp <- as.data.table(tmp)
     tmp <- dplyr::left_join(
       data.table::as.data.table(tmp),
       data.table::as.data.table(obj$target_mapping),
@@ -445,7 +454,6 @@ gene_summary <- function(obj, which_column, transform = identity, norm_by_length
   } else {
     scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
   }
-  # scale_factor <- median(obj_mod$obs_norm_filt$eff_len)
   obj_mod$obs_norm_filt <- reads_per_base_transform(obj_mod$obs_norm_filt,
     scale_factor, which_column, obj$target_mapping, norm_by_length)
   obj_mod$obs_norm <- reads_per_base_transform(obj_mod$obs_norm,
@@ -454,12 +462,14 @@ gene_summary <- function(obj, which_column, transform = identity, norm_by_length
   obs_counts <- obs_to_matrix(obj_mod, "scaled_reads_per_base")
   obs_counts <- transform(obs_counts)
 
-  obj_mod$kal <- parallel::mclapply(seq_along(obj_mod$kal),
+  msg("starting mclapply process now")
+  obj_mod$kal <- lapply(seq_along(obj_mod$kal),
     function(i) {
       k <- obj_mod$kal[[i]]
       current_sample <- obj_mod$sample_to_covariates$sample[i]
       msg(paste('aggregating across sample: ', current_sample))
-      k$bootstrap <- lapply(k$bootstrap, function(b) {
+      k$bootstrap <- apply_function(seq_along(k$bootstrap), function(j) {
+        b <- k$bootstrap[[j]]
         b <- dplyr::mutate(b, sample = current_sample)
         reads_per_base_transform(b, scale_factor, which_column,
           obj$target_mapping, norm_by_length)

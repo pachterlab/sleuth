@@ -66,6 +66,16 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
   model_exists(obj, null_model)
   model_exists(obj, alt_model)
 
+  if(!obj$fits[[alt_model]]$transform_synced) {
+    stop("Model '", alt_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
+  }
+
+  if(!obj$fits[[null_model]]$transform_synced) {
+    stop("Model '", null_model, "' was not computed using the sleuth object's",
+         " current transform function. Please rerun sleuth_fit for this model.")
+  }
+
   if ( !likelihood_exists(obj, null_model) ) {
     obj <- compute_likelihood(obj, null_model)
   }
@@ -90,7 +100,7 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
     test_stat = test_statistic, pval = p_value)
   result <- dplyr::mutate(result, qval = p.adjust(pval, method = "BH"))
   model_info <- data.table::data.table(obj$fits[[null_model]]$summary)
-  model_info <- dplyr::select(model_info, -c(x_group, iqr))
+  model_info <- dplyr::select(model_info, -c(iqr))
   result <- dplyr::left_join(
     data.table::data.table(result),
     model_info,

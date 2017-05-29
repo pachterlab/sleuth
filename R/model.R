@@ -54,7 +54,7 @@ models.sleuth <- function(obj, verbose = TRUE) {
   # TODO: output a new in between models for readability
   if (verbose) {
     for (x in names(obj$fits)) {
-      cat('[ ', x,' ]\n')
+      cat('[ ', x, ' ]\n')
       models(obj$fits[[x]])
     }
   }
@@ -68,9 +68,43 @@ models.sleuth_model <- function(obj) {
   print(obj)
 }
 
+#' Check Transform Sync Status of Sleuth Fits
+#'
+#' This method prints out the sync status for all fits of \code{sleuth} object
+#' If the sleuth object's transform function was changed after sleuth_fit was used,
+#' the user will need to redo sleuth_fit for any fits already done.
+#'
+#' @param obj a \code{sleuth} object.
+#' @return a print out of each fit with the transform sync status.
+#' @export
+transform_status <- function(obj) {
+  useMethod('transform_status')
+}
+
+#' @export
+transform_status.sleuth <- function(obj, verbose=TRUE) {
+  if (is.null(obj$fits))
+    stop("sleuth obj has no fits.")
+
+  if (verbose) {
+    for (x in names(obj$fits)) {
+      cat('[ ', x, ' ]\n')
+      models(obj$fits[[x]]$transform_synced)
+    }
+  }
+
+
+  invisible(obj$fits)
+}
+
+#' @export
+transform_status.sleuth_model <- function(obj) {
+  print(obj$transform_synced)
+}
+
 #' Extract design matrix
 #'
-#' Getter method for extracting a design matrix from a sleuth object
+#' Accessor method for extracting a design matrix from a sleuth object
 #'
 #' @param obj a \code{sleuth} object
 #' @param which_model a character string of the model
@@ -330,7 +364,50 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       data.table::as.data.table(obj$target_mapping),
       by = 'target_id')
   }
+
+  if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {
+    # after removing the target_id column
+    # there are several redundant columns for each gene
+    # this line gets the unique line for each gene
+    target_mapping <- unique(dplyr::select(
+                               obj$target_mapping,
+                               -target_id))
+    # this line uses dplyr's "left_join" syntax for "by"
+    # to match "target_id" from the "res" table,
+    # and the gene_column from the target_mapping table.
+    res <- dplyr::left_join(data.table::as.data.table(res),
+                            data.table::as.data.table(target_mapping),
+                            by = c("target_id" = obj$gene_column))
+  }
+
   res <- as_df(res)
 
   dplyr::arrange(res, qval)
+}
+
+#' Extract a model from a sleuth object
+#'
+#' This function extracts the parameter estimates from a sleuth model after it
+#' has been fit with \code{\link{sleuth_fit}}.
+#' @param obj a sleuth object.
+#' @param which_model a model fitted with \code{\link{sleuth_fit}}.
+#' @return a data frame including a column for the target_id, the term (which coefficient),
+#'         and the corresponding standard error.
+#' @export
+extract_model <- function(obj, which_model) {
+  if (!model_exists(obj, which_model)) {
+    stop("'", which_model, "' does not exist in ", substitute(obj),
+      ". Please check  models(", substitute(obj), ") for fitted models.")
+  }
+
+  res <- lapply(seq_along(obj$fits[[which_model]]$models),
+    function(i) {
+      x <- obj$fits[[which_model]]$models[[i]]
+      coefficients <- coef(x$ols_fit)
+      list(
+        target_id = rep_len(names(obj$fits[[which_model]]$models)[i], length(coefficients)),
+        term = names(coefficients), estimate = coefficients,
+        std_error = sqrt(diag(obj$fits[[which_model]]$beta_covars[[i]])))
+    })
+  dplyr::bind_rows(res)
 }

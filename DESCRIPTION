@@ -1,6 +1,6 @@
 Package: sleuth
 Title: Tools for investigating RNA-Seq
-Version: 0.28.1
+Version: 0.29.0
 Authors@R: c(person("Harold", "Pimentel", , "haroldpimentel@gmail.com", role = c("aut", "cre")))
 Description: Investigate transcript abundance from "kallisto" and differential
     expression analysis from RNA-Seq data.
@@ -20,6 +20,7 @@ Imports:
     rhdf5,
     parallel,
     lazyeval,
+    matrixStats,
     shiny
 Suggests:
     MASS,
