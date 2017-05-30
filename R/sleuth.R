@@ -349,6 +349,7 @@ sleuth_prep <- function(
       # Get list of IDs to aggregate on (usually genes)
       # Also get the filtered list and update the "filter_df" and "filter_bool"
       # variables for the sleuth object
+      target_mapping <- data.table::data.table(target_mapping)
       target_mapping[target_mapping[[aggregation_column]] == "",
                      aggregation_column] <- NA
       agg_id <- unique(target_mapping[, aggregation_column, with = FALSE])
