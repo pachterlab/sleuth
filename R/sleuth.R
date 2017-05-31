@@ -447,9 +447,10 @@ sleuth_prep <- function(
     })
 
     # if mclapply results in an error (a warning is shown), then print error and stop
-    if (is(bs_results[[1]], "try-error")) {
-      print(attributes(bs_results[[1]])$condition)
-      stop("mclapply had an error. See the above error message for more details.")
+    error_status <- sapply(bs_results, function(x) is(x, "try-error"))
+    if (any(error_status)) {
+      print(attributes(bs_results[error_status])$condition)
+      stop("At least one core from mclapply had an error. See the above error message(s) for more details.")
     }
 
     # mclapply is expected to retun the bootstraps in order; this is a sanity check of that
