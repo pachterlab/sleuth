@@ -205,7 +205,7 @@ sleuth_prep <- function(
   sample_to_covariates$path <- NULL
 
   msg('dropping unused factor levels')
-  samples_to_covariates <- droplevels(sample_to_covariates)
+  sample_to_covariates <- droplevels(sample_to_covariates)
 
   nsamp <- 0
   # append sample column to data
