@@ -6,13 +6,13 @@ Additionally, speed has been improved in numerous areas — particularly `sleuth
 
 Below is an incomplete list of new features:
 
-- The full model no longer have to be specified in `sleuth_prep`.
-- A new function `extract_model` allow users to extract the effect sizes for a specific model in a tidy format similar to [broom](https://cran.r-project.org/web/packages/broom/vignettes/broom.html).
+- The full model no longer has to be specified in `sleuth_prep`.
+- A new function `extract_model` allow users to extract the effect sizes for a model in a tidy format similar to [broom](https://cran.r-project.org/web/packages/broom/vignettes/broom.html).
 - An arbitrary transformation can be specified/used in `sleuth_prep` (see argument `transformation_function`).
 
 A big thanks to our users for fixing and reporting bugs.
 A special thanks to [Warren McGee](https://github.com/warrenmcg) for making several of the performance improvements as well as fixing several bugs.
-Below is a partial list of many of the upgrades and the pull request by the community.
+Below is a partial list of many of the upgrades and the pull requests by the community.
 
 - [Memory overhaul to reduce overall usage](https://github.com/pachterlab/sleuth/pull/63) (@psturmfels)
 - [Bugfix to drop unused factors](https://github.com/pachterlab/sleuth/pull/71) (@roryk and @warrenmcg)
