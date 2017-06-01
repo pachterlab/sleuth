@@ -10,6 +10,12 @@ target_mapping <- read.table(file.path(data_path, 'target_mappings.txt'), header
 incomplete_mapping <- read.table(file.path(data_path, 'target_mappings_incomplete.txt'), header = TRUE,
   stringsAsFactors = FALSE, sep="\t", quote="")
 
+small_study_map <- data.frame(sample = "small_sample", condition = "test",
+                                path = "small_test_data/kallisto.N",
+                                stringsAsFactors = F)
+small_target_mapping <- read.table('small_test_data/target_mapping.txt', header = TRUE,
+  stringsAsFactors = FALSE, sep="\t", quote="")
+
 study_mapping <- read.table(file.path(data_path, 'study_design.txt'), header = TRUE,
   stringsAsFactors = FALSE)
 study_mapping <- dplyr::select(study_mapping, sample = run, condition)
