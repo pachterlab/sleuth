@@ -280,7 +280,7 @@ sleuth_prep <- function(
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
-    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool, ])
+    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool, , drop = FALSE])
 
     filter_df <- adf(target_id = names(filter_true))
 
@@ -298,7 +298,7 @@ sleuth_prep <- function(
     msg("normalizing tpm")
     tpm_spread <- spread_abundance_by(obs_raw, "tpm",
       sample_to_covariates$sample)
-    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool, ])
+    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool, , drop = FALSE])
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
     tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
@@ -473,10 +473,10 @@ sleuth_prep <- function(
     # This is the rest of the gene_summary code
     if (ret$gene_mode) {
       names(sigma_q_sq) <- which_agg_id
-      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, ]
+      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, , drop = FALSE]
     } else {
       names(sigma_q_sq) <- which_target_id
-      obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
+      obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, , drop = FALSE]
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
@@ -562,7 +562,7 @@ check_target_mapping <- function(t_id, target_mapping) {
 #' @export
 norm_factors <- function(mat) {
   nz <- apply(mat, 1, function(row) !any(round(row) == 0))
-  mat_nz <- mat[nz, ]
+  mat_nz <- mat[nz, , drop = FALSE]
   p <- ncol(mat)
   geo_means <- exp(apply(mat_nz, 1, function(row) mean(log(row))))
   s <- sweep(mat_nz, 1, geo_means, `/`)
@@ -718,7 +718,7 @@ obs_to_matrix <- function(obj, value_name) {
   rownames(obs_counts) <- obs_counts$target_id
   obs_counts$target_id <- NULL
   obs_counts <- as.matrix(obs_counts)
-  obs_counts <- obs_counts[, obj$sample_to_covariates$sample]
+  obs_counts <- obs_counts[, obj$sample_to_covariates$sample, drop = FALSE]
 
   obs_counts
 }
