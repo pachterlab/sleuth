@@ -1,7 +1,7 @@
 context("reading")
 
 test_that("get kallisto path", {
-  dir_name <- "small_test_data"
+  dir_name <- "small_test_data/kallisto"
 
   # the standard case
   file_name <- file.path(dir_name, "abundance.h5")
@@ -28,7 +28,7 @@ test_that("get kallisto path", {
 })
 
 test_that("both read types", {
-  dir_name <- "small_test_data"
+  dir_name <- "small_test_data/kallisto"
 
   h5_file_name <- file.path(dir_name, "abundance.h5")
   kal_h5 <- read_kallisto_h5(h5_file_name, read_bootstrap = FALSE)
@@ -42,7 +42,7 @@ test_that("both read types", {
 })
 
 test_that("generalized read", {
-  dir_name <- "small_test_data"
+  dir_name <- "small_test_data/kallisto"
 
   kal_dir <- read_kallisto(dir_name, read_bootstrap = TRUE)
   h5_file_name <- file.path(dir_name, "abundance.h5")
