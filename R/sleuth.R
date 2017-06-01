@@ -201,6 +201,14 @@ sleuth_prep <- function(
   msg('reading in kallisto results')
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
+  if(nrow(sample_to_covariates) == 1 && !is.null(full_model)) {
+    warning("There is only one sample present, but you also provided a model. ",
+            "The model will be set to NULL to prevent downstream errors.\n",
+            "The sample can be viewed using sleuth_live after preparation, ",
+            "but you need more than one sample to run the other aspects of Sleuth.")
+    full_model <- NULL
+  }
+
   kal_dirs <- sample_to_covariates$path
   sample_to_covariates$path <- NULL
 
