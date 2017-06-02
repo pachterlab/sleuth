@@ -5,19 +5,19 @@
         <description>sleuth - Pachter Lab</description>
         <link>http://pachterlab.github.io/sleuth</link>
         <link>http://pachterlab.github.io/sleuth</link>
-        <lastBuildDate>2015-11-28T22:35:24-08:00</lastBuildDate>
-        <pubDate>2015-11-28T22:35:24-08:00</pubDate>
+        <lastBuildDate>2017-06-01T22:22:15-07:00</lastBuildDate>
+        <pubDate>2017-06-01T22:22:15-07:00</pubDate>
         <ttl>1800</ttl>
 
 
         <item>
-                <title></title>
+                <title>V0.42.2.1</title>
                 <description>&lt;p&gt;A few bugfixes to v0.42.2 are included here:&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;Off-by-one error fix in pseudobam output for reads mapping to reverse strand&lt;/li&gt;
   &lt;li&gt;Rare segfault fix happening on Ubuntu 12.02&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;-nan&lt;/code&gt; values would sometimes show up in abundances in edge case&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;-nan&lt;/code&gt; values would sometimes show up in abundances in edge case&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;It is recommended that users upgrade to this release.&lt;/p&gt;
@@ -29,26 +29,26 @@
         </item>
 
         <item>
-                <title></title>
+                <title>V0.42.2</title>
                 <description>&lt;p&gt;This is version 0.42.2 of Kallisto.&lt;/p&gt;
 
 &lt;p&gt;Updates include&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;code&gt;index&lt;/code&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;index&lt;/code&gt;
     &lt;ul&gt;
       &lt;li&gt;the index has been updated to include more of the transcript information&lt;/li&gt;
       &lt;li&gt;indices should be slightly smaller than before&lt;/li&gt;
       &lt;li&gt;indices constructed with previous versions will not work with this version, rerun your index command&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;quant&lt;/code&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;quant&lt;/code&gt;
     &lt;ul&gt;
-      &lt;li&gt;Bootstraps can be run in multithreaded mode, use option &lt;code&gt;-t&lt;/code&gt; to specify number of threads&lt;/li&gt;
-      &lt;li&gt;If only one read of a paired end maps, &lt;code&gt;kallisto&lt;/code&gt; will check the transcript positions to discard reads that would go outside of transcript given the mean fragment length.&lt;/li&gt;
-      &lt;li&gt;Pseudobam. Pseudoalignments can now be output in SAM format to standard output. For more details on the output see &lt;a href=&quot;/kallisto/pseudobam.html&quot;&gt;pseudobam&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;Sequence specific bias. &lt;code&gt;kallisto&lt;/code&gt; can learn a model for sequence specific bias and correct the abundances accordingly.&lt;/li&gt;
-      &lt;li&gt;TSV. All output text files have been changed to &lt;code&gt;.tsv&lt;/code&gt; ending.&lt;/li&gt;
+      &lt;li&gt;Bootstraps can be run in multithreaded mode, use option &lt;code class=&quot;highlighter-rouge&quot;&gt;-t&lt;/code&gt; to specify number of threads&lt;/li&gt;
+      &lt;li&gt;If only one read of a paired end maps, &lt;code class=&quot;highlighter-rouge&quot;&gt;kallisto&lt;/code&gt; will check the transcript positions to discard reads that would go outside of transcript given the mean fragment length.&lt;/li&gt;
+      &lt;li&gt;Pseudobam. Pseudoalignments can now be output in SAM format to standard output. For more details on the output see &lt;a href=&quot;http://localhost:4000/kallisto/pseudobam.html&quot;&gt;pseudobam&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;Sequence specific bias. &lt;code class=&quot;highlighter-rouge&quot;&gt;kallisto&lt;/code&gt; can learn a model for sequence specific bias and correct the abundances accordingly.&lt;/li&gt;
+      &lt;li&gt;TSV. All output text files have been changed to &lt;code class=&quot;highlighter-rouge&quot;&gt;.tsv&lt;/code&gt; ending.&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
 &lt;/ul&gt;
@@ -60,22 +60,22 @@
         </item>
 
         <item>
-                <title></title>
+                <title>V0.42.1</title>
                 <description>&lt;p&gt;This is version 0.42.1 of Kallisto. We recommend that users upgrade to this version.&lt;/p&gt;
 
 &lt;p&gt;Updates include&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;code&gt;index&lt;/code&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;index&lt;/code&gt;
     &lt;ul&gt;
       &lt;li&gt;now accepts multiple FASTA files and creates an index of all the targets&lt;/li&gt;
       &lt;li&gt;clips the polyA tail of transcripts that end with runs of A of length 10 or greater&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;quant&lt;/code&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;quant&lt;/code&gt;
     &lt;ul&gt;
       &lt;li&gt;now accepts multiple FASTQ paired-end files, or single-end files&lt;/li&gt;
-      &lt;li&gt;&lt;code&gt;--single&lt;/code&gt; flag to specify single-end reads&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;--single&lt;/code&gt; flag to specify single-end reads&lt;/li&gt;
       &lt;li&gt;simplifies jumping rules&lt;/li&gt;
       &lt;li&gt;uses soft-intersect, if one read has no mapping k-mers the other end is used for pseudoalignment&lt;/li&gt;
       &lt;li&gt;outputs number of reads processed and number of reads pseudoaligned&lt;/li&gt;
@@ -90,7 +90,7 @@
         </item>
 
         <item>
-                <title></title>
+                <title>V0.42</title>
                 <description>&lt;p&gt;This is the initial public release of Kallisto.&lt;/p&gt;
 
 </description>

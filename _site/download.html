@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -48,7 +49,7 @@
     
       
       	
-      	<li><a href="/about.html">About</a></li>
+      	<li><a href="/about">About</a></li>
       	
       
     
@@ -60,7 +61,7 @@
     
       
       	
-      	<li class="active"><a href="/download.html" class="active">Download</a></li>
+      	<li class="active"><a href="/download" class="active">Download</a></li>
       	
       
     
@@ -68,7 +69,7 @@
     
       
       	
-      	<li><a href="/faq.html">FAQ</a></li>
+      	<li><a href="/faq">FAQ</a></li>
       	
       
     
@@ -78,20 +79,8 @@
     
       
       	
-      	<li><a href="/license.html">License</a></li>
+      	<li><a href="/manual">Manual</a></li>
       	
-      
-    
-  
-    
-      
-      	
-      	<li><a href="/manual.html">Manual</a></li>
-      	
-      
-    
-  
-    
       
     
   
@@ -105,8 +94,12 @@
   
     
       
+    
+  
+    
+      
       	
-      	<li><a href="/source.html">Source</a></li>
+      	<li><a href="/walkthroughs">Walkthroughs</a></li>
       	
       
     
@@ -124,6 +117,7 @@
 
       <div class="content">
         
+
 <div class="page-header">
   <h1>Download </h1>
 </div>
@@ -131,33 +125,47 @@
 <div class="row-fluid">
   <div class="span12">
     
-<h4 id="repository">Repository</h4>
-
-<p>The <strong>sleuth</strong> GitHub repository is <a href="http://github.com/pachterlab/sleuth">here</a>.</p>
-
 <h4 id="installation">Installation</h4>
 
-<p>To install <strong>sleuth</strong> start <a href="https://www.r-project.org">R</a> and first install <code>rhdf5</code> by typing:</p>
+<p>To install <strong>sleuth</strong> start <a href="https://www.r-project.org">R</a> and first install <code class="highlighter-rouge">rhdf5</code> by typing:</p>
 
-<pre><code>source("http://bioconductor.org/biocLite.R")
+<div class="highlighter-rouge"><pre class="highlight"><code>source("http://bioconductor.org/biocLite.R")
 biocLite("rhdf5")
 </code></pre>
+</div>
 
 <p>Then install devtools by typing</p>
 
-<pre><code>install.packages("devtools")
+<div class="highlighter-rouge"><pre class="highlight"><code>install.packages("devtools")
 </code></pre>
+</div>
 
 <p>and install <strong>sleuth</strong> by typing</p>
 
-<pre><code>devtools::install_github("pachterlab/sleuth")
+<div class="highlighter-rouge"><pre class="highlight"><code>devtools::install_github("pachterlab/sleuth")
 </code></pre>
+</div>
+
+<p>If you have <a href="http://conda.pydata.org/docs/"><strong>conda</strong></a>, a cross-platform package manager installed, you can install <strong>sleuth</strong> via the <a href="https://bioconda.github.io/"><strong>bioconda</strong></a> channel.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>conda install --channel bioconda r-sleuth
+</code></pre>
+</div>
 
 <p>Next load <strong>sleuth</strong> with</p>
 
-<pre><code>library("sleuth")
+<div class="highlighter-rouge"><pre class="highlight"><code>library("sleuth")
 </code></pre>
+</div>
 
+<h4 id="repository">Repository</h4>
+
+<p>The <strong>sleuth</strong> GitHub repository containing the <strong>sleuth</strong> source code is <a href="http://github.com/pachterlab/sleuth">here</a>.</p>
+
+<h4 id="license">License</h4>
+
+<p>Sleuth is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License, version
+3<a></a>.</a></p>
 
   </div>
 </div>
@@ -166,7 +174,7 @@ biocLite("rhdf5")
       </div>
       <hr>
       <footer>
-        <p>&copy; 2015 Pachter Lab
+        <p>&copy; 2017 Pachter Lab
           with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
           and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
         </p>

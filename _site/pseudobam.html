@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -48,7 +49,7 @@
     
       
       	
-      	<li><a href="/about.html">About</a></li>
+      	<li><a href="/about">About</a></li>
       	
       
     
@@ -60,7 +61,7 @@
     
       
       	
-      	<li><a href="/download.html">Download</a></li>
+      	<li><a href="/download">Download</a></li>
       	
       
     
@@ -68,7 +69,7 @@
     
       
       	
-      	<li><a href="/faq.html">FAQ</a></li>
+      	<li><a href="/faq">FAQ</a></li>
       	
       
     
@@ -78,20 +79,8 @@
     
       
       	
-      	<li><a href="/license.html">License</a></li>
+      	<li><a href="/manual">Manual</a></li>
       	
-      
-    
-  
-    
-      
-      	
-      	<li><a href="/manual.html">Manual</a></li>
-      	
-      
-    
-  
-    
       
     
   
@@ -105,8 +94,12 @@
   
     
       
+    
+  
+    
+      
       	
-      	<li><a href="/source.html">Source</a></li>
+      	<li><a href="/walkthroughs">Walkthroughs</a></li>
       	
       
     
@@ -124,6 +117,7 @@
 
       <div class="content">
         
+
 <div class="page-header">
   <h1>Pseudobam </h1>
 </div>
@@ -131,46 +125,47 @@
 <div class="row-fluid">
   <div class="span12">
     
-<p>The output of <code>kallisto quant</code> when run with the <code>--pseudobam</code> option is a SAM formatted stream. This stream can be redirected to a SAM file or directly to a BAM file by piping into <code>samtools view -Sb - &gt; output.bam</code>. Examples of how to do this are shown in the <a href="manual.html">Manual</a>.</p>
+<p>The output of <code class="highlighter-rouge">kallisto quant</code> when run with the <code class="highlighter-rouge">--pseudobam</code> option is a SAM formatted stream. This stream can be redirected to a SAM file or directly to a BAM file by piping into <code class="highlighter-rouge">samtools view -Sb - &gt; output.bam</code>. Examples of how to do this are shown in the <a href="manual.html">Manual</a>.</p>
 
 <p>The SAM/BAM format is described in <a href="http://samtools.github.io/hts-specs/SAMv1.pdf">http://samtools.github.io/hts-specs/SAMv1.pdf</a></p>
 
-<p><code>kallisto</code> will output a SAM file showing the pseudoalignments of the reads to the transcriptome. Each read will have one SAM entry for each transcript is pseudoaligns to.</p>
+<p><code class="highlighter-rouge">kallisto</code> will output a SAM file showing the pseudoalignments of the reads to the transcriptome. Each read will have one SAM entry for each transcript is pseudoaligns to.</p>
 
 <p>For paired end reads the output will first include all entries for the first read, followed by all entries for the second read.</p>
 
 <p>Each SAM line, where a read pseudoaligns to a transcript, follows the normal SAM format with the following interpretation of the fields</p>
 
 <ul>
-  <li><code>QNAME</code>, read name, any /1 or /2 is discarded from read names and the information is stored in the FLAG field</li>
-  <li><code>FLAG</code>, normal SAM flags</li>
-  <li><code>RNAME</code>, the transcript name</li>
-  <li><code>POS</code>, 1-based position of the leftmost mapping</li>
-  <li><code>MAPQ</code>, 255 for pseudoaligned reads, 0 otherwise</li>
-  <li><code>CIGAR</code>, all matches (probably a lie), e.g. for 75bp reads <code>75M</code></li>
-  <li><code>RNEXT</code>, the transcript of the mate, always equal to <code>RNAME</code></li>
-  <li><code>PNEXT</code>, the leftmost 1-based position of the mate</li>
-  <li><code>TLEN</code>, observed template length</li>
-  <li><code>SEQ</code>, read sequence or the reverse complement if it pseudoaligns to the reverse complement of the transcript</li>
-  <li><code>QUAL</code>, the quality values of the read</li>
+  <li><code class="highlighter-rouge">QNAME</code>, read name, any /1 or /2 is discarded from read names and the information is stored in the FLAG field</li>
+  <li><code class="highlighter-rouge">FLAG</code>, normal SAM flags</li>
+  <li><code class="highlighter-rouge">RNAME</code>, the transcript name</li>
+  <li><code class="highlighter-rouge">POS</code>, 1-based position of the leftmost mapping</li>
+  <li><code class="highlighter-rouge">MAPQ</code>, 255 for pseudoaligned reads, 0 otherwise</li>
+  <li><code class="highlighter-rouge">CIGAR</code>, all matches (probably a lie), e.g. for 75bp reads <code class="highlighter-rouge">75M</code></li>
+  <li><code class="highlighter-rouge">RNEXT</code>, the transcript of the mate, always equal to <code class="highlighter-rouge">RNAME</code></li>
+  <li><code class="highlighter-rouge">PNEXT</code>, the leftmost 1-based position of the mate</li>
+  <li><code class="highlighter-rouge">TLEN</code>, observed template length</li>
+  <li><code class="highlighter-rouge">SEQ</code>, read sequence or the reverse complement if it pseudoaligns to the reverse complement of the transcript</li>
+  <li><code class="highlighter-rouge">QUAL</code>, the quality values of the read</li>
   <li>optional fields
     <ul>
-      <li><code>NH</code>, set to the size of the equivalence class, i.e. the number of transcripts this reads pseudoaligns to.</li>
+      <li><code class="highlighter-rouge">NH</code>, set to the size of the equivalence class, i.e. the number of transcripts this reads pseudoaligns to.</li>
     </ul>
   </li>
 </ul>
 
 <p>Example output (skipping header lines)</p>
 
-<pre><code>ENST00000623973_197_729_1:0:0_2:0:0_8c  99      ENST00000623973 197     255     70M     659     =       532     CCTGGTGACCATCCTTGACTCCCGCCTGCACACGCCCAAGTACTTCTTCCTAGGGAACCTCTCCTTCCTG  2222222222222222222222222222222222222222222222222222222222222222222222  NH:i:3
+<div class="highlighter-rouge"><pre class="highlight"><code>ENST00000623973_197_729_1:0:0_2:0:0_8c  99      ENST00000623973 197     255     70M     659     =       532     CCTGGTGACCATCCTTGACTCCCGCCTGCACACGCCCAAGTACTTCTTCCTAGGGAACCTCTCCTTCCTG  2222222222222222222222222222222222222222222222222222222222222222222222  NH:i:3
 ENST00000623973_197_729_1:0:0_2:0:0_8c  99      ENST00000341959 197     255     70M     659     =       532     CCTGGTGACCATCCTTGACTCCCGCCTGCACACGCCCAAGTACTTCTTCCTAGGGAACCTCTCCTTCCTG  2222222222222222222222222222222222222222222222222222222222222222222222  NH:i:3
 ENST00000623973_197_729_1:0:0_2:0:0_8c  99      ENST00000625188 141     255     70M     603     =       532     CCTGGTGACCATCCTTGACTCCCGCCTGCACACGCCCAAGTACTTCTTCCTAGGGAACCTCTCCTTCCTG  2222222222222222222222222222222222222222222222222222222222222222222222  NH:i:3
 ENST00000623973_197_729_1:0:0_2:0:0_8c  147     ENST00000623973 659     255     70M     197     =       -532    GTGACGAATGTGATCTTCCTAGGAGTCCCGGTTCTGTTCTTCTCTTTCTCCTATGTCTTCAGCATCACCA  2222222222222222222222222222222222222222222222222222222222222222222222  NH:i:3
 ENST00000623973_197_729_1:0:0_2:0:0_8c  147     ENST00000341959 659     255     70M     197     =       -532    GTGACGAATGTGATCTTCCTAGGAGTCCCGGTTCTGTTCTTCTCTTTCTCCTATGTCTTCAGCATCACCA  2222222222222222222222222222222222222222222222222222222222222222222222  NH:i:3
 ENST00000623973_197_729_1:0:0_2:0:0_8c  147     ENST00000625188 603     255     70M     141     =       -532    GTGACGAATGTGATCTTCCTAGGAGTCCCGGTTCTGTTCTTCTCTTTCTCCTATGTCTTCAGCATCACCA  2222222222222222222222222222222222222222222222222222222222222222222222  NH:i:3
 </code></pre>
+</div>
 
-<p>In this case the read <code>ENST00000623973_197_729_1:0:0_2:0:0_8c</code>, which was simulated from <code>ENST00000623973</code> was aligned to 3 transcripts, one of which is <code>ENST00000623973</code> and the mapping positions match the read name. To decode the SAM flags consult <a href="https://broadinstitute.github.io/picard/explain-flags.html">this handy guide</a>.</p>
+<p>In this case the read <code class="highlighter-rouge">ENST00000623973_197_729_1:0:0_2:0:0_8c</code>, which was simulated from <code class="highlighter-rouge">ENST00000623973</code> was aligned to 3 transcripts, one of which is <code class="highlighter-rouge">ENST00000623973</code> and the mapping positions match the read name. To decode the SAM flags consult <a href="https://broadinstitute.github.io/picard/explain-flags.html">this handy guide</a>.</p>
 
   </div>
 </div>
@@ -179,7 +174,7 @@ ENST00000623973_197_729_1:0:0_2:0:0_8c  147     ENST00000625188 603     255     
       </div>
       <hr>
       <footer>
-        <p>&copy; 2015 Pachter Lab
+        <p>&copy; 2017 Pachter Lab
           with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
           and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
         </p>
