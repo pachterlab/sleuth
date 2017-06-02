@@ -201,11 +201,19 @@ sleuth_prep <- function(
   msg('reading in kallisto results')
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
+  if(nrow(sample_to_covariates) == 1 && !is.null(full_model)) {
+    warning("There is only one sample present, but you also provided a model. ",
+            "The model will be set to NULL to prevent downstream errors.\n",
+            "The sample can be viewed using sleuth_live after preparation, ",
+            "but you need more than one sample to run the other aspects of Sleuth.")
+    full_model <- NULL
+  }
+
   kal_dirs <- sample_to_covariates$path
   sample_to_covariates$path <- NULL
 
   msg('dropping unused factor levels')
-  samples_to_covariates <- droplevels(sample_to_covariates)
+  sample_to_covariates <- droplevels(sample_to_covariates)
 
   nsamp <- 0
   # append sample column to data
@@ -280,7 +288,7 @@ sleuth_prep <- function(
     filter_true <- filter_bool[filter_bool]
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
-    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool, ])
+    est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool, , drop = FALSE])
 
     filter_df <- adf(target_id = names(filter_true))
 
@@ -298,7 +306,7 @@ sleuth_prep <- function(
     msg("normalizing tpm")
     tpm_spread <- spread_abundance_by(obs_raw, "tpm",
       sample_to_covariates$sample)
-    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool, ])
+    tpm_sf <- norm_fun_tpm(tpm_spread[filter_bool, , drop = FALSE])
     tpm_norm <- as_df(t(t(tpm_spread) / tpm_sf))
     tpm_norm$target_id <- rownames(tpm_norm)
     tpm_norm <- tidyr::gather(tpm_norm, sample, tpm, -target_id)
@@ -349,6 +357,7 @@ sleuth_prep <- function(
       # Get list of IDs to aggregate on (usually genes)
       # Also get the filtered list and update the "filter_df" and "filter_bool"
       # variables for the sleuth object
+      target_mapping <- data.table::data.table(target_mapping)
       target_mapping[target_mapping[[aggregation_column]] == "",
                      aggregation_column] <- NA
       agg_id <- unique(target_mapping[, aggregation_column, with = FALSE])
@@ -446,9 +455,10 @@ sleuth_prep <- function(
     })
 
     # if mclapply results in an error (a warning is shown), then print error and stop
-    if (is(bs_results[[1]], "try-error")) {
-      print(attributes(bs_results[[1]])$condition)
-      stop("mclapply had an error. See the above error message for more details.")
+    error_status <- sapply(bs_results, function(x) is(x, "try-error"))
+    if (any(error_status)) {
+      print(attributes(bs_results[error_status])$condition)
+      stop("At least one core from mclapply had an error. See the above error message(s) for more details.")
     }
 
     # mclapply is expected to retun the bootstraps in order; this is a sanity check of that
@@ -471,10 +481,10 @@ sleuth_prep <- function(
     # This is the rest of the gene_summary code
     if (ret$gene_mode) {
       names(sigma_q_sq) <- which_agg_id
-      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, ]
+      obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, , drop = FALSE]
     } else {
       names(sigma_q_sq) <- which_target_id
-      obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, ]
+      obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, , drop = FALSE]
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
@@ -560,7 +570,7 @@ check_target_mapping <- function(t_id, target_mapping) {
 #' @export
 norm_factors <- function(mat) {
   nz <- apply(mat, 1, function(row) !any(round(row) == 0))
-  mat_nz <- mat[nz, ]
+  mat_nz <- mat[nz, , drop = FALSE]
   p <- ncol(mat)
   geo_means <- exp(apply(mat_nz, 1, function(row) mean(log(row))))
   s <- sweep(mat_nz, 1, geo_means, `/`)
@@ -716,7 +726,7 @@ obs_to_matrix <- function(obj, value_name) {
   rownames(obs_counts) <- obs_counts$target_id
   obs_counts$target_id <- NULL
   obs_counts <- as.matrix(obs_counts)
-  obs_counts <- obs_counts[, obj$sample_to_covariates$sample]
+  obs_counts <- obs_counts[, obj$sample_to_covariates$sample, drop = FALSE]
 
   obs_counts
 }

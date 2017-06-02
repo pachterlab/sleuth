@@ -398,6 +398,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
   if (read_bootstrap_tpm) {
     bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm,
                                 eff_len))
+    colnames(bs_quant_tpm) <- colnames(bs_mat)
 
     # gene level code is analogous here to below code
     if (gene_mode) {

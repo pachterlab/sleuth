@@ -202,10 +202,10 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   if ( length(beta_i) == 0 ) {
     stop(paste0("'", which_beta,
         "' doesn't appear in your design. Try one of the following:\n",
-        colnames(d_matrix)))
+        paste(colnames(d_matrix), collapse = ' ')))
   } else if ( length(beta_i) > 1 ) {
     stop(paste0("Sorry. '", which_beta, "' is ambiguous for columns: ",
-        colnames(d_matrix[beta_i])))
+        paste(colnames(d_matrix[beta_i]), collapse = ' ')))
   }
 
   b <- sapply(obj$fits[[ which_model ]]$models,
@@ -236,8 +236,6 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
     pval = 2 * pnorm(abs(wald_stat), lower.tail = FALSE),
     qval = p.adjust(pval, method = 'BH')
     )
-
-  res <- dplyr::select(res, -x_group)
 
   obj <- add_test(obj, res, which_beta, 'wt', which_model)
 
