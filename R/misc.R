@@ -67,9 +67,13 @@ shrink_df <- function(data, shrink_formula, filter_var) {
   fit <- eval(loess(s_formula, data[data[, filter_var], ], model = T))
   shrink_data <- data.frame(data, shrink = predict(fit, data))
 
-  if (any(is.na(shrink_data$shrink))) {
-    num_na <- length(which(is.na(shrink_data$shrink)))
-    which_na <- shrink_data$target_id[is.na(shrink_data$shrink)]
+  # include a column to report any target IDs that failed shrinkage estimation
+  # 'failed_ise' is short for 'failed initial shrinkage estimation'
+  shrink_data$failed_ise <- is.na(shrink_data$shrink)
+  if (any(shrink_data$failed_ise))) {
+    na_rows <- which(shrink_data$failed_ise)
+    num_na <- length(na_rows)
+    which_na <- shrink_data$target_id[na_rows]
     max_mean_obs <- summary(fit$model$mean_obs)["Max."]
     min_mean_obs <- summary(fit$model$mean_obs)["Min."]
     # check for mean_obs values that fall outside of the window that
@@ -85,9 +89,9 @@ shrink_df <- function(data, shrink_formula, filter_var) {
               "These are the target ids with NA values: ", paste(which_na))
       direct_fit <- eval(loess(s_formula, data[data[, filter_var], ], model = T,
                   control = loess.control(surface = "direct")))
-      na_data <- data[which(data$target_id %in% which_na), ]
+      na_data <- data[na_rows, ]
       na_shrink_data <- data.frame(na_data, shrink = predict(direct_fit, na_data))
-      shrink_data[which(shrink_data$target_id %in% which_na), "shrink"] <- na_shrink_data$shrink
+      shrink_data[na_rows, "shrink"] <- na_shrink_data$shrink
     }
     # repeat the check for NA values; if there were no values outside of the mean_obs window used
     # (first check above) or if there were new NA values from the direct fit, then
