@@ -8,16 +8,24 @@ group: navigation
 
 ### Officially supported walkthroughs
 
-The following walkthroughs were created by the sleuth team and demonstrate several use cases of __sleuth__.
-If you wish to look at the code that generated them, the repository is on [GitHub](https://github.com/pachterlab/sleuth_walkthroughs).
+The following walkthroughs were created by the __sleuth__ team and demonstrate several use cases of __sleuth__. The code for generating each walkthrough is available on [GitHub](https://github.com/pachterlab/sleuth_walkthroughs).
 
-- [Getting started with sleuth](https://pachterlab.github.io/sleuth_walkthroughs/trapnell/analysis.html)
-- [Differential analysis with multiple conditions and covariates](https://pachterlab.github.io/sleuth_walkthroughs/boj/analysis.html)
+- [Getting started with __sleuth__](https://pachterlab.github.io/sleuth_walkthroughs/trapnell/analysis.html)
+  - Install and set up __sleuth__
+  - How to perform a two condition differential analysis
+  - Linking transcript IDs to genes
+  - __Sleuth__ live
+  - Basic QC
+Learn how to use __sleuth__ to identify differential transcripts in a two condition experiment.
 - [Accounting for batch effects](https://pachterlab.github.io/sleuth_walkthroughs/bottomly/analysis.html)
+  - Accounting for known batch effects
+  - Extracting effect sizes (fold changes)
+- [Differential analysis with multiple conditions and covariates](https://pachterlab.github.io/sleuth_walkthroughs/boj/analysis.html)
+  - Testing frameworks for experimental designs with multiple conditions and covariates
+  - Performing gene-level differnetial analysis
+  - Identifying and removing outliers
 
 ### Community contributed walkthroughs
-
-These walkthroughs have been generously contributed by the community.
 
 - [Combining data from multiple RNA-Seq experiments](http://achri.blogspot.com/2017/03/combining-rnaseq-experiments-to-find.html)
 - [Timecourse analysis](http://www.nxn.se/valent/timecourse-analysis-with-sleuth)
