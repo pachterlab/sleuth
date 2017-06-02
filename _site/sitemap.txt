@@ -5,7 +5,6 @@ http://pachterlab.github.io/sleuth/download
 http://pachterlab.github.io/sleuth/faq
 http://pachterlab.github.io/sleuth/
 http://pachterlab.github.io/sleuth/manual
-http://pachterlab.github.io/sleuth/pseudobam
 http://pachterlab.github.io/sleuth/rss.xml
 http://pachterlab.github.io/sleuth/sitemap.txt
 http://pachterlab.github.io/sleuth/walkthroughs
