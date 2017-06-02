@@ -55,3 +55,11 @@ test_that("gene level", {
                         target_mapping = incomplete_mapping,
                         aggregation_column = "gene_name"))
 })
+
+test_that(".N target mappings", {
+  expect_warning(result.N <- sleuth_prep(small_study_map,
+                          target_mapping = small_target_mapping))
+  expect_warning(result.N <- sleuth_prep(small_study_map,
+                          target_mapping = small_target_mapping,
+                          aggregation_column = "gene_name"))
+})
