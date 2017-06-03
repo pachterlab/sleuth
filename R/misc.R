@@ -70,7 +70,7 @@ shrink_df <- function(data, shrink_formula, filter_var) {
   # include a column to report any target IDs that failed shrinkage estimation
   # 'failed_ise' is short for 'failed initial shrinkage estimation'
   shrink_data$failed_ise <- is.na(shrink_data$shrink)
-  if (any(shrink_data$failed_ise))) {
+  if (any(shrink_data$failed_ise)) {
     na_rows <- which(shrink_data$failed_ise)
     num_na <- length(na_rows)
     which_na <- shrink_data$target_id[na_rows]
