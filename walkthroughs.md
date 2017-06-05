@@ -14,9 +14,8 @@ The following walkthroughs were created by the __sleuth__ team and demonstrate s
   - Install and set up __sleuth__
   - How to perform a two condition differential analysis
   - Linking transcript IDs to genes
-  - __Sleuth__ live
+  - __sleuth__ live
   - Basic QC
-Learn how to use __sleuth__ to identify differential transcripts in a two condition experiment.
 - [Accounting for batch effects](https://pachterlab.github.io/sleuth_walkthroughs/bottomly/analysis.html)
   - Accounting for known batch effects
   - Extracting effect sizes (fold changes)
