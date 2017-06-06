@@ -13,7 +13,7 @@ A <a href="http://liorpachter.wordpress.com/2015/08/17/a-sleuth-for-rna-seq/">co
 The __sleuth__ project was developed by [Harold Pimentel](https://pimentel.github.io) with assistance from [Nicolas Bray](https://math.berkeley.edu/~nbray/), Suzette Puente, [Páll Melsted](https://notendur.hi.is/pmelsted/) and [Lior Pachter](http://pachterlab.github.io/).
 A preprint with more details about the program is available from the bioRxiv:
 
-Harold J. Pimentel, Nicolas Bray, Suzette Puente, P&aacute;ll Melsted and Lior Pachter, [Differential analysis of RNA-Seq incorporating quantification uncertainty](http://biorxiv.org/content/early/2016/06/10/058164), bioRxiv (2016), http://dx.doi.org/10.1101/058164.
+Harold J. Pimentel, Nicolas Bray, Suzette Puente, P&aacute;ll Melsted and Lior Pachter, [Differential analysis of RNA-Seq incorporating quantification uncertainty](http://www.nature.com/nmeth/journal/vaop/ncurrent/full/nmeth.4324.html), Nature Methods (2017), advanced access http://dx.doi.org/10.1038/nmeth.4324.
 
 To use __sleuth__ [download the software](download.html) and visit the [walkthrough page](walkthroughs) to learn how to use the program.
 
