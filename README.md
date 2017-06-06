@@ -1,6 +1,10 @@
-# sleuth: inspect your RNA-Seq
+# sleuth
 
-Investigate RNA-Seq transcript abundance from [kallisto](https://github.com/pimentel/kallisto) and perform differential expression analysis.
+__sleuth__ is a program for differential analysis of RNA-Seq data. It makes use of quantification uncertainty estimates obtained via [kallisto](https://github.com/pimentel/kallisto) for accurate differential analysis of isoforms or genes, allows testing in the context of experiments with complex designs, and supports interactive exploratory data analysis via __sleuth live__. The sleuth methods are described in
+
+H Pimentel,	NL Bray,	S Puente,	P Melsted	and Lior Pachter, [Differential analysis of RNA-seq incorporating quantification uncertainty](http://www.nature.com/nmeth/journal/vaop/ncurrent/full/nmeth.4324.html), Nature Methods (2017), advances access.
+
+Scripts reproducing all the results of the paper are available [here](https://github.com/pachterlab/sleuth_paper_analysis).
 
 # Installation
 
