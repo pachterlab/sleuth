@@ -482,6 +482,11 @@ sleuth_prep <- function(
     if (ret$gene_mode) {
       names(sigma_q_sq) <- which_agg_id
       obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, , drop = FALSE]
+      ret$bs_quants <- lapply(ret$bs_quants, function(sample) {
+        index <- which(names(sample) == "est_counts")
+        names(sample)[index] <- "scaled_reads_per_base"
+        sample
+      })
     } else {
       names(sigma_q_sq) <- which_target_id
       obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, , drop = FALSE]
