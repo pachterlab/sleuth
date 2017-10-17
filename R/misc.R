@@ -86,7 +86,7 @@ shrink_df <- function(data, shrink_formula, filter_var) {
               " due to mean observation values outside of the range used for the LOESS fit.\n",
               "The LOESS fit will be repeated using exact computation of the fitted ",
               "surface to extrapolate the missing values.\n",
-              "These are the target ids with NA values: ", paste(which_na))
+              "These are the target ids with NA values: ", paste(which_na, collapse = ", "))
       direct_fit <- eval(loess(s_formula, data[data[, filter_var], ], model = T,
                   control = loess.control(surface = "direct")))
       na_data <- data[na_rows, ]
@@ -102,7 +102,7 @@ shrink_df <- function(data, shrink_formula, filter_var) {
               " due to an unknown cause. These values will result in NAs ",
               "with any downstream testing for these target ids.\n",
               "Please submit a bug report at the Sleuth Github website.\n",
-              "These are the target ids with NA values: ", paste(which_na))
+              "These are the target ids with NA values: ", paste(which_na, collapse = ", "))
     }
   }
   shrink_data
