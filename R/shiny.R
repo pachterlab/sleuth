@@ -136,7 +136,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                   min = 1, max = 15, step = 1))
         ),
         fluidRow(uiOutput('no_genes_message')),
-        fluidRow(uiOutput('gv_var_plts'))
+        fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+          HTML(paste('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at ',
+                     'least one of extra_bootstrap_summary or',
+                     'read_bootstrap_tpm to use this feature.<br>'))
+        } else { uiOutput('gv_var_plts') }
+        ))
     ),
 
       ####
@@ -289,10 +294,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                 ))
             ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plot <- (if (length(obj$bs_quants) == 0)
-                    { HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least one of extra_bootstrap_summary or read_bootstrap_tpm to use this feature.<br>') }
-                    else { plotOutput('bs_var_plt') }
-             )),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+            HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least ',
+                 'one of extra_bootstrap_summary or ',
+                 'read_bootstrap_tpm to use this feature.<br>') }
+            else { plotOutput('bs_var_plt') }
+          )),
           fluidRow(
             div(align = "right", style = "margin-right:15px; margin-bottom:10px",
               downloadButton("download_bs_var_plt", "Download Plot"))
