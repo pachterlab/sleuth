@@ -77,6 +77,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
           p(strong('sleuth live features:')),
              tags$ul(
+               tags$li(strong('v0.29.0'),
+                       ':',
+                       'Integration of gene mode by Warren McGee.',
+               ),
                     tags$li(strong('v0.28.0'),
                       ':',
                       'Download buttons for plots and tables by Alex Tseng.',
@@ -105,44 +109,84 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     navbarMenu('analyses',
 
       tabPanel('gene view',
-        fluidRow(
+        conditionalPanel(
+          condition = 'obj$gene_mode',
+          fluidRow(
             column(12,
-                p(h3('gene view'),
-                'Boxplots of abundances of transcript mapping to a given gene,',
-                'and their technical variation.',
-                'This step can take a while, especially with many plots.')
-                ),
+                   p(
+                     h3('gene view'),
+                     'Boxplots of gene abundances showing technical variation in each sample.')
+            ),
             offset = 1),
-        fluidRow(column(3,
-            textInput('gv_var_input', label = 'gene: ', value = '')
+          fluidRow(
+            column(4,
+                   textInput('bsg_var_input', label = 'gene: ', value = '')
+            ),
+            column(4,
+                   selectInput('bsg_var_color_by', label = 'color by: ',
+                               choices = c(NULL, poss_covars), selected = NULL)
             ),
             column(3,
-                selectInput('gv_var_color_by',
-                  label = 'color by: ',
-                  choices = c(NULL, poss_covars),
-                  selected = NULL)),
-            column(3,
-                selectInput('gv_var_units',
-                  label = 'units: ',
-                  choices = c(counts_unit, 'tpm'),
-                  selected = counts_unit)),
-            column(3,
-                uiOutput('gv_gene_column')
-            )
+                   selectInput('bsg_var_units', label = 'units: ',
+                               choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
+                                           else { names(obj$bs_quants[[1]]) } ),
+                               selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
+                                           else { names(obj$bs_quants[[1]])[1] })
+                   ))
+          ),
+          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bsg_go', 'view')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+            HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least ',
+                 'one of extra_bootstrap_summary or ',
+                 'read_bootstrap_tpm to use this feature.<br>') }
+            else { plotOutput('bsg_var_plt') }
+          )),
+          fluidRow(
+            div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                downloadButton("download_bsg_var_plt", "Download Plot"))
+          )
         ),
-        fluidRow(
-          column(3, actionButton('gv_go', 'view')),
-          column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
-                  min = 1, max = 15, step = 1))
-        ),
-        fluidRow(uiOutput('no_genes_message')),
-        fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
-          HTML(paste('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at ',
-                     'least one of extra_bootstrap_summary or',
-                     'read_bootstrap_tpm to use this feature.<br>'))
-        } else { uiOutput('gv_var_plts') }
-        ))
-    ),
+        conditionalPanel(
+          condition = '!obj$gene_mode',
+          fluidRow(
+            column(12,
+                   p(h3('gene view'),
+                     'Boxplots of abundances of transcript mapping to a given gene,',
+                     'and their technical variation.',
+                     'This step can take a while, especially with many plots.')
+            ),
+            offset = 1),
+          fluidRow(column(3,
+                          textInput('gv_var_input', label = 'gene: ', value = '')
+          ),
+          column(3,
+                 selectInput('gv_var_color_by',
+                             label = 'color by: ',
+                             choices = c(NULL, poss_covars),
+                             selected = NULL)),
+          column(3,
+                 selectInput('gv_var_units',
+                             label = 'units: ',
+                             choices = c(counts_unit, 'tpm'),
+                             selected = counts_unit)),
+          column(3,
+                 uiOutput('gv_gene_column')
+          )
+          ),
+          fluidRow(
+            column(3, actionButton('gv_go', 'view')),
+            column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
+                                   min = 1, max = 15, step = 1))
+          ),
+          fluidRow(uiOutput('no_genes_message')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+            HTML(paste('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at ',
+                       'least one of extra_bootstrap_summary or',
+                       'read_bootstrap_tpm to use this feature.<br>'))
+          } else { uiOutput('gv_var_plts') }
+          ))
+        )
+      ),
 
       ####
       tabPanel('heat map',
@@ -270,40 +314,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
         ####
         tabPanel('transcript view',
-          fluidRow(
-            column(12,
-              p(
-                h3('transcript view'),
-                'Boxplots of transcript abundances showing technical variation in each sample.')
-                ),
-                offset = 1),
-          fluidRow(
-            column(4,
-              textInput('bs_var_input', label = 'transcript: ', value = '')
-            ),
-            column(4,
-              selectInput('bs_var_color_by', label = 'color by: ',
-                choices = c(NULL, poss_covars), selected = NULL)
-            ),
-            column(3,
-              selectInput('bs_var_units', label = 'units: ',
-                choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
-                            else { names(obj$bs_quants[[1]]) } ),
-                selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
-                            else { names(obj$bs_quants[[1]])[1] })
-                ))
-            ),
-          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
-            HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least ',
-                 'one of extra_bootstrap_summary or ',
-                 'read_bootstrap_tpm to use this feature.<br>') }
-            else { plotOutput('bs_var_plt') }
-          )),
-          fluidRow(
-            div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-              downloadButton("download_bs_var_plt", "Download Plot"))
-              )
+          uiOutput('transcript_view')
         ),
 
         ####
@@ -1332,33 +1343,110 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
 
-    ### bootstrap var
+    ### Transcript viewer, transcript mode
+    output$transcript_view <- renderUI({
+      if (!obj$gene_mode) {
+        layout <- list(
+          fluidRow(
+            column(12,
+                   p(
+                     h3('transcript view'),
+                     'Boxplots of transcript abundances showing technical variation in each sample.')
+            ),
+            offset = 1),
+          fluidRow(
+            column(4,
+                   textInput('bs_var_input', label = 'transcript: ', value = '')
+            ),
+            column(4,
+                   selectInput('bs_var_color_by', label = 'color by: ',
+                               choices = c(NULL, poss_covars), selected = NULL)
+            ),
+            column(3,
+                   selectInput('bs_var_units', label = 'units: ',
+                               choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
+                                           else { names(obj$bs_quants[[1]]) } ),
+                               selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
+                                           else { names(obj$bs_quants[[1]])[1] })
+                   ))
+          ),
+          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+            HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least ',
+                 'one of extra_bootstrap_summary or ',
+                 'read_bootstrap_tpm to use this feature.<br>') }
+            else { plotOutput('bs_var_plt') }
+          )),
+          fluidRow(
+            div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                downloadButton("download_bs_var_plt", "Download Plot"))
+          )
+        )
+      } else {
+        layout <- list(
+          HTML('&nbsp&nbsp&nbsp&nbspThis view is disabled because your sleuth',
+               ' object is in gene mode.<br>&nbsp&nbsp&nbsp&nbspTo view',
+               ' transcripts, rerun sleuth without the \'aggregation_column\'',
+               ' option.<br>&nbsp&nbsp&nbsp&nbspFor more information, see the ',
+               '<a href = "https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html">',
+               'sleuth getting started guide</a>.')
+        )
+        layout
+      }
+
+    })
 
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
     })
 
     output$bs_var_plt <- renderPlot({
-        saved_plots_and_tables$bs_var_plt <- plot_bootstrap(obj, bs_var_text(),
+      saved_plots_and_tables$bs_var_plt <- plot_bootstrap(
+        obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
-        saved_plots_and_tables$bs_var_plt
+      saved_plots_and_tables$bs_var_plt
     })
 
     output$download_bs_var_plt <- downloadHandler(
-        filename = function() {
-          "bootstrap_vars.pdf"
-          },
-        content = function(file) {
-            ggsave(file,
-              saved_plots_and_tables$bs_var_plt,
-              width = user_settings$save_width,
-              height = user_settings$save_height,
-              units = "cm")
+      filename = function() {
+        "transcript_bootstrap_vars.pdf"
+      },
+      content = function(file) {
+        ggsave(file,
+               saved_plots_and_tables$bs_var_plt,
+               width = user_settings$save_width,
+               height = user_settings$save_height,
+               units = "cm")
+      })
+
+    ### Gene viewer, gene mode
+
+    bsg_var_text <- eventReactive(input$bsg_go, {
+      input$bsg_var_input
     })
 
+    output$bsg_var_plt <- renderPlot({
+      saved_plots_and_tables$bs_var_plt <- plot_bootstrap(
+        obj, bsg_var_text(),
+        units = input$bsg_var_units,
+        color_by = input$bsg_var_color_by)
+      saved_plots_and_tables$bs_var_plt
+    })
 
-    ### Gene Viewer
+    output$download_bsg_var_plt <- downloadHandler(
+      filename = function() {
+        "gene_bootstrap_vars.pdf"
+      },
+      content = function(file) {
+        ggsave(file,
+               saved_plots_and_tables$bs_var_plt,
+               width = user_settings$save_width,
+               height = user_settings$save_height,
+               units = "cm")
+      })
+
+    ### Gene Viewer, transcript mode
     # the name of the gene supplied
     gv_var_text <- eventReactive(input$gv_go, {
       if (!is.null(obj$target_mapping)) {
