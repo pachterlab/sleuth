@@ -88,7 +88,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
              tags$ul(
                tags$li(strong('v0.29.0'),
                        ':',
-                       'Integration of gene mode by Warren McGee.',
+                       'Integration of gene mode by Warren McGee.'
                ),
                     tags$li(strong('v0.28.0'),
                       ':',
