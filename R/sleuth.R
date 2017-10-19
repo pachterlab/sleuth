@@ -851,8 +851,9 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
 transcripts_from_gene <- function(obj, test, test_type,
   which_model, gene_colname, gene_name) {
 
-  # FIXME: this is a work around
-  obj$gene_mode <- FALSE
+  if (obj$gene_mode) {
+    stop("this sleuth object is in gene mode. Please use 'gene_from_gene' instead.")
+  }
 
   table <- sleuth_results(obj, test, test_type, which_model)
   table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
@@ -861,6 +862,46 @@ transcripts_from_gene <- function(obj, test, test_type,
       stop("Couldn't find gene ", gene_name)
   }
   table$target_id[table[, 2] == gene_name]
+}
+
+#' Get the gene ID using other gene identifiers
+#'
+#' Get the \code{target_id} of a gene using other gene identifiers
+#'
+#' @param obj a \code{sleuth} object
+#' @param test a character string denoting which beta to use
+#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
+#' @param which_model a character string denoting which model to use
+#' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
+#' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
+#' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
+#' @param gene_name a string containing the name of the gene you are interested in
+#' @return a character vector containing the name of the gene mapping to the identifier
+#' @export
+gene_from_gene <- function(obj, gene_colname, gene_name) {
+
+  if (!obj$gene_mode) {
+    stop("this sleuth object is in transcript mode. Please use 'transcripts_from_gene' instead.")
+  }
+
+  table <- as.data.frame(obj$target_mapping)
+  if (gene_colname == obj$gene_column) {
+    if (!(gene_name %in% table[, eval(parse(text = obj$gene_column))])) {
+      stop("Couldn't find gene ", gene_name)
+    } else {
+      return(gene_name)
+    }
+  }
+
+  table <- unique(dplyr::select_(table, obj$gene_column, gene_colname))
+  if (!(gene_name %in% table[, 2])) {
+      stop("Couldn't find gene ", gene_name)
+  }
+  hits <- unique(table[table[,2] == gene_name, 1])
+  if (length(hits) > 1) {
+    warning("there was more than one gene ID that matched this identifier; taking the first one")
+  }
+  hits[1]
 }
 
 #' Change sleuth transform function

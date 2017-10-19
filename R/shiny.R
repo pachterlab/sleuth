@@ -38,10 +38,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
   if (obj$gene_mode) {
     counts_unit <- "scaled_reads_per_base"
+    bsg_choices <- names(obj$target_mapping)[2:length(names(obj$target_mapping))]
+    index <- which(bsg_choices == obj$gene_column)
+    bsg_choices <- c(bsg_choices[index], bsg_choices[-index])
     gene_mode_choice <- "true"
   } else {
     counts_unit <- "est_counts"
     gene_mode_choice <- "false"
+    bsg_choices <- c()
   }
 
   # set up for the different types of tests
@@ -124,10 +128,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
             offset = 1),
           fluidRow(
-            column(4,
+            column(3,
                    textInput('bsg_var_input', label = 'gene: ', value = '')
             ),
-            column(4,
+            column(3,
                    selectInput('bsg_var_color_by', label = 'color by: ',
                                choices = c(NULL, poss_covars), selected = NULL)
             ),
@@ -137,7 +141,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                                            else { names(obj$bs_quants[[1]]) } ),
                                selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
                                            else { names(obj$bs_quants[[1]])[1] })
-                   ))
+                   )),
+            column(3,
+                   selectInput('bsg_gene_colname',
+                               label = 'genes from: ',
+                               choices = bsg_choices)
+            )
           ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bsg_go', 'view')),
           fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
@@ -1434,7 +1443,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     ### Gene viewer, gene mode
 
     bsg_var_text <- eventReactive(input$bsg_go, {
-      input$bsg_var_input
+      if (obj$gene_mode) {
+        gene_from_gene(obj,
+                       input$bsg_gene_colname,
+                       input$bsg_var_input)
+      }
     })
 
     output$bsg_var_plt <- renderPlot({
@@ -1460,13 +1473,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     ### Gene Viewer, transcript mode
     # the name of the gene supplied
     gv_var_text <- eventReactive(input$gv_go, {
-      if (!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping) & !obj$gene_mode) {
           input$gv_var_input
       }
     })
 
     output$gv_gene_column <- renderUI({
-      if (!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping) & !obj$gene_mode) {
         selectInput('gv_gene_colname',
           label = 'genes from: ',
           choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
@@ -1492,12 +1505,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         current_test <- possible_tests[1]
       }
 
-      transcripts_from_gene(obj,
-        current_test,
-        test_type,
-        input$which_model_qq,
-        input$gv_gene_colname,
-        gv_var_text())
+      if (!obj$gene_mode) {
+        transcripts_from_gene(obj,
+                              current_test,
+                              test_type,
+                              input$which_model_qq,
+                              input$gv_gene_colname,
+                              gv_var_text())
+      }
     })
 
     output$gv_var_plts <- renderUI({
@@ -1515,7 +1530,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           my_i <- i
           gv_plotname <- paste("plot", my_i, sep = "")
             output[[gv_plotname]] <- renderPlot({
-               if (!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i])) {
+               if (!is.null(obj$target_mapping) && !obj$gene_mode &&
+                   !is.na(gv_var_list()[my_i])) {
                  plot_bootstrap(obj,
                    gv_var_list()[my_i],
                    units = input$gv_var_units,
