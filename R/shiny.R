@@ -36,8 +36,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       install.packages('shiny')")
   }
 
-  if (obj$gene_mode) counts_unit <- "scaled_reads_per_base" else
+  if (obj$gene_mode) {
+    counts_unit <- "scaled_reads_per_base"
+    gene_mode_choice <- "true"
+  } else {
     counts_unit <- "est_counts"
+    gene_mode_choice <- "false"
+  }
 
   # set up for the different types of tests
   poss_covars <- dplyr::setdiff(
@@ -110,7 +115,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
       tabPanel('gene view',
         conditionalPanel(
-          condition = 'obj$gene_mode',
+          condition = 'input.settings_gene_mode == "true"',
           fluidRow(
             column(12,
                    p(
@@ -147,11 +152,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           )
         ),
         conditionalPanel(
-          condition = '!obj$gene_mode',
+          condition = 'input.settings_gene_mode == "false"',
           fluidRow(
             column(12,
                    p(h3('gene view'),
-                     'Boxplots of abundances of transcript mapping to a given gene,',
+                     'Boxplots of abundances of transcripts mapping to a given gene,',
                      'and their technical variation.',
                      'This step can take a while, especially with many plots.')
             ),
@@ -739,6 +744,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               label = 'test type:',
               choices = valid_test_types,
               selected = valid_test_types[1])
+          ),
+          column(2,
+            selectInput('settings_gene_mode',
+              label = 'gene mode:',
+              choices = gene_mode_choice,
+              selected = gene_mode_choice[1])
           )
         )
       )
