@@ -332,6 +332,11 @@ plot_group_density <- function(obj,
   ) {
 
   units <- check_quant_mode(obj, units)
+  if(length(grouping) > 1) {
+    stop("'grouping' must be only one column name from the 'obj$sample_to_covariates' table")
+  } else if (!(grouping %in% colnames(obj$sample_to_covariates))) {
+    stop(paste(grouping, "is not a column name in the 'obj$sample_to_covariates' table")
+  }
 
   res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
   # res <- NULL
