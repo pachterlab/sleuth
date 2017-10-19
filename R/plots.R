@@ -318,7 +318,7 @@ plot_pc_variance <- function(obj,
 #' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param grouping a string from the columns of \code{sample_to_covariates} in
-#' the sleuth object for which to group and color by
+#' the sleuth object for which to group and color by. At this time, 
 #' @param offset the offset so that transformations such as log don't compute
 #' -Inf. If NULL, then will not add an offset
 #' @return a \code{ggplot2} object
@@ -331,23 +331,39 @@ plot_group_density <- function(obj,
   offset = 1
   ) {
 
-  units <- check_quant_mode(obj, units)
-  if(length(grouping) > 1) {
-    stop("'grouping' must be only one column name from the 'obj$sample_to_covariates' table")
-  } else if (!(grouping %in% colnames(obj$sample_to_covariates))) {
-    stop(paste(grouping, "is not a column name in the 'obj$sample_to_covariates' table")
+  units <- sleuth:::check_quant_mode(obj, units)
+  if (!all(grouping %in% colnames(obj$sample_to_covariates))) {
+    bad_names <- which(!(grouping %in% colnames(obj$sample_to_covariates)))
+    if(length(bad_names) > 1) {
+      formatted_names <- paste(grouping[bad_names], collapse = "', '")
+      formatted_names <- paste0("'", formatted_names, "'")
+      stop(paste(formatted_names, "are not column names in the 'obj$sample_to_covariates' table"))
+    } else {
+      formatted_name <- paste0("'", grouping[bad_names], "'")
+      stop(paste(formatted_name, "is not a column name in the 'obj$sample_to_covariates' table"))
+    }
   }
 
-  res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
-  # res <- NULL
-  # if (use_filtered) {
-  #   res <- obj$obs_norm_filt
-  # } else {
-  #   res <- obj$obs_norm
-  # }
-
   gdots <- list(target_id = ~target_id)
-  gdots[[grouping]] <- as.formula(paste0('~', grouping))
+  if (length(grouping) > 1) {
+    temp_s2c <- obj$sample_to_covariates
+    uniq_vals <- apply(temp_s2c[, grouping], 2, function(x) length(unique(x)))
+    if(any(uniq_vals == nrow(temp_s2c))) {
+      warning("You've selected at least one grouping column that is unique for each sample.\n",
+              "That makes the output identical to plot_sample_density for all samples.")
+    }
+    temp_s2c$grouping <- do.call(paste, append(as.list(temp_s2c[, grouping]), list(sep = " and ")))
+    res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = FALSE)
+    res <- dplyr::left_join(data.table::as.data.table(res), 
+            data.table::as.data.table(temp_s2c), 
+            by = "sample")
+    gdots[["grouping"]] <- as.formula('~grouping')
+    grouping <- "grouping"
+  } else {
+    res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
+    gdots[[grouping]] <- as.formula(paste0('~', grouping))
+  }
+
   res <- dplyr::group_by_(res, .dots = gdots)
 
   mean_str <- paste0('mean(', units, ' )')
