@@ -889,7 +889,7 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
       highlight <- dplyr::semi_join(res, highlight, by = 'target_id')
     })
     if (nrow(highlight) > 0) {
-      p <- p + geom_point(aes(mean_obs, b), data = highlight, colour = highlight_color)
+      p <- p + geom_point(aes(theoretical, observed), data = highlight, colour = highlight_color)
     } else {
       warning("Couldn't find any transcripts from highlight set in this test.
         They were probably filtered out.")
