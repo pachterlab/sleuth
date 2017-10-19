@@ -393,13 +393,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
               selected = 2)
             ),
-          column(4,
+          column(3,
             selectInput('color_by', label = 'color by: ',
               choices = c(NULL, poss_covars), selected = NULL)
             ),
           column(2,
             numericInput('pca_point_size', label = 'size: ', value = 3)),
-          column(2,
+          column(3,
             selectInput('pca_units', label = 'units: ',
               choices = c(counts_unit, 'tpm'),
               selected = counts_unit))
