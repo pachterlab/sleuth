@@ -752,14 +752,20 @@ plot_fld.kallisto <- function(obj) {
 #' @param color_high the 'high' color
 #' @param color_low the 'low' color
 #' @param x_axis_angle the angle at which to put the x-axis labels
+#' @param annotation_cols a character vector of covariates from
+#'   \code{sample_to_covariates} that should be annotated on the heatmap
+#' @param cluster_bool whether the rows and columns should be hierarchically
+#'   clustered. default is \code{TRUE}
 #' @return a \code{ggplot2} object
 #' @export
 plot_sample_heatmap <- function(obj,
   use_filtered = TRUE,
   color_high = 'white',
   color_low = 'dodgerblue',
-  x_axis_angle = 50
-  ) {
+  annotation_cols = setdiff(colnames(obj$sample_to_covariates), 'sample'),
+  cluster_bool = TRUE,
+  x_axis_angle = 50,
+  ...) {
   abund <- NULL
   if (use_filtered) {
     abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm',
@@ -770,18 +776,38 @@ plot_sample_heatmap <- function(obj,
   }
   all_pairs <- apply_all_pairs(abund, jsd)
 
-  all_pairs <- reshape2::melt(all_pairs, varnames = c('sample_x', 'sample_y'),
-    value.name = 'jsd')
+  s2c <- obj$sample_to_covariates
+  if (is.null(annotation_cols)) {
+    s2c <- NA
+  } else if (!all(annotation_cols %in% colnames(s2c))) {
+    bad_cols <- which(!(annotation_cols %in% colnames(s2c)))
+    formatted_cols <- paste(annotation_cols[bad_cols], collapse = ", ")
+    stop("At least one covariate selected in 'annotation_cols' does not exist.",
+         "\nHere are the covariates that do not exist: ", formatted_cols)
+  } else {
+    rownames(s2c) <- s2c$sample
+    s2c <- s2c[, annotation_cols]
+  }
 
-  p <- ggplot(all_pairs, aes(sample_x, sample_y))
-  p <- p + geom_tile(aes(fill = jsd))
-  p <- p + geom_text(aes(label = round(jsd, 3)))
-  p <- p + scale_fill_gradient(high = color_high, low = color_low)
-  p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
-  p <- p + xlab('')
-  p <- p + ylab('')
-
-  p
+  colors <- colorRampPalette(c(color_high, color_low))(100)
+  # the PDF code prevents the heatmap from printing before we modify the plot
+  pdf(file = NULL)
+  p <- pheatmap::pheatmap(all_pairs, annotation_col = s2c, color = colors,
+                          cluster_rows = cluster_bool,
+                          cluster_cols = cluster_bool,
+                          clustering_distance_cols = dist(all_pairs),
+                          clustering_distance_rows = dist(all_pairs),
+                          treeheight_row = 0, # remove redundant row dendrogram
+                          ...)
+  invisible(dev.off())
+  # modify the column labels with the x_axis_angle
+  # subtracting from 360 degrees to get it to align well without modifying
+  # anything else
+  p$gtable$grobs[[3]]$rot <- 360 - x_axis_angle
+  # remove redundant y-axis labels
+  p$gtable$grobs[[4]]$label <- NULL
+  # this sends the graphic back
+  gridExtra::grid.arrange(p$gtable)
 }
 
 #' Plot volcano plot
