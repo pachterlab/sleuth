@@ -21,6 +21,7 @@ Imports:
     parallel,
     lazyeval,
     matrixStats,
+    pheatmap,
     shiny
 Suggests:
     MASS,
