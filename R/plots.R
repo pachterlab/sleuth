@@ -953,13 +953,17 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
 #' @param transcripts a vector of strings containing a list of transcripts to be plotted in a heatmap
 #' @param obj a \code{sleuth} object
 #' @param units a string specifying which units to use, either tpm or est_counts (scaled_reads_per_base for gene_mode)
-#' @param trans a string specifying a function to transform the data by
+#' @param trans a function or a string specifying a function to transform
+#'   the data by
+#' @param cluster_transcripts whether the transcripts also should be clustered.
+#'   default is \code{FALSE}
 #' @return a \code{ggplot} object
 #' @export
 plot_transcript_heatmap <- function(obj,
   transcripts,
   units = 'tpm',
   trans = 'log',
+  cluster_transcripts = FALSE,
   offset = 1) {
 
   units <- check_quant_mode(obj, units)
@@ -978,6 +982,10 @@ plot_transcript_heatmap <- function(obj,
   } else if (units == 'est_counts') {
     tabd_df <- dplyr::select(tabd_df, target_id, sample, est_counts)
     tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
+  } else if (units == 'scaled_reads_per_base') {
+    tabd_df <- dplyr::select(tabd_df, target_id, sample, scaled_reads_per_base)
+    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample,
+                               value.var = 'scaled_reads_per_base')
   } else {
     stop("Didn't recognize the following unit: ", units)
   }
@@ -988,9 +996,14 @@ plot_transcript_heatmap <- function(obj,
   p <- NULL
   if (nchar(trans) > 0 && !is.null(trans)) {
     tFunc <- eval(parse(text = trans))
-    p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)), clustRows = FALSE)
+    p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)),
+                          clustRows = cluster_transcripts)
+  } else if (is.function(trans)){
+    p <- ggPlotExpression(as.matrix(trans(tabd_df + offset)),
+                          clustRows = cluster_transcripts)
   } else {
-    p <- ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
+    p <- ggPlotExpression(as.matrix(tabd_df),
+                          clustRows = cluster_transcripts)
   }
 
   p
