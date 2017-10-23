@@ -959,6 +959,16 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
 #'   the data by
 #' @param cluster_transcripts whether the transcripts also should be clustered.
 #'   default is \code{FALSE}
+#' @param offset how much should be added to estimated expression before
+#'   transformation? Default is 1.
+#' @param color_high the 'high expression' color (default: dark red)
+#' @param color_mide the 'medium expression' color (default: yellow)
+#' @param color_low the 'low expression' color (default: light green)
+#' @param x_axis_angle the angle at which to put the x-axis labels
+#' @param annotation_cols a character vector of covariates from
+#'   \code{sample_to_covariates} that should be annotated on the heatmap
+#' @param ... additional arguments to customize the heatmap. passed to
+#'   \code{pheatmap}. See ?pheatmap for documentation on additional options.
 #' @return a \code{ggplot} object
 #' @export
 plot_transcript_heatmap <- function(obj,
@@ -966,7 +976,13 @@ plot_transcript_heatmap <- function(obj,
   units = 'tpm',
   trans = 'log',
   cluster_transcripts = FALSE,
-  offset = 1) {
+  offset = 1,
+  color_high = '#581845',
+  color_mid = '#FFC300',
+  color_low = '#DAF7A6',
+  x_axis_angle = 50,
+  annotation_cols = setdiff(colnames(obj$sample_to_covariates), 'sample'),
+  ...) {
 
   units <- check_quant_mode(obj, units)
 
@@ -995,20 +1011,48 @@ plot_transcript_heatmap <- function(obj,
   rownames(tabd_df) <- tabd_df$target_id
   tabd_df$target_id <- NULL
 
-  p <- NULL
   if (nchar(trans) > 0 && !is.null(trans)) {
     tFunc <- eval(parse(text = trans))
-    p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)),
-                          clustRows = cluster_transcripts)
+    trans_mat <- as.matrix(tFunc(tabd_df + offset))
   } else if (is.function(trans)){
-    p <- ggPlotExpression(as.matrix(trans(tabd_df + offset)),
-                          clustRows = cluster_transcripts)
+    trans_mat <- as.matrix(trans(tabd_df + offset))
   } else {
-    p <- ggPlotExpression(as.matrix(tabd_df),
-                          clustRows = cluster_transcripts)
+    trans_mat <- as.matrix(tabd_df)
   }
 
-  p
+  s2c <- obj$sample_to_covariates
+  if (is.null(annotation_cols)) {
+    s2c <- NA
+  } else if (!all(annotation_cols %in% colnames(s2c))) {
+    bad_cols <- which(!(annotation_cols %in% colnames(s2c)))
+    formatted_cols <- paste(annotation_cols[bad_cols], collapse = ", ")
+    stop("At least one covariate selected in 'annotation_cols' does not exist.",
+         "\nHere are the covariates that do not exist: ", formatted_cols)
+  } else {
+    rownames(s2c) <- s2c$sample
+    s2c <- s2c[, annotation_cols, drop = FALSE]
+  }
+
+  colors <- colorRampPalette(c(color_low, color_mid, color_high))(100)
+  # the PDF code prevents the heatmap from printing before we modify the plot
+  pdf(file = NULL)
+  if (cluster_transcripts) {
+    p <- pheatmap::pheatmap(trans_mat, annotation_col = s2c, color = colors,
+                            cluster_cols = TRUE,
+                            cluster_rows = cluster_transcripts,
+                            ...)
+  } else {
+    p <- pheatmap::pheatmap(trans_mat, annotation_col = s2c, color = colors,
+                            cluster_cols = TRUE,
+                            ...)
+  }
+  invisible(dev.off())
+  # modify the column labels with the x_axis_angle
+  # subtracting from 360 degrees to get it to align well without modifying
+  # anything else
+  p$gtable$grobs[[3]]$rot <- 360 - x_axis_angle
+  # this sends the graphic back
+  gridExtra::grid.arrange(p$gtable)
 }
 
 
