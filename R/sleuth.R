@@ -871,7 +871,7 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
   filter_empty <- !filter_empty
   popped_gene_table <- popped_gene_table[filter_empty, ]
 
-  popped_gene_table
+  adf(popped_gene_table)
 }
 
 
