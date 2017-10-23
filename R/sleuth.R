@@ -281,7 +281,8 @@ sleuth_prep <- function(
   if (!is.null(target_mapping)) {
     tmp_names <- data.frame(target_id = kal_list[[1]]$abundance$target_id,
       stringsAsFactors = FALSE)
-    target_mapping <- check_target_mapping(tmp_names, target_mapping)
+    target_mapping <- check_target_mapping(tmp_names, target_mapping,
+                                           !is.null(aggregation_column))
     rm(tmp_names)
   }
 
@@ -541,11 +542,16 @@ check_kal_pack <- function(kal_list) {
 }
 
 # this function is mostly to deal with annoying ENSEMBL transcript names that
-# have a training .N to keep track of version number
-#
+# have a trailing .N to keep track of version number
+# 
+# this also checks to see if there are duplicate entries for any target IDs
+# and issues a warning if sleuth prep is in transcript mode, but stops if
+# sleuth prep is in gene mode, since duplicate entries creates problems when
+# doing the aggregation
+# 
 # @return the target_mapping if an intersection is found. a target_mapping that
 # matches \code{t_id} if no matching is found
-check_target_mapping <- function(t_id, target_mapping) {
+check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   t_id <- data.table::as.data.table(t_id)
   target_mapping <- data.table::as.data.table(target_mapping)
 
@@ -579,6 +585,24 @@ check_target_mapping <- function(t_id, target_mapping) {
       ' please check obj$target_mapping to ensure this new mapping is correct.'))
   }
 
+  if(any(duplicated(target_mapping$target_id))) {
+    indices <- which(duplicated(target_mapping$target_id))
+    duplicated_ids <- target_mapping$target_id[indices]
+    formatted_ids <- paste(dupliated_ids, collapse = ", ")
+    if(gene_mode) {
+      stop("There is at least one duplicated target ID in the target mapping. ",
+           "Since sleuth prep is in gene aggregation mode, any duplicated ",
+           "entries will cause errors during gene aggregation. Here is a list ",
+           "of all the duplicated target IDs:\n", formatted_ids)
+    } else {
+      warning("There is at least one duplicated target ID in the target ",
+              "mapping. Since sleuth prep is not in gene aggregation mode, ",
+              "duplicated entries will not cause errors during preparation, ",
+              "but may cause unexpected behavior when making any plots or ",
+              "tables. Here is a list of all the duplicated target IDs:\n",
+              formatted_ids)
+    }
+  }
   target_mapping
 }
 
