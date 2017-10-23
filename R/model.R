@@ -288,9 +288,9 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' @return ...: if there is a target mapping data frame, all of the annotations columns are added from \code{obj$target_mapping} before the other columns.
 #' @return pval: p-value of the chosen model
 #' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
-#' @return test_stat (LRT only): the likelihood ratio between the two models. Only seen with Likelihood Ratio test results.
-#' @return rss (LRT only): the residual sum of squares of the "null model". Only seen with Likelihood Ratio test results.
-#' @return degrees_free (LRT only): the degrees of freedom used by the "alternative model". Only seen with Likelihood Ratio test results.
+#' @return test_stat (LRT only): Chi-squared test statistic (likelihood ratio test). Only seen with Likelihood Ratio test results.
+#' @return rss (LRT only): the residual sum of squares under the "null model". Only seen with Likelihood Ratio test results.
+#' @return degrees_free (LRT only): the degrees of freedom (equal to difference between the two models). Only seen with Likelihood Ratio test results.
 #' @return b (Wald only): 'beta' value (effect size). Technically a biased estimator of the fold change. Only seen with Wald test results.
 #' @return se_b (Wald only): standard error of the beta. Only seen with Wald test results.
 #' @return mean_obs: mean of natural log counts of observations
