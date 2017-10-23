@@ -237,6 +237,16 @@ sleuth_prep <- function(
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
+  counts_test <- data.table::as.data.table(obs_raw)
+  counts_test <- counts_test[, total = .(total = sum(est_counts)), by = "sample"]
+  if (any(counts_test$total == 0)) {
+    zero_names <- counts_test$sample[which(counts_test$total == 0)]
+    formatted_names <- paste(zero_names, collapse = ", ")
+    warning("At least one sample have no reads aligned. ",
+            "Here are the samples with zero counts:\n",
+            formatted_names)
+  }
+  
   design_matrix <- NULL
   if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
