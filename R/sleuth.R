@@ -249,6 +249,18 @@ sleuth_prep <- function(
 
   if (!is.null(full_model)) {
     rownames(design_matrix) <- sample_to_covariates$sample
+    # check if the resulting design_matrix is singular (i.e. non-invertible)
+    # followed the suggested method found here: https://stackoverflow.com/a/24962470 
+    M <- t(design_matrix) %*% design_matrix
+    det_mod <- determinant(M)$modulus
+    if(!is.finite(det_mod)) {
+      stop("The full model you provided seems to result in a singular design matrix. ",
+           "This frequently happens when one of the covariates is a linear ",
+           "combination of one or more other covariates (e.g. one covariate ",
+           "yields identical groupings as another covariate). Check your ",
+           "sample_to_covariates table and your full model.")
+    }
+    rm(M, det_mod)
   }
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
