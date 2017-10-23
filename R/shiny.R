@@ -212,9 +212,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           offset = 1
         ),
         fluidRow(
-          column(12,
+          column(4,
             textInput('hm_transcripts', label = 'enter target ids: ', value = '')
-              )),
+              ),
+          column(8, style = "margin-top:15px;",
+            checkboxGroupInput('hm_covars', label = 'covariates',
+                               choices = as.list(poss_covars), inline = TRUE)
+                 )),
         fluidRow(
           column(3,
             selectInput('hm_units', label = 'units:', choices = c(counts_unit, 'tpm'), selected = 'tpm')
@@ -224,7 +228,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               ),
           column(2,
             numericInput('hm_offset', label = 'offset: ', value = 1)),
-          column(2, style = "margin-top: 15px;",
+          column(2, style = "margin-top: 10px;",
             checkboxInput('hm_cluster', label = 'cluster transcripts', value = TRUE)),
           column(1,
             actionButton('hm_go', 'view')
@@ -477,7 +481,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                    checkboxInput('samp_heat_cluster', label = 'cluster samples', value = TRUE)
                    ),
                  column(9,
-                   checkboxGroupInput('samp_heat_covar', label = 'covariates',
+                   checkboxGroupInput('samp_heat_covars', label = 'covariates',
                                       choices = as.list(poss_covars), inline = TRUE)
                    )),
         fluidRow(plotOutput('samp_heat_plt')),
@@ -1057,7 +1061,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     ###
     output$samp_heat_plt <- renderPlot({
       samp_heat_plt <- plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt,
-                                           annotation_cols = input$samp_heat_covar,
+                                           annotation_cols = input$samp_heat_covars,
                                            cluster_bool = input$samp_heat_cluster)
       saved_plots_and_tables$samp_heat_plt <- samp_heat_plt #this is a gtable object
       samp_heat_plt
@@ -1586,7 +1590,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           hm_transcripts(),
           input$hm_units, hm_func(),
           cluster_transcripts = input$hm_cluster,
-          offset = input$hm_offset)
+          offset = input$hm_offset,
+          annotation_cols = input$hm_covars)
 
         output$download_hm_plt_button <- renderUI({
           div(
