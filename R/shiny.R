@@ -212,17 +212,20 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           offset = 1
         ),
         fluidRow(
-          column(3,
+          column(12,
             textInput('hm_transcripts', label = 'enter target ids: ', value = '')
-              ),
+              )),
+        fluidRow(
           column(3,
             selectInput('hm_units', label = 'units:', choices = c(counts_unit, 'tpm'), selected = 'tpm')
               ),
-          column(3,
+          column(2,
             textInput('hm_trans', label = 'tranform: ', value = 'log')
               ),
           column(2,
             numericInput('hm_offset', label = 'offset: ', value = 1)),
+          column(2, style = "margin-top: 15px;",
+            checkboxInput('hm_cluster', label = 'cluster transcripts', value = TRUE)),
           column(1,
             actionButton('hm_go', 'view')
           )
@@ -468,7 +471,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
           ),
           offset = 1),
-        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+        fluidRow(column(1, style = "margin-top: 15px;",
+                   checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+                 column(2, style = "margin-top: 15px;",
+                   checkboxInput('samp_heat_cluster', label = 'cluster samples', value = TRUE)
+                   ),
+                 column(9,
+                   checkboxGroupInput('samp_heat_covar', label = 'covariates',
+                                      choices = as.list(poss_covars), inline = TRUE)
+                   )),
         fluidRow(plotOutput('samp_heat_plt')),
         fluidRow(
           div(align = "right", style = "margin-right:15px; margin-bottom:10px",
@@ -1045,8 +1056,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     ###
     output$samp_heat_plt <- renderPlot({
-      samp_heat_plt <- plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt)
-      saved_plots_and_tables$samp_heat_plt <- samp_heat_plt
+      samp_heat_plt <- plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt,
+                                           annotation_cols = input$samp_heat_covar,
+                                           cluster_bool = input$samp_heat_cluster)
+      saved_plots_and_tables$samp_heat_plt <- samp_heat_plt #this is a gtable object
       samp_heat_plt
     })
 
@@ -1572,6 +1585,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         saved_plots_and_tables$hm_plt <- plot_transcript_heatmap(obj,
           hm_transcripts(),
           input$hm_units, hm_func(),
+          cluster_transcripts = input$hm_cluster,
           offset = input$hm_offset)
 
         output$download_hm_plt_button <- renderUI({
