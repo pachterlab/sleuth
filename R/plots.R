@@ -749,22 +749,24 @@ plot_fld.kallisto <- function(obj) {
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use everything
-#' @param color_high the 'high' color
-#' @param color_low the 'low' color
+#' @param color_high the 'high' color (to label samples that are close)
+#' @param color_low the 'low' color (to label samples that are far apart)
 #' @param x_axis_angle the angle at which to put the x-axis labels
 #' @param annotation_cols a character vector of covariates from
 #'   \code{sample_to_covariates} that should be annotated on the heatmap
 #' @param cluster_bool whether the rows and columns should be hierarchically
 #'   clustered. default is \code{TRUE}
+#' @param ... additional arguments to customize the heatmap. passed to
+#'   \code{pheatmap}. See ?pheatmap for documentation on additional options.
 #' @return a \code{ggplot2} object
 #' @export
 plot_sample_heatmap <- function(obj,
   use_filtered = TRUE,
   color_high = 'white',
   color_low = 'dodgerblue',
+  x_axis_angle = 50,
   annotation_cols = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   cluster_bool = TRUE,
-  x_axis_angle = 50,
   ...) {
   abund <- NULL
   if (use_filtered) {
@@ -786,7 +788,7 @@ plot_sample_heatmap <- function(obj,
          "\nHere are the covariates that do not exist: ", formatted_cols)
   } else {
     rownames(s2c) <- s2c$sample
-    s2c <- s2c[, annotation_cols]
+    s2c <- s2c[, annotation_cols, drop = FALSE]
   }
 
   colors <- colorRampPalette(c(color_high, color_low))(100)
