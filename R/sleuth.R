@@ -480,7 +480,14 @@ sleuth_prep <- function(
     # if mclapply results in an error (a warning is shown), then print error and stop
     error_status <- sapply(bs_results, function(x) is(x, "try-error"))
     if (any(error_status)) {
-      print(attributes(bs_results[error_status])$condition)
+      error_msgs <- sapply(which(error_status), function(i) {
+        bad_run <- bs_results[[i]]
+        samp_name <- sample_to_covariates$sample[i]
+        trace <- .traceback(bad_run)
+        paste0("Sample '", samp_name, "' had this error message: ", trace[1])
+      })
+      formatted_error <- paste(error_msgs, collapse = "")
+      message(formatted_error)
       stop("At least one core from mclapply had an error. See the above error message(s) for more details.")
     }
 
