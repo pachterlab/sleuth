@@ -104,6 +104,9 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param transformation_function the transformation that should be applied
 #' to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
 #' NOTE: be sure you know what you're doing before you change this.
+#' @param transformation_function_tpm the transformation that should be applied
+#' to the TPM values. Default is \code{'x'} (i.e. the identity function / no transformation)
+#' NOTE: be sure you know what you're doing before you change this.
 #' @param num_cores an integer of the number of computer cores mclapply should use
 #' to speed up sleuth preparation
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
@@ -128,6 +131,7 @@ sleuth_prep <- function(
   read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE,
   transformation_function = log_transform,
+  transformation_function_tpm = identity,
   num_cores = max(1L, parallel::detectCores() - 1L),
   ...) {
 
@@ -274,7 +278,8 @@ sleuth_prep <- function(
       target_mapping = target_mapping,
       gene_mode = !is.null(aggregation_column),
       gene_column = aggregation_column,
-      transform_fun = transformation_function
+      transform_fun = transformation_function,
+      transform_fun_tpm = transformation_function_tpm
     )
 
   # TODO: eventually factor this out
@@ -451,7 +456,7 @@ sleuth_prep <- function(
                         read_bootstrap_tpm, ret$gene_mode,
                         extra_bootstrap_summary,
                         target_id, mappings, which_ids, ret$gene_column,
-                        ret$transform_fun)
+                        ret$transform_fun, ret$transform_fun_tpm)
     })
 
     # if mclapply results in an error (a warning is shown), then print error and stop
@@ -464,7 +469,6 @@ sleuth_prep <- function(
     # mclapply is expected to retun the bootstraps in order; this is a sanity check of that
     indices <- sapply(bs_results, function(result) result$index)
     stopifnot(identical(indices, order(indices)))
-
     if(read_bootstrap_tpm | extra_bootstrap_summary) {
       ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
       names(ret$bs_quants) <- sample_to_covariates$sample
@@ -858,9 +862,9 @@ transcripts_from_gene <- function(obj, test, test_type,
   table$target_id[table[, 2] == gene_name]
 }
 
-#' Change sleuth transform function
+#' Change sleuth transform counts function
 #'
-#' Replace the transformation function of a sleuth object
+#' Replace the transformation function of a sleuth object for estimated counts
 #'
 #' NOTE: if you change the transformation function after having done a fit,
 #' the fit(s) will have to be redone using the new transformation.
@@ -880,6 +884,27 @@ transcripts_from_gene <- function(obj, test, test_type,
   obj
 }
 
+#' Change sleuth transform TPM function
+#'
+#' Replace the transformation function of a sleuth object for TPM values
+#'
+#' NOTE: if you change the transformation function after having done a fit,
+#' the fit(s) will have to be redone using the new transformation.
+#' @examples transform_fun(x) <- function(x) identity(x)
+#' @export
+`transform_fun_tpm<-` <- function(obj, fxn) {
+  stopifnot(is.function(fxn))
+  obj$transform_fun_tpm <- fxn
+  if(!is.null(obj$fits)) {
+    warning(paste("Your sleuth object has fits based on the old transform function.",
+                  "Please rerun sleuth_prep and sleuth_fit."))
+    obj$fits <- lapply(obj$fits, function(x) {
+                         x$transform_synced <- FALSE
+                         x
+                       })
+  }
+  obj
+}
 
 #' Extend internal '$<-' for sleuth object
 #'
@@ -892,7 +917,7 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' @export
 `$<-.sleuth` <- function(obj, name, value) {
   obj[[name]] <- value
-  if(name=="transform_fun") {
+  if(name == "transform_fun" || name == "transform_fun_tpm") {
     if(!is.null(obj$fits)) {
       warning(paste("Your sleuth object has fits based on the old transform function.",
                     "Please rerun sleuth_prep and sleuth_fit."))
