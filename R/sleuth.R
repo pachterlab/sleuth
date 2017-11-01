@@ -469,7 +469,16 @@ sleuth_prep <- function(
     # mclapply is expected to retun the bootstraps in order; this is a sanity check of that
     indices <- sapply(bs_results, function(result) result$index)
     stopifnot(identical(indices, order(indices)))
-    if(read_bootstrap_tpm | extra_bootstrap_summary) {
+
+    sigma_q_sq_tpm <- NULL
+    if(read_bootstrap_tpm) {
+      all_sample_tpm <- sapply(bs_results, function(result) result$bootstrap_tpm_result)
+      rownames(all_sample_tpm) <- which_ids
+      sigma_q_sq_tpm <- rowMeans(all_sample_tpm)
+      sigma_q_sq_tpm <- sigma_q_sq_tpm[order(names(sigma_q_sq_tpm))]
+      ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
+      names(ret$bs_quants) <- sample_to_covariates$sample
+    } else if(extra_bootstrap_summary) {
       ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
       names(ret$bs_quants) <- sample_to_covariates$sample
     }
@@ -481,21 +490,27 @@ sleuth_prep <- function(
     msg('')
 
     sigma_q_sq <- rowMeans(all_sample_bootstrap)
+    names(sigma_q_sq) <- which_ids
 
     # This is the rest of the gene_summary code
     if (ret$gene_mode) {
-      names(sigma_q_sq) <- which_agg_id
       obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, , drop = FALSE]
+      obs_tpm <- obs_to_matrix(ret, "tpm")[which_agg_id, , drop = FALSE]
     } else {
-      names(sigma_q_sq) <- which_target_id
       obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, , drop = FALSE]
+      obs_tpm <- obs_to_matrix(ret, "tpm")[which_target_id, , drop = FALSE]
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
     obs_counts <- ret$transform_fun(obs_counts)
     obs_counts <- obs_counts[order(rownames(obs_counts)),]
+    obs_tpm <- ret$transform_fun_tpm(obs_tpm)
+    obs_tpm <- obs_tpm[order(rownames(obs_tpm)),]
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
+    ret$bs_summary <- list(obs_counts = obs_counts, obs_tpm = obs_tpm,
+                           sigma_q_sq = sigma_q_sq,
+                           sigma_q_sq_tpm = sigma_q_sq_tpm)
   }
 
   class(ret) <- 'sleuth'
