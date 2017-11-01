@@ -96,10 +96,11 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
-#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM.
-#' NOTE: Unnecessary for typical analyses
+#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM;
+#' needed for some plots (e.g. \code{\link{plot_bootstrap}}), and needed if TPM values are used for
+#' \code{\link{sleuth_fit}}.
 #' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
-#' statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
+#' statistics for estimated counts; needed for some plots (e.g. \code{\link{plot_bootstrap}}).
 #' NOTE: Unnecessary for typical analyses
 #' @param transformation_function the transformation that should be applied
 #' to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
