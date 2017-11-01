@@ -495,7 +495,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
 
   # If bs_mat was made at gene-level, already has column names
   # If at transcript-level, need to add target_ids
-  if(gene_mode) {
+  if(gene_mode & extra_bootstrap_summary) {
     # rename est_counts to scaled_reads_per_base
     bs_quants$scaled_reads_per_base <- bs_quants$est_counts
     bs_quants$est_counts <- NULL
