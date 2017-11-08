@@ -457,7 +457,8 @@ sleuth_prep <- function(
                         read_bootstrap_tpm, ret$gene_mode,
                         extra_bootstrap_summary,
                         target_id, mappings, which_ids, ret$gene_column,
-                        ret$transform_fun, ret$transform_fun_tpm)
+                        ret$transform_fun, ret$transform_fun_tpm,
+                        max_bootstrap)
     })
 
     # if mclapply results in an error (a warning is shown), then print error and stop

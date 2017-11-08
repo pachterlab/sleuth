@@ -377,13 +377,14 @@ process_bootstrap <- function(i, samp_name, kal_path,
                               extra_bootstrap_summary,
                               target_id, mappings, which_ids,
                               aggregation_column, transform_fun,
-                              transform_fun_tpm)
+                              transform_fun_tpm, max_bootstrap)
 {
   dot(i)
   bs_quants <- list()
 
   num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path,
                                             "aux/num_bootstrap"))
+  num_bootstrap <- min(num_bootstrap, max_bootstrap)
   if (num_bootstrap == 0) {
     stop(paste0("File ", kal_path, " has no bootstraps.",
                 "Please generate bootstraps using \"kallisto quant -b\"."))
