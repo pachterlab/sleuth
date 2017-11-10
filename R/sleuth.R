@@ -869,9 +869,6 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' Get the \code{target_id} of a gene using other gene identifiers
 #'
 #' @param obj a \code{sleuth} object
-#' @param test a character string denoting which beta to use
-#' @param test_type either 'wt' for wald test or 'lrt' for likelihood ratio test
-#' @param which_model a character string denoting which model to use
 #' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
 #' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
 #' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
