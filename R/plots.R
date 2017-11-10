@@ -318,7 +318,7 @@ plot_pc_variance <- function(obj,
 #' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param grouping a string from the columns of \code{sample_to_covariates} in
-#' the sleuth object for which to group and color by. At this time, 
+#' the sleuth object for which to group and color by.
 #' @param offset the offset so that transformations such as log don't compute
 #' -Inf. If NULL, then will not add an offset
 #' @return a \code{ggplot2} object
