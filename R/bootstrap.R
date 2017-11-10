@@ -256,11 +256,12 @@ get_bootstrap_summary <- function(obj, target_id, units = 'est_counts') {
     stop(paste0("'", units, "' is invalid for 'units'. please see documentation"))
   }
 
-  if (is.null(obj$bs_quants)) {
-    if (units == 'est_counts') {
-      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE'")
+  if (is.null(obj$bs_quants) | is.null(obj$bs_quants[[1]][[units]])) {
+    if (units %in% c('est_counts', 'scaled_reads_per_base')) {
+      stop("bootstrap summary appears to be missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE'")
     } else {
-      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE' and 'read_bootstrap_tpm = TRUE'")
+      stop("bootstrap summary appears to be missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE' ",
+           "and 'read_bootstrap_tpm = TRUE'")
     }
   }
 
