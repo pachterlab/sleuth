@@ -308,7 +308,8 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' results_table <- sleuth_results(sleuth_obj, 'conditionIP')
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
-  which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
+  which_model = 'full', rename_cols = TRUE, show_all = TRUE,
+  aggregate_pval = obj$gene_aggregate) {
   stopifnot( is(obj, 'sleuth') )
 
   if (test_type == 'wt' && !model_exists(obj, which_model)) {
@@ -384,6 +385,10 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       data.table::as.data.table(obj$target_mapping),
       data.table::as.data.table(res),
       by = 'target_id')
+  }
+
+  if ( obj$gene_aggregate ) {
+    # TODO: p-value aggregation here
   }
 
   if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {

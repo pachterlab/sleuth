@@ -246,7 +246,7 @@ sleuth_prep <- function(
             "Here are the samples with zero counts:\n",
             formatted_names)
   }
-  
+
   design_matrix <- NULL
   if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
@@ -260,7 +260,7 @@ sleuth_prep <- function(
   if (!is.null(full_model)) {
     rownames(design_matrix) <- sample_to_covariates$sample
     # check if the resulting design_matrix is singular (i.e. non-invertible)
-    # followed the suggested method found here: https://stackoverflow.com/a/24962470 
+    # followed the suggested method found here: https://stackoverflow.com/a/24962470
     M <- t(design_matrix) %*% design_matrix
     det_mod <- determinant(M)$modulus
     if(!is.finite(det_mod)) {
@@ -295,8 +295,10 @@ sleuth_prep <- function(
       full_formula = full_model,
       design_matrix = design_matrix,
       target_mapping = target_mapping,
-      gene_mode = !is.null(aggregation_column),
+      # TODO: enable a hidden mode for gene_mode
+      gene_mode = FALSE,
       gene_column = aggregation_column,
+      gene_aggregate = !is.null(aggregation_column),
       transform_fun = transformation_function
     )
 
@@ -555,12 +557,12 @@ check_kal_pack <- function(kal_list) {
 
 # this function is mostly to deal with annoying ENSEMBL transcript names that
 # have a trailing .N to keep track of version number
-# 
+#
 # this also checks to see if there are duplicate entries for any target IDs
 # and issues a warning if sleuth prep is in transcript mode, but stops if
 # sleuth prep is in gene mode, since duplicate entries creates problems when
 # doing the aggregation
-# 
+#
 # @return the target_mapping if an intersection is found. a target_mapping that
 # matches \code{t_id} if no matching is found
 check_target_mapping <- function(t_id, target_mapping, gene_mode) {
