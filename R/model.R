@@ -387,12 +387,18 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       by = 'target_id')
   }
 
-  if ( obj$gene_aggregate ) {
+  if ( aggregate_pval ) {
+  	if(is.null(obj$target_mapping)) {
+  			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
+  	}
+    if(obj$gene_mode) {
+    		stop('Aggregation cannot be done from results in gene mode. Must be performed on results in transcript mode.')
+    }
     # TODO: p-value aggregation here
     if(any(res$pval < 10^-323, na.rm=TRUE)) {
     		warning('Extreme p-values around and below 10^-320 will generate 0 pvalues in aggregation')
     }
-    res <- res %>% group_by(ens_gene) %>% summarise(num_aggregated_transcripts = length(!is.na(pval)), pval = lancaster(pval, exp(mean_obs)), ext_gene = unique(ext_gene), mean_counts = sum(exp(mean_obs), na.rm=TRUE))
+    res <- res %>% group_by(ens_gene) %>% summarise(ext_gene = unique(ext_gene), num_aggregated_transcripts = length(!is.na(pval)), sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE), pval = lancaster(pval, mean_obs))
   	res <- dplyr::mutate(res, qval = p.adjust(pval, 'BH'))
   }
 
