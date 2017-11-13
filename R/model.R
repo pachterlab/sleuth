@@ -389,6 +389,11 @@ sleuth_results <- function(obj, test, test_type = 'wt',
 
   if ( obj$gene_aggregate ) {
     # TODO: p-value aggregation here
+    if(any(res$pval < 10^-323, na.rm=TRUE)) {
+    		warning('Extreme p-values around and below 10^-320 will generate 0 pvalues in aggregation')
+    }
+    res <- res %>% group_by(ens_gene) %>% summarise(num_aggregated_transcripts = length(!is.na(pval)), pval = lancaster(pval, exp(mean_obs)), ext_gene = unique(ext_gene), mean_counts = sum(exp(mean_obs), na.rm=TRUE))
+  	res <- dplyr::mutate(res, qval = p.adjust(pval, 'BH'))
   }
 
   if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {
