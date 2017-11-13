@@ -388,9 +388,9 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   }
 
   if ( aggregate_pval ) {
-	if(is.null(obj$target_mapping)) {
-			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
-	}
+  	if(is.null(obj$target_mapping)) {
+  			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
+  	}
     if(obj$gene_mode) {
     		stop('Aggregation cannot be done from results in gene mode. Must be performed on results in transcript mode.')
     }
