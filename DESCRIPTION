@@ -1,7 +1,9 @@
 Package: sleuth
 Title: Tools for investigating RNA-Seq
 Version: 0.29.0
-Authors@R: c(person("Harold", "Pimentel", , "haroldpimentel@gmail.com", role = c("aut", "cre")))
+Authors@R: c(
+  person("Harold", "Pimentel", , "haroldpimentel@gmail.com", role = c("aut", "cre")),
+  person("Warren", "McGee", , "warren-mcgee@fsm.northwestern.edu", role = "aut"))
 Description: Investigate transcript abundance from "kallisto" and differential
     expression analysis from RNA-Seq data.
 License: GPL-3
