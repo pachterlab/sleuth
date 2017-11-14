@@ -238,7 +238,7 @@ sleuth_prep <- function(
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
   counts_test <- data.table::as.data.table(obs_raw)
-  counts_test <- counts_test[, total = .(total = sum(est_counts)), by = "sample"]
+  counts_test <- counts_test[, .(total = sum(est_counts)), by = "sample"]
   if (any(counts_test$total == 0)) {
     zero_names <- counts_test$sample[which(counts_test$total == 0)]
     formatted_names <- paste(zero_names, collapse = ", ")
