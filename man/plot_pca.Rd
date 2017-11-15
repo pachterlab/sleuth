@@ -29,4 +29,3 @@ a gpplot object
 \description{
 Plot projections of samples onto the principal components for a set of RNA-Seq experiments
 }
-

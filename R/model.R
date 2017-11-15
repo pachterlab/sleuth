@@ -283,6 +283,8 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
+#' @param pval_aggregate if \code{TRUE} and both \code{target_mapping} and \code{aggregation_column} were provided,
+#' to \code{sleuth_prep}, use lancaster's method to aggregate p-values by the \code{aggregation_column}.
 #' @return a \code{data.frame} with the following columns:
 #' @return target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
 #' @return ...: if there is a target mapping data frame, all of the annotations columns are added from \code{obj$target_mapping} before the other columns.
@@ -309,7 +311,7 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
   which_model = 'full', rename_cols = TRUE, show_all = TRUE,
-  aggregate_pval = obj$gene_aggregate) {
+  pval_aggregate = obj$pval_aggregate) {
   stopifnot( is(obj, 'sleuth') )
 
   if (test_type == 'wt' && !model_exists(obj, which_model)) {
@@ -320,6 +322,15 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   #   stop("'", which_model, "' does not exist in ", substitute(obj),
   #     ". Please check  models(", substitute(obj), ") for fitted models.")
   # }
+
+  if (obj$gene_mode && pval_aggregate) {
+    stop("This shouldn't happen. Please report this issue.")
+  }
+
+  if (pval_aggregate && is.null(obj$gene_column)) {
+    stop("`aggregation_column` not set in `sleuth_prep()`.",
+      " Please rerun sleuth_prep() with an aggregation column.")
+  }
 
   if ( !is(test, 'character') ) {
     stop("'", substitute(test), "' is not a valid character.")
@@ -387,20 +398,24 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       by = 'target_id')
   }
 
-  if ( aggregate_pval ) {
-  	if(is.null(obj$target_mapping)) {
+  if ( pval_aggregate ) {
+  	if (is.null(obj$target_mapping) ) {
   			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
   	}
-    if(obj$gene_mode) {
-    		stop('Aggregation cannot be done from results in gene mode. Must be performed on results in transcript mode.')
-    }
-    # TODO: p-value aggregation here
-    if(any(res$pval < 10^-323, na.rm=TRUE)) {
+
+    if( any(res$pval < 10^-323, na.rm = TRUE) ) {
     		warning('Extreme p-values around and below 10^-320 will generate 0 pvalues in aggregation')
     }
-    res <- data.table::as.data.table(res)[, .(num_aggregated_transcripts = length(!is.na(pval)), sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE), pval = as.numeric(lancaster(pval, exp(mean_obs)))), by=eval(obj$gene_column)]
-	res <- res[, qval:=p.adjust(pval, 'BH')]
-	res <- as_df(res)
+
+    res <- data.table::as.data.table(res)
+    res <- res[, .(
+      num_aggregated_transcripts = length(!is.na(pval)),
+      sum_mean_obs_counts = sum(mean_obs, na.rm = TRUE),
+      pval = as.numeric(lancaster(pval, exp(mean_obs)))),
+      by = eval(obj$gene_column)]
+
+  	res <- res[, qval := p.adjust(pval, 'BH')]
+  	res <- as_df(res)
   }
 
   if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {

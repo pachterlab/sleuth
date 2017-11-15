@@ -7,7 +7,6 @@
 #' @param weights A vector of weights, each associated with its respective p-value. Weights must be nonegative. NAs and negative weights will be filtered out with corresponding p-values.
 #' @examples
 #' lancaster(c(.1, .5), c(2, 4))
-#' @export
 lancaster <- function(pvalues, weights)
 {
 	if(length(weights) != length(pvalues))
@@ -32,7 +31,7 @@ lancaster <- function(pvalues, weights)
 	}
 	t <- sapply(1:length(pvalues), function(i) lts(pvalues[i], weights[i]))
 	t <- sum(t)
-	p <- pchisq(t, sum(weights), lower.tail=FALSE) 
+	p <- pchisq(t, sum(weights), lower.tail=FALSE)
 	p
 }
 
@@ -40,4 +39,3 @@ lts <- function(pvalue, weight)
 {
 	qgamma(pvalue, shape = weight /2, scale = 2, lower.tail=FALSE)
 }
-

@@ -47,4 +47,3 @@ so <- sleuth_fit(so, ~1, 'reduced')
 \code{\link{sleuth_wt}} to test whether a coefficient is zero,
 \code{\link{sleuth_lrt}} to test nested models.
 }
-

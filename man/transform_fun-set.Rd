@@ -16,4 +16,3 @@ the fit(s) will have to be redone using the new transformation.
 \examples{
 transform_fun(x) <- function(x) log2(x+0.5)
 }
-

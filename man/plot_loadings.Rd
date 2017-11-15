@@ -13,7 +13,10 @@ plot_loadings(obj, use_filtered = TRUE, sample = NULL, pc_input = NULL,
 
 \item{use_filtered}{if TRUE, use filtered data. otherwise, use all data}
 
-\item{sample}{user input on which sample and which PC's contribute the most}
+\item{sample}{a character string representing the sample to find the loadings of.
+If NULL, then loadings will be computed across all samples (and `pc_input` must be specified).}
+
+\item{pc_input}{the principal components to compute loadings for.}
 
 \item{units}{either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'}
 
@@ -22,8 +25,6 @@ plot_loadings(obj, use_filtered = TRUE, sample = NULL, pc_input = NULL,
 \item{scale}{scale or not}
 
 \item{pca_loading_abs}{default true, to see all PC's magnitude (recommended)}
-
-\item{PC}{principal component to view sample's contribution to that PC}
 }
 \value{
 a ggplot object
@@ -31,4 +32,3 @@ a ggplot object
 \description{
 give a principal component, tells you which contribute the most or give a sample, tells you which PC's it contributes to the most
 }
-

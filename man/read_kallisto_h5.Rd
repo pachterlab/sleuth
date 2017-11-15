@@ -20,4 +20,3 @@ a \code{kallisto} object
 \description{
 Read a kallisto object from an HDF5 file.
 }
-
