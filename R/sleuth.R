@@ -926,7 +926,7 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
 #' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
 #' @param gene_name a string containing the name of the gene you are interested in
-#' @return a character vector containing the name of the gene mapping to the identifier
+#' @return a character vector containing the ID of the gene mapping to 'gene_name'
 #' @export
 gene_from_gene <- function(obj, gene_colname, gene_name) {
 
