@@ -73,3 +73,47 @@ bias_table.kallisto <- function(obj) {
     bias_weights = obj$bias_observed / obj$bias_normalized
     )
 }
+
+#' Subset a kallisto object
+#'
+#' Use a vector of target_ids to subset a single kallisto
+#' object or all of kallisto objects in a sleuth object.
+#'
+#' @param obj either a sleuth or kallisto object
+#' @return a new object with only the subset of target_ids included
+#' @export
+subset_kallisto <- function(obj, ...) {
+  UseMethod('subset_kallisto')
+}
+
+#' @export
+subset_kallisto.sleuth <- function(obj, target_ids) {
+  stopifnot(all(target_ids %in% names(obj$filter_bool)))
+  if(length(target_ids) != length(unique(target_ids))) {
+    target_tab <- table(target_ids)
+    stop("There is at least one target_id that is duplicated. ",
+         "Please provide a vector with unique target_ids.\n",
+         "Here are the target_ids that are duplicated: ",
+         paste(names(target_tab)[target_tab > 1], collapse = ", "))
+  }
+
+  obj$kal <- lapply(obj$kal, function(kal) {
+    subset_kallisto(kal)
+  })
+
+  obj
+}
+
+#' @export
+subset_kallisto.kallisto <- function(obj, target_ids) {
+  stopifnot(all(target_ids %in% obj$abundance$target_id))
+
+  subset_num <- length(unique(target_ids))
+  new_obj <- obj
+  new_obj$abundance <- new_obj$abundance[which(new_obj$abundance %in% target_ids), ]
+  new_obj$bootstrap <- lapply(new_obj$bootstrap, function(bs) {
+    bs[which(bs$target_id %in% target_ids), ]
+  })
+  attr(new_obj, "num_targets") <- subset_num
+  new_obj
+}
