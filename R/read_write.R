@@ -131,7 +131,8 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     bias_normalized = bias_normalized,
     bias_observed = bias_observed,
     bootstrap = bs_samples,
-    fld = fld
+    fld = fld,
+    excluded_ids = character()
     )
   class(res) <- 'kallisto'
 
@@ -139,6 +140,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   attr(res, 'kallisto_version') <- rhdf5::h5read(fname, 'aux/kallisto_version')
   attr(res, 'start_time') <- rhdf5::h5read(fname, 'aux/start_time')
   attr(res, 'num_targets') <- nrow(abund)
+  attr(res, 'original_num_targets') <- nrow(abund)
   attr(res, 'num_mapped') <- sum(abund$est_counts)
   attr(res, 'num_processed') <- num_processed
 
