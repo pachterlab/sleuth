@@ -566,6 +566,7 @@ check_kal_pack <- function(kal_list) {
 check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   t_id <- data.table::as.data.table(t_id)
   target_mapping <- data.table::as.data.table(target_mapping)
+  target_mapping$target_id <- as.character(target_mapping$target_id)
 
   tmp_join <- dplyr::inner_join(t_id, target_mapping, by = 'target_id')
 

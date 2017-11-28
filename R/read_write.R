@@ -202,6 +202,7 @@ read_kallisto_tsv <- function(fname) {
     len = length,
     eff_len = eff_length)
   abundance <- dplyr::arrange(abundance, target_id)
+  abundance$target_id <- as.character(abundance$target_id)
 
   result <- list(abundance = abundance, bootstrap = NULL)
   class(result) <- 'kallisto'
