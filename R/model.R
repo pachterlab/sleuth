@@ -402,13 +402,15 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   	if (is.null(obj$target_mapping) ) {
   			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
   	}
-    if(obj$gene_mode) {
-    		stop('Aggregation cannot be done from results in gene mode. Must be performed on results in transcript mode.')
-    }
-    res <- data.table::as.data.table(res)[, .(num_aggregated_transcripts = length(!is.na(pval)), sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE), pval = as.numeric(lancaster(pval, mean_obs))), by=eval(obj$gene_column)]
+    res <- data.table::as.data.table(res)
+    res <- res[, .(
+    	num_aggregated_transcripts = length(!is.na(pval)),
+    	sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE),
+    	pval = as.numeric(lancaster(pval, mean_obs))),
+		by=eval(obj$gene_column)]
+	
 	res <- res[, qval:=p.adjust(pval, 'BH')]
 	res <- as_df(res)
-
   }
 
   if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {
