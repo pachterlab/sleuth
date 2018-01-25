@@ -12,7 +12,8 @@ Depends:
     R (>= 3.2.1),
     methods,
     ggplot2,
-    dplyr
+    dplyr,
+    aggregation
 Imports:
     data.table,
     tidyr,
@@ -22,7 +23,8 @@ Imports:
     lazyeval,
     matrixStats,
     pheatmap,
-    shiny
+    shiny,
+    aggregation
 Suggests:
     MASS,
     lintr,
