@@ -298,7 +298,7 @@ sleuth_prep <- function(
       # TODO: enable a hidden mode for gene_mode
       gene_mode = FALSE,
       gene_column = aggregation_column,
-      gene_aggregate = !is.null(aggregation_column),
+      pval_aggregate = !is.null(aggregation_column),
       transform_fun = transformation_function
     )
 
@@ -929,7 +929,6 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
 #' @param gene_name a string containing the name of the gene you are interested in
 #' @return a character vector containing the name of the gene mapping to the identifier
-#' @export
 gene_from_gene <- function(obj, gene_colname, gene_name) {
 
   if (!obj$gene_mode) {
