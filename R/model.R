@@ -409,9 +409,6 @@ sleuth_results <- function(obj, test, test_type = 'wt',
 	res <- res[, qval:=p.adjust(pval, 'BH')]
 	res <- as_df(res)
 
-    if( any(res$pval < 10^-323, na.rm = TRUE) ) {
-    		warning('Extreme p-values around and below 10^-320 will generate 0 pvalues in aggregation')
-    }
   }
 
   if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {

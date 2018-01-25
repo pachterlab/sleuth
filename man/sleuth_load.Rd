@@ -18,4 +18,3 @@ load a sleuth object previously saved with \code{sleuth_save}
 \seealso{
 \code{\link{sleuth_save}}, \code{\link{sleuth_deploy}}
 }
-

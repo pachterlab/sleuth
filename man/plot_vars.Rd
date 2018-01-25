@@ -35,4 +35,3 @@ a \code{ggplot2} object
 \description{
 Plot technical variance versus observed variance
 }
-
