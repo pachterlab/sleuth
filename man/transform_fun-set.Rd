@@ -6,13 +6,18 @@
 \usage{
 transform_fun(obj, fxn) <- value
 }
+\arguments{
+\item{obj}{a \code{sleuth} object}
+
+\item{gene_colname}{the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
+object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
+This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}}
+
+\item{gene_name}{a string containing the name of the gene you are interested in}
+}
+\value{
+a character vector containing the ID of the gene mapping to 'gene_name'
+}
 \description{
 Replace the transformation function of a sleuth object for estimated counts
-}
-\details{
-NOTE: if you change the transformation function after having done a fit,
-the fit(s) will have to be redone using the new transformation.
-}
-\examples{
-transform_fun(x) <- function(x) log2(x+0.5)
 }
