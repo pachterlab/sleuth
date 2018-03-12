@@ -584,6 +584,7 @@ check_kal_pack <- function(kal_list) {
 check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   t_id <- data.table::as.data.table(t_id)
   target_mapping <- data.table::as.data.table(target_mapping)
+  target_mapping$target_id <- as.character(target_mapping$target_id)
 
   tmp_join <- dplyr::inner_join(t_id, target_mapping, by = 'target_id')
 
@@ -940,9 +941,12 @@ transcripts_from_gene <- function(obj, test, test_type,
 #'
 #' Replace the transformation function of a sleuth object for estimated counts
 #'
-#' NOTE: if you change the transformation function after having done a fit,
-#' the fit(s) will have to be redone using the new transformation.
-#' @examples transform_fun(x) <- function(x) log2(x+0.5)
+#' @param obj a \code{sleuth} object
+#' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
+#' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
+#' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
+#' @param gene_name a string containing the name of the gene you are interested in
+#' @return a character vector containing the ID of the gene mapping to 'gene_name'
 #' @export
 `transform_fun<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))

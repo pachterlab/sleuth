@@ -20,7 +20,12 @@
 print.kallisto <- function(obj) {
   cat("\tkallisto object\n")
   cat("\n")
-  cat("transcripts: ", length(obj$abundance$target_id), "\n")
+  cat("transcripts: ", attr(obj, "num_targets"), "\n")
+  cat("original number of transcripts: ", attr(obj, "original_num_targets"), "\n")
+
+  subset <- ifelse(is_kallisto_subset(obj), "Original", "Subset")
+  cat("Original or Subset: ", subset)
+
   n_bootstrap <- length(obj$bootstrap)
 
   cat("bootstraps: ", n_bootstrap, "\n")
@@ -72,4 +77,102 @@ bias_table.kallisto <- function(obj) {
     observed_counts = obj$bias_observed,
     bias_weights = obj$bias_observed / obj$bias_normalized
     )
+}
+
+#' Subset a kallisto object
+#'
+#' Use a vector of target_ids to subset a single kallisto
+#' object or all of kallisto objects in a sleuth object.
+#'
+#' @param obj either a sleuth or kallisto object
+#' @return a new object with only the subset of target_ids included
+#' @export
+subset_kallisto <- function(obj, ...) {
+  UseMethod('subset_kallisto')
+}
+
+#' @export
+subset_kallisto.sleuth <- function(obj, target_ids) {
+  stopifnot(is(target_ids, "character"))
+  stopifnot(all(target_ids %in% names(obj$filter_bool)))
+
+  if(length(target_ids) != length(unique(target_ids))) {
+    target_tab <- table(target_ids)
+    stop("There is at least one target_id that is duplicated. ",
+         "Please provide a vector with unique target_ids.\n",
+         "Here are the target_ids that are duplicated: ",
+         paste(names(target_tab)[target_tab > 1], collapse = ", "))
+  }
+
+  obj$kal <- lapply(obj$kal, function(kal) {
+    subset_kallisto(kal)
+  })
+
+  obj
+}
+
+#' @export
+subset_kallisto.kallisto <- function(obj, target_ids) {
+  stopifnot(is(target_ids, "character"))
+  stopifnot(all(target_ids %in% obj$abundance$target_id))
+
+  subset_num <- length(unique(target_ids))
+  new_obj <- obj
+  new_obj$abundance <- new_obj$abundance[which(new_obj$abundance %in% target_ids), ]
+  new_obj$bootstrap <- lapply(new_obj$bootstrap, function(bs) {
+    bs[which(bs$target_id %in% target_ids), ]
+  })
+  attr(new_obj, "num_targets") <- subset_num
+  excluded_ids <- obj$abundance$target_id[which(!(obj$abundance$target_id %in% target_ids))]
+  if(length(new_obj$excluded_ids) == 0) {
+    new_obj$excluded_ids <- excluded_ids
+  } else {
+    new_obj$excluded_ids <- c(new_obj$excluded_ids, excluded_ids)
+  }
+
+  new_obj
+}
+
+#' Is Kallisto Object Subsetted?
+#'
+#' This function returns a boolean for whether the kallisto object has been
+#' subsetted or if it contains the original set of target_ids analyzed by kallisto.
+#' If a sleuth object is given, then a vector of booleans for each kallisto object
+#' is returned.
+#'
+#' @param obj a sleuth or kallisto object
+#' @return a boolean vector with \code{TRUE} if the kallisto object has been subsetted
+#'   (i.e. not all originally analyzed target_ids are represented), or \code{FALSE} if
+#'   the kallisto object contains the full original set of target_ids. For a sleuth object,
+#'   a boolean vector for all of the contained kallisto objects is returned.
+#' @export
+is_kallisto_subset <- function(obj) {
+  UseMethod("is_kallisto_subset")
+}
+
+#' @export
+is_kallisto_subset.sleuth <- function(obj) {
+  sapply(obj$kal, function(kal) is_kallisto_subset(kal))
+}
+
+#' @export
+is_kallisto_subset.kallisto <- function(obj) {
+  # If the num_targets is not equal to the original num_targets
+  # then the kallisto object is a subsetted object
+  attr(obj, "num_targets") != attr(obj, "original_num_targets")
+}
+
+#' Excluded IDs in Kallisto object
+#'
+#' Returns the excluded IDs if a kallisto object has been subsetted.
+#' Will return an empty character vector if it is the original object.
+#'
+#' @param obj a kallisto object
+#' @return a character vector containing all of the excluded IDs. This will be
+#'   an empty character vector if the kallisto is the original object.
+#' @export
+excluded_ids <- function(obj) {
+  stopifnot(is(obj, "kallisto"))
+
+  obj$excluded_ids
 }
