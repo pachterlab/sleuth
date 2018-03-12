@@ -16,4 +16,3 @@ for each sample
 \description{
 More or less the DESeq size factors
 }
-

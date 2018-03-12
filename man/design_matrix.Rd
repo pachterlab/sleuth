@@ -17,4 +17,3 @@ the \code{model.matrix} used to fit \code{which_model}
 \description{
 Accessor method for extracting a design matrix from a sleuth object
 }
-

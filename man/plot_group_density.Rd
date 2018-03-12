@@ -18,7 +18,7 @@ plot_group_density(obj, use_filtered = TRUE, units = "est_counts",
 \item{trans}{a string pointing to a function to use for the transformation.}
 
 \item{grouping}{a string from the columns of \code{sample_to_covariates} in
-the sleuth object for which to group and color by}
+the sleuth object for which to group and color by.}
 
 \item{offset}{the offset so that transformations such as log don't compute
 -Inf. If NULL, then will not add an offset}
@@ -29,4 +29,3 @@ a \code{ggplot2} object
 \description{
 Plot the density of a some grouping
 }
-

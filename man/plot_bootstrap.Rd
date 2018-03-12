@@ -25,4 +25,3 @@ a ggplot2 object
 \description{
 Plot the normalized bootstraps across all samples.
 }
-

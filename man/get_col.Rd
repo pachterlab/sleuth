@@ -17,4 +17,3 @@ a data.frame with columns \code{sample} and column \code{col_name}
 \description{
 Build a data.frame from all kallisto objects given a column name
 }
-

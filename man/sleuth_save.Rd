@@ -17,4 +17,3 @@ save a sleuth object
 \seealso{
 \code{\link{sleuth_load}}, \code{\link{sleuth_deploy}}
 }
-

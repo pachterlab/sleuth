@@ -238,7 +238,7 @@ sleuth_prep <- function(
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
   counts_test <- data.table::as.data.table(obs_raw)
-  counts_test <- counts_test[, total = .(total = sum(est_counts)), by = "sample"]
+  counts_test <- counts_test[, .(total = sum(est_counts)), by = "sample"]
   if (any(counts_test$total == 0)) {
     zero_names <- counts_test$sample[which(counts_test$total == 0)]
     formatted_names <- paste(zero_names, collapse = ", ")
@@ -246,7 +246,7 @@ sleuth_prep <- function(
             "Here are the samples with zero counts:\n",
             formatted_names)
   }
-  
+
   design_matrix <- NULL
   if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
@@ -260,7 +260,7 @@ sleuth_prep <- function(
   if (!is.null(full_model)) {
     rownames(design_matrix) <- sample_to_covariates$sample
     # check if the resulting design_matrix is singular (i.e. non-invertible)
-    # followed the suggested method found here: https://stackoverflow.com/a/24962470 
+    # followed the suggested method found here: https://stackoverflow.com/a/24962470
     M <- t(design_matrix) %*% design_matrix
     det_mod <- determinant(M)$modulus
     if(!is.finite(det_mod)) {
@@ -295,8 +295,10 @@ sleuth_prep <- function(
       full_formula = full_model,
       design_matrix = design_matrix,
       target_mapping = target_mapping,
-      gene_mode = !is.null(aggregation_column),
+      # TODO: enable a hidden mode for gene_mode
+      gene_mode = FALSE,
       gene_column = aggregation_column,
+      pval_aggregate = !is.null(aggregation_column),
       transform_fun = transformation_function
     )
 
@@ -555,12 +557,12 @@ check_kal_pack <- function(kal_list) {
 
 # this function is mostly to deal with annoying ENSEMBL transcript names that
 # have a trailing .N to keep track of version number
-# 
+#
 # this also checks to see if there are duplicate entries for any target IDs
 # and issues a warning if sleuth prep is in transcript mode, but stops if
 # sleuth prep is in gene mode, since duplicate entries creates problems when
 # doing the aggregation
-# 
+#
 # @return the target_mapping if an intersection is found. a target_mapping that
 # matches \code{t_id} if no matching is found
 check_target_mapping <- function(t_id, target_mapping, gene_mode) {
@@ -927,7 +929,6 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
 #' @param gene_name a string containing the name of the gene you are interested in
 #' @return a character vector containing the name of the gene mapping to the identifier
-#' @export
 gene_from_gene <- function(obj, gene_colname, gene_name) {
 
   if (!obj$gene_mode) {

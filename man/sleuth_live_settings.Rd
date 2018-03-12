@@ -16,4 +16,3 @@ a named to list with the options and settings
 This is a helper function for setting preferences in sleuth live.
 Currently, this is somewhat limited, but it will be expanded in the future.
 }
-

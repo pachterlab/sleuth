@@ -78,4 +78,3 @@ so <- sleuth_prep(s2c, ~genotype + drug)
 \code{\link{sleuth_fit}} to fit a model, \code{\link{sleuth_wt}} or
 \code{\link{sleuth_lrt}} to perform hypothesis testing
 }
-

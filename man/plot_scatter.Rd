@@ -42,4 +42,3 @@ a ggplot object for the scatterplot
 \description{
 Make a scatter plot of transcripts from two samples. to assess correlation
 }
-

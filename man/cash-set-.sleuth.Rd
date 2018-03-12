@@ -16,4 +16,3 @@ Otherwise it acts normally.
 \examples{
 obj$transform_fun <- function(x) log2(x+0.5)
 }
-
