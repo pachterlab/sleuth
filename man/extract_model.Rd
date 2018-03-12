@@ -19,4 +19,3 @@ a data frame including a column for the target_id, the term (which coefficient),
 This function extracts the parameter estimates from a sleuth model after it
 has been fit with \code{\link{sleuth_fit}}.
 }
-

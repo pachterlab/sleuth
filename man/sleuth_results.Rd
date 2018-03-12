@@ -5,7 +5,8 @@
 \title{Extract Wald or Likelihood Ratio test results from a sleuth object}
 \usage{
 sleuth_results(obj, test, test_type = "wt", which_model = "full",
-  rename_cols = TRUE, show_all = TRUE)
+  rename_cols = TRUE, show_all = TRUE,
+  pval_aggregate = obj$pval_aggregate)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
@@ -23,6 +24,9 @@ consistent with vignette}
 \item{show_all}{if \code{TRUE} will show all transcripts (not only the ones
 passing filters). The transcripts that do not pass filters will have
 \code{NA} values in most columns.}
+
+\item{pval_aggregate}{if \code{TRUE} and both \code{target_mapping} and \code{aggregation_column} were provided,
+to \code{sleuth_prep}, use lancaster's method to aggregate p-values by the \code{aggregation_column}.}
 }
 \value{
 a \code{data.frame} with the following columns:

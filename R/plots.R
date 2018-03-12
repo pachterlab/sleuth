@@ -632,6 +632,12 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
       ' Suggestions? Email us.')
   }
 
+  which_var <- obj$fits[[which_model]]$which_var
+  if (which_var == "obs_counts") {
+    x_label <- "counts"
+  } else {
+    x_label <- "tpms"
+  }
   res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
     show_all = FALSE)
   res <- dplyr::mutate(res, significant = qval < sig_level)
@@ -639,7 +645,7 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
   p <- ggplot(res, aes(mean_obs, b))
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
   p <- p + scale_colour_manual(values = c('black', sig_color))
-  p <- p + xlab('mean( log( counts + 0.5 ) )')
+  p <- p + xlab(paste('mean( log(', x_label, '+ 0.5 ) )'))
   p <- p + ylab(paste0('beta: ', test))
 
   if (!is.null(highlight)) {

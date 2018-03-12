@@ -19,4 +19,3 @@ a logical of length 1
 \description{
 A basic filter to be used.
 }
-
