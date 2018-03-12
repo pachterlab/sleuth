@@ -9,7 +9,8 @@ sleuth_prep(sample_to_covariates, full_model = NULL,
   norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
   aggregation_column = NULL, read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE, transformation_function = log_transform,
-  num_cores = max(1L, parallel::detectCores() - 1L), ...)
+  transformation_function_tpm = identity, num_cores = max(1L,
+  parallel::detectCores() - 1L), ...)
 }
 \arguments{
 \item{sample_to_covariates}{a \code{data.frame} which contains a mapping
@@ -41,15 +42,20 @@ transcript.}
 
 \item{aggregation_column}{a string of the column name in \code{\link{target_mapping}} to aggregate targets}
 
-\item{read_bootstrap_tpm}{read and compute summary statistics on bootstraps on the TPM.
-NOTE: Unnecessary for typical analyses}
+\item{read_bootstrap_tpm}{read and compute summary statistics on bootstraps on the TPM;
+needed for some plots (e.g. \code{\link{plot_bootstrap}}), and needed if TPM values are used for
+\code{\link{sleuth_fit}}.}
 
 \item{extra_bootstrap_summary}{if \code{TRUE}, compute extra summary
-statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
+statistics for estimated counts; needed for some plots (e.g. \code{\link{plot_bootstrap}}).
 NOTE: Unnecessary for typical analyses}
 
 \item{transformation_function}{the transformation that should be applied
 to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
+NOTE: be sure you know what you're doing before you change this.}
+
+\item{transformation_function_tpm}{the transformation that should be applied
+to the TPM values. Default is \code{'x'} (i.e. the identity function / no transformation)
 NOTE: be sure you know what you're doing before you change this.}
 
 \item{num_cores}{an integer of the number of computer cores mclapply should use

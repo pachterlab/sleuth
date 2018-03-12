@@ -35,6 +35,8 @@
 #' you do not need to specify it again (will be fit as the 'full' model).
 #' @param fit_name the name to store the fit in the sleuth object (at so$fits$fit_name).
 #' If \code{NULL}, the model will be named 'full'.
+#' @param which_var which kind of data (counts or TPMs) should be fit? only accepts
+#' \code{'obs_counts'} (default) or \code{'obs_tpm'}
 #' @param ... additional arguments passed to \code{sliding_window_grouping} and
 #' \code{shrink_df}
 #' @return a sleuth object with updated attributes.
@@ -47,8 +49,19 @@
 #' \code{\link{sleuth_wt}} to test whether a coefficient is zero,
 #' \code{\link{sleuth_lrt}} to test nested models.
 #' @export
-sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
+sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, which_var = 'obs_counts', ...) {
   stopifnot( is(obj, 'sleuth') )
+  which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
+
+  if (is.null(obj$bs_summary[[which_var]])) {
+    if (which_var == "obs_tpm") {
+      stop(which_var, " does not exist. Make sure sleuth_prep was used with 'read_bootstrap_tpm'",
+           " set to TRUE")
+    } else {
+      stop(which_var, " does not exist. Make sure sleuth_prep was used with 'extra_bootstrap_summary'",
+           " set to TRUE")
+    }
+  }
 
   if ( is.null(formula) ) {
     formula <- obj$full_formula
@@ -85,7 +98,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   A <- solve(t(X) %*% X)
 
   msg("fitting measurement error models")
-  mes <- me_model_by_row(obj, X, obj$bs_summary)
+  mes <- me_model_by_row(obj, X, obj$bs_summary, which_var)
   tid <- names(mes)
 
   mes_df <- dplyr::bind_rows(lapply(mes,
@@ -134,7 +147,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     beta_covars = beta_covars,
     formula = formula,
     design_matrix = X,
-    transform_synced = TRUE)
+    transform_synced = TRUE,
+    which_var = which_var)
 
   class(obj$fits[[fit_name]]) <- 'sleuth_model'
 
@@ -267,15 +281,21 @@ covar_beta <- function(sigma, X, A) {
 # @param design a design matrix
 # @param bs_summary a list from \code{bs_sigma_summary}
 # @return a list with a bunch of objects that are useful for shrinking
-me_model_by_row <- function(obj, design, bs_summary) {
-  stopifnot( all.equal(names(bs_summary$sigma_q_sq), rownames(bs_summary$obs_counts)) )
-  stopifnot( length(bs_summary$sigma_q_sq) == nrow(bs_summary$obs_counts))
+me_model_by_row <- function(obj, design, bs_summary, which_var = 'obs_counts') {
+  which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
+  if (which_var == "obs_counts")
+    sigma_var <- "sigma_q_sq"
+  else
+    sigma_var <- "sigma_q_sq_tpm"
 
-  models <- lapply(1:nrow(bs_summary$obs_counts),
+  stopifnot( all.equal(names(bs_summary[[sigma_var]]), rownames(bs_summary[[which_var]])) )
+  stopifnot( length(bs_summary[[sigma_var]]) == nrow(bs_summary[[which_var]]))
+
+  models <- lapply(1:nrow(bs_summary[[which_var]]),
     function(i) {
-      me_model(design, bs_summary$obs_counts[i, ], bs_summary$sigma_q_sq[i])
+      me_model(design, bs_summary[[which_var]][i, ], bs_summary[[sigma_var]][i])
     })
-  names(models) <- rownames(bs_summary$obs_counts)
+  names(models) <- rownames(bs_summary[[which_var]])
 
   models
 }

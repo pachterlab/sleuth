@@ -96,13 +96,17 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
 #' @param norm_fun_tpm a function to perform between sample normalization on the TPM
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
-#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM.
-#' NOTE: Unnecessary for typical analyses
+#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM;
+#' needed for some plots (e.g. \code{\link{plot_bootstrap}}), and needed if TPM values are used for
+#' \code{\link{sleuth_fit}}.
 #' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
-#' statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
+#' statistics for estimated counts; needed for some plots (e.g. \code{\link{plot_bootstrap}}).
 #' NOTE: Unnecessary for typical analyses
 #' @param transformation_function the transformation that should be applied
 #' to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
+#' NOTE: be sure you know what you're doing before you change this.
+#' @param transformation_function_tpm the transformation that should be applied
+#' to the TPM values. Default is \code{'x'} (i.e. the identity function / no transformation)
 #' NOTE: be sure you know what you're doing before you change this.
 #' @param num_cores an integer of the number of computer cores mclapply should use
 #' to speed up sleuth preparation
@@ -128,6 +132,7 @@ sleuth_prep <- function(
   read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE,
   transformation_function = log_transform,
+  transformation_function_tpm = identity,
   num_cores = max(1L, parallel::detectCores() - 1L),
   ...) {
 
@@ -298,8 +303,9 @@ sleuth_prep <- function(
       # TODO: enable a hidden mode for gene_mode
       gene_mode = FALSE,
       gene_column = aggregation_column,
-      pval_aggregate = !is.null(aggregation_column),
-      transform_fun = transformation_function
+      transform_fun = transformation_function,
+      transform_fun_tpm = transformation_function_tpm,
+      pval_aggregate = !is.null(aggregation_column)
     )
 
   # TODO: eventually factor this out
@@ -476,7 +482,8 @@ sleuth_prep <- function(
                         read_bootstrap_tpm, ret$gene_mode,
                         extra_bootstrap_summary,
                         target_id, mappings, which_ids, ret$gene_column,
-                        ret$transform_fun)
+                        ret$transform_fun, ret$transform_fun_tpm,
+                        max_bootstrap)
     })
 
     # if mclapply results in an error (a warning is shown), then print error and stop
@@ -497,7 +504,15 @@ sleuth_prep <- function(
     indices <- sapply(bs_results, function(result) result$index)
     stopifnot(identical(indices, order(indices)))
 
-    if(read_bootstrap_tpm | extra_bootstrap_summary) {
+    sigma_q_sq_tpm <- NULL
+    if(read_bootstrap_tpm) {
+      all_sample_tpm <- sapply(bs_results, function(result) result$bootstrap_tpm_result)
+      rownames(all_sample_tpm) <- which_ids
+      sigma_q_sq_tpm <- rowMeans(all_sample_tpm)
+      sigma_q_sq_tpm <- sigma_q_sq_tpm[order(names(sigma_q_sq_tpm))]
+      ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
+      names(ret$bs_quants) <- sample_to_covariates$sample
+    } else if(extra_bootstrap_summary) {
       ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
       names(ret$bs_quants) <- sample_to_covariates$sample
     }
@@ -509,26 +524,27 @@ sleuth_prep <- function(
     msg('')
 
     sigma_q_sq <- rowMeans(all_sample_bootstrap)
+    names(sigma_q_sq) <- which_ids
 
     # This is the rest of the gene_summary code
     if (ret$gene_mode) {
-      names(sigma_q_sq) <- which_agg_id
       obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, , drop = FALSE]
-      ret$bs_quants <- lapply(ret$bs_quants, function(sample) {
-        index <- which(names(sample) == "est_counts")
-        names(sample)[index] <- "scaled_reads_per_base"
-        sample
-      })
+      obs_tpm <- obs_to_matrix(ret, "tpm")[which_agg_id, , drop = FALSE]
     } else {
-      names(sigma_q_sq) <- which_target_id
       obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, , drop = FALSE]
+      obs_tpm <- obs_to_matrix(ret, "tpm")[which_target_id, , drop = FALSE]
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
     obs_counts <- ret$transform_fun(obs_counts)
     obs_counts <- obs_counts[order(rownames(obs_counts)),]
+    obs_tpm <- ret$transform_fun_tpm(obs_tpm)
+    obs_tpm <- obs_tpm[order(rownames(obs_tpm)),]
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
+    ret$bs_summary <- list(obs_counts = obs_counts, obs_tpm = obs_tpm,
+                           sigma_q_sq = sigma_q_sq,
+                           sigma_q_sq_tpm = sigma_q_sq_tpm)
   }
 
   class(ret) <- 'sleuth'
@@ -919,45 +935,10 @@ transcripts_from_gene <- function(obj, test, test_type,
   table$target_id[table[, 2] == gene_name]
 }
 
-#' Get the gene ID using other gene identifiers
+                        
+#' Change sleuth transform counts function
 #'
-#' Get the \code{target_id} of a gene using other gene identifiers
-#'
-#' @param obj a \code{sleuth} object
-#' @param gene_colname the name of the column in which the desired gene apperas gene appears. Once genes have been added to a sleuth
-#' object, you can inspect the genes names present in your sleuth object via \code{obj$target_mapping}, assuming 'obj' is the name of your sleuth object.
-#' This parameter refers to the name of the column that the gene you are searching for appears in. Checkout the column names using \code{names(obj$target_mapping)}
-#' @param gene_name a string containing the name of the gene you are interested in
-#' @return a character vector containing the name of the gene mapping to the identifier
-gene_from_gene <- function(obj, gene_colname, gene_name) {
-
-  if (!obj$gene_mode) {
-    stop("this sleuth object is in transcript mode. Please use 'transcripts_from_gene' instead.")
-  }
-
-  table <- as.data.frame(obj$target_mapping)
-  if (gene_colname == obj$gene_column) {
-    if (!(gene_name %in% table[, eval(parse(text = obj$gene_column))])) {
-      stop("Couldn't find gene ", gene_name)
-    } else {
-      return(gene_name)
-    }
-  }
-
-  table <- unique(dplyr::select_(table, obj$gene_column, gene_colname))
-  if (!(gene_name %in% table[, 2])) {
-      stop("Couldn't find gene ", gene_name)
-  }
-  hits <- unique(table[table[,2] == gene_name, 1])
-  if (length(hits) > 1) {
-    warning("there was more than one gene ID that matched this identifier; taking the first one")
-  }
-  hits[1]
-}
-
-#' Change sleuth transform function
-#'
-#' Replace the transformation function of a sleuth object
+#' Replace the transformation function of a sleuth object for estimated counts
 #'
 #' NOTE: if you change the transformation function after having done a fit,
 #' the fit(s) will have to be redone using the new transformation.
@@ -977,6 +958,27 @@ gene_from_gene <- function(obj, gene_colname, gene_name) {
   obj
 }
 
+#' Change sleuth transform TPM function
+#'
+#' Replace the transformation function of a sleuth object for TPM values
+#'
+#' NOTE: if you change the transformation function after having done a fit,
+#' the fit(s) will have to be redone using the new transformation.
+#' @examples transform_fun(x) <- function(x) identity(x)
+#' @export
+`transform_fun_tpm<-` <- function(obj, fxn) {
+  stopifnot(is.function(fxn))
+  obj$transform_fun_tpm <- fxn
+  if(!is.null(obj$fits)) {
+    warning(paste("Your sleuth object has fits based on the old transform function.",
+                  "Please rerun sleuth_prep and sleuth_fit."))
+    obj$fits <- lapply(obj$fits, function(x) {
+                         x$transform_synced <- FALSE
+                         x
+                       })
+  }
+  obj
+}
 
 #' Extend internal '$<-' for sleuth object
 #'
@@ -989,7 +991,7 @@ gene_from_gene <- function(obj, gene_colname, gene_name) {
 #' @export
 `$<-.sleuth` <- function(obj, name, value) {
   obj[[name]] <- value
-  if(name=="transform_fun") {
+  if(name == "transform_fun" || name == "transform_fun_tpm") {
     if(!is.null(obj$fits)) {
       warning(paste("Your sleuth object has fits based on the old transform function.",
                     "Please rerun sleuth_prep and sleuth_fit."))

@@ -4,7 +4,8 @@
 \alias{sleuth_fit}
 \title{Fit a measurement error model}
 \usage{
-sleuth_fit(obj, formula = NULL, fit_name = NULL, ...)
+sleuth_fit(obj, formula = NULL, fit_name = NULL, which_var = "obs_counts",
+  ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
@@ -15,6 +16,9 @@ you do not need to specify it again (will be fit as the 'full' model).}
 
 \item{fit_name}{the name to store the fit in the sleuth object (at so$fits$fit_name).
 If \code{NULL}, the model will be named 'full'.}
+
+\item{which_var}{which kind of data (counts or TPMs) should be fit? only accepts
+\code{'obs_counts'} (default) or \code{'obs_tpm'}}
 
 \item{...}{additional arguments passed to \code{sliding_window_grouping} and
 \code{shrink_df}}
