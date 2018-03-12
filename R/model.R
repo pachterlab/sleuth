@@ -26,7 +26,7 @@
 print.sleuth_model <- function(obj) {
   cat('formula: ', deparse(obj$formula), '\n')
   cat('data modeled: ', obj$which_var, '\n')
-  cat('transform sync'ed: ', obj$transform_sync, '\n')
+  cat('transform sync\'ed: ', obj$transform_sync, '\n')
   cat('coefficients:\n')
   cat(paste0('\t', colnames(obj$design_matrix), '\n'))
 
