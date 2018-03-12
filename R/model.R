@@ -80,7 +80,7 @@ models.sleuth_model <- function(obj) {
 #' @return a print out of each fit with the transform sync status.
 #' @export
 transform_status <- function(obj) {
-  useMethod('transform_status')
+  UseMethod('transform_status')
 }
 
 #' @export
