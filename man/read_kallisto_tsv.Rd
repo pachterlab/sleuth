@@ -18,4 +18,3 @@ This function reads kallisto plaintext output. Note, it cannot be used with
 sleuth. It also does not read bootstraps since reading plaintext bootstraps
 is quite slow.
 }
-

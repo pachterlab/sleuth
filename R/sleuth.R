@@ -242,6 +242,16 @@ sleuth_prep <- function(
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
+  counts_test <- data.table::as.data.table(obs_raw)
+  counts_test <- counts_test[, .(total = sum(est_counts)), by = "sample"]
+  if (any(counts_test$total == 0)) {
+    zero_names <- counts_test$sample[which(counts_test$total == 0)]
+    formatted_names <- paste(zero_names, collapse = ", ")
+    warning("At least one sample have no reads aligned. ",
+            "Here are the samples with zero counts:\n",
+            formatted_names)
+  }
+
   design_matrix <- NULL
   if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
@@ -254,6 +264,18 @@ sleuth_prep <- function(
 
   if (!is.null(full_model)) {
     rownames(design_matrix) <- sample_to_covariates$sample
+    # check if the resulting design_matrix is singular (i.e. non-invertible)
+    # followed the suggested method found here: https://stackoverflow.com/a/24962470
+    M <- t(design_matrix) %*% design_matrix
+    det_mod <- determinant(M)$modulus
+    if(!is.finite(det_mod)) {
+      stop("The full model you provided seems to result in a singular design matrix. ",
+           "This frequently happens when one of the covariates is a linear ",
+           "combination of one or more other covariates (e.g. one covariate ",
+           "yields identical groupings as another covariate). Check your ",
+           "sample_to_covariates table and your full model.")
+    }
+    rm(M, det_mod)
   }
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
@@ -264,7 +286,8 @@ sleuth_prep <- function(
   if (!is.null(target_mapping)) {
     tmp_names <- data.frame(target_id = kal_list[[1]]$abundance$target_id,
       stringsAsFactors = FALSE)
-    target_mapping <- check_target_mapping(tmp_names, target_mapping)
+    target_mapping <- check_target_mapping(tmp_names, target_mapping,
+                                           !is.null(aggregation_column))
     rm(tmp_names)
   }
 
@@ -277,10 +300,12 @@ sleuth_prep <- function(
       full_formula = full_model,
       design_matrix = design_matrix,
       target_mapping = target_mapping,
-      gene_mode = !is.null(aggregation_column),
+      # TODO: enable a hidden mode for gene_mode
+      gene_mode = FALSE,
       gene_column = aggregation_column,
       transform_fun = transformation_function,
-      transform_fun_tpm = transformation_function_tpm
+      transform_fun_tpm = transformation_function_tpm,
+      pval_aggregate = !is.null(aggregation_column)
     )
 
   # TODO: eventually factor this out
@@ -464,7 +489,14 @@ sleuth_prep <- function(
     # if mclapply results in an error (a warning is shown), then print error and stop
     error_status <- sapply(bs_results, function(x) is(x, "try-error"))
     if (any(error_status)) {
-      print(attributes(bs_results[error_status])$condition)
+      error_msgs <- sapply(which(error_status), function(i) {
+        bad_run <- bs_results[[i]]
+        samp_name <- sample_to_covariates$sample[i]
+        trace <- .traceback(bad_run)
+        paste0("Sample '", samp_name, "' had this error message: ", trace[1])
+      })
+      formatted_error <- paste(error_msgs, collapse = "")
+      message(formatted_error)
       stop("At least one core from mclapply had an error. See the above error message(s) for more details.")
     }
 
@@ -540,11 +572,16 @@ check_kal_pack <- function(kal_list) {
 }
 
 # this function is mostly to deal with annoying ENSEMBL transcript names that
-# have a training .N to keep track of version number
+# have a trailing .N to keep track of version number
+#
+# this also checks to see if there are duplicate entries for any target IDs
+# and issues a warning if sleuth prep is in transcript mode, but stops if
+# sleuth prep is in gene mode, since duplicate entries creates problems when
+# doing the aggregation
 #
 # @return the target_mapping if an intersection is found. a target_mapping that
 # matches \code{t_id} if no matching is found
-check_target_mapping <- function(t_id, target_mapping) {
+check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   t_id <- data.table::as.data.table(t_id)
   target_mapping <- data.table::as.data.table(target_mapping)
 
@@ -578,6 +615,24 @@ check_target_mapping <- function(t_id, target_mapping) {
       ' please check obj$target_mapping to ensure this new mapping is correct.'))
   }
 
+  if(any(duplicated(target_mapping$target_id))) {
+    indices <- which(duplicated(target_mapping$target_id))
+    duplicated_ids <- target_mapping$target_id[indices]
+    formatted_ids <- paste(dupliated_ids, collapse = ", ")
+    if(gene_mode) {
+      stop("There is at least one duplicated target ID in the target mapping. ",
+           "Since sleuth prep is in gene aggregation mode, any duplicated ",
+           "entries will cause errors during gene aggregation. Here is a list ",
+           "of all the duplicated target IDs:\n", formatted_ids)
+    } else {
+      warning("There is at least one duplicated target ID in the target ",
+              "mapping. Since sleuth prep is not in gene aggregation mode, ",
+              "duplicated entries will not cause errors during preparation, ",
+              "but may cause unexpected behavior when making any plots or ",
+              "tables. Here is a list of all the duplicated target IDs:\n",
+              formatted_ids)
+    }
+  }
   target_mapping
 }
 
@@ -846,7 +901,7 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
   filter_empty <- !filter_empty
   popped_gene_table <- popped_gene_table[filter_empty, ]
 
-  popped_gene_table
+  adf(popped_gene_table)
 }
 
 
@@ -867,8 +922,9 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
 transcripts_from_gene <- function(obj, test, test_type,
   which_model, gene_colname, gene_name) {
 
-  # FIXME: this is a work around
-  obj$gene_mode <- FALSE
+  if (obj$gene_mode) {
+    stop("this sleuth object is in gene mode. Please use 'gene_from_gene' instead.")
+  }
 
   table <- sleuth_results(obj, test, test_type, which_model)
   table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
@@ -879,6 +935,7 @@ transcripts_from_gene <- function(obj, test, test_type,
   table$target_id[table[, 2] == gene_name]
 }
 
+                        
 #' Change sleuth transform counts function
 #'
 #' Replace the transformation function of a sleuth object for estimated counts

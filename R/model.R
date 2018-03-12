@@ -271,30 +271,39 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 
 }
 
-#' Extract Wald test results from a sleuth object
+#' Extract Wald or Likelihood Ratio test results from a sleuth object
 #'
-#' This function extracts Wald test results from a sleuth object.
+#' This function extracts Wald or Likelihood Ratio test results from a sleuth object.
 #'
 #' @param obj a \code{sleuth} object
 #' @param test a character string denoting the test to extract. Possible tests can be found by using \code{models(obj)}.
-#' @param which_model a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.
+#' @param test_type 'wt' for Wald test or 'lrt' for Likelihood Ratio test.
+#' @param which_model a character string denoting the model. If extracting a wald test, use the model name.
+#'   Not used if extracting a likelihood ratio test.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
-#' consistent with vignette
+#'   consistent with vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
+#' @param pval_aggregate if \code{TRUE} and both \code{target_mapping} and \code{aggregation_column} were provided,
+#' to \code{sleuth_prep}, use lancaster's method to aggregate p-values by the \code{aggregation_column}.
 #' @return a \code{data.frame} with the following columns:
 #' @return target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
+#' @return ...: if there is a target mapping data frame, all of the annotations columns are added from \code{obj$target_mapping} before the other columns.
 #' @return pval: p-value of the chosen model
 #' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
-#' @return b: 'beta' value (effect size). Technically a biased estimator of the fold change
-#' @return se_b: standard error of the beta
+#' @return test_stat (LRT only): Chi-squared test statistic (likelihood ratio test). Only seen with Likelihood Ratio test results.
+#' @return rss (LRT only): the residual sum of squares under the "null model". Only seen with Likelihood Ratio test results.
+#' @return degrees_free (LRT only): the degrees of freedom (equal to difference between the two models). Only seen with Likelihood Ratio test results.
+#' @return b (Wald only): 'beta' value (effect size). Technically a biased estimator of the fold change. Only seen with Wald test results.
+#' @return se_b (Wald only): standard error of the beta. Only seen with Wald test results.
 #' @return mean_obs: mean of natural log counts of observations
 #' @return var_obs: variance of observation
-#' @return tech_var: technical variance of observation from the bootstraps
+#' @return tech_var: technical variance of observation from the bootstraps (named 'sigma_q_sq' if rename_cols is \code{FALSE})
 #' @return sigma_sq: raw estimator of the variance once the technical variance has been removed
 #' @return smooth_sigma_sq: smooth regression fit for the shrinkage estimation
 #' @return final_simga_sq: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
+#'   (named 'smooth_sigma_sq_pmax' if rename_cols is \code{FALSE})
 #' @seealso \code{\link{sleuth_wt}} and \code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 #' @examples
@@ -303,7 +312,8 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' results_table <- sleuth_results(sleuth_obj, 'conditionIP')
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
-  which_model = 'full', rename_cols = TRUE, show_all = TRUE) {
+  which_model = 'full', rename_cols = TRUE, show_all = TRUE,
+  pval_aggregate = obj$pval_aggregate) {
   stopifnot( is(obj, 'sleuth') )
 
   if (test_type == 'wt' && !model_exists(obj, which_model)) {
@@ -314,6 +324,15 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   #   stop("'", which_model, "' does not exist in ", substitute(obj),
   #     ". Please check  models(", substitute(obj), ") for fitted models.")
   # }
+
+  if (obj$gene_mode && pval_aggregate) {
+    stop("This shouldn't happen. Please report this issue.")
+  }
+
+  if (pval_aggregate && is.null(obj$gene_column)) {
+    stop("`aggregation_column` not set in `sleuth_prep()`.",
+      " Please rerun sleuth_prep() with an aggregation column.")
+  }
 
   if ( !is(test, 'character') ) {
     stop("'", substitute(test), "' is not a valid character.")
@@ -327,6 +346,20 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   res <- NULL
   if (test_type == 'lrt') {
     res <- get_test(obj, test, type = 'lrt')
+    res <- dplyr::select(res,
+      target_id,
+      pval,
+      qval,
+      test_stat,
+      rss,
+      degrees_free,
+      mean_obs,
+      var_obs,
+      sigma_q_sq,
+      sigma_sq,
+      smooth_sigma_sq,
+      smooth_sigma_sq_pmax
+      )
   } else {
     res <- get_test(obj, test, 'wt', which_model)
     res <- dplyr::select(res,
@@ -362,9 +395,24 @@ sleuth_results <- function(obj, test, test_type = 'wt',
 
   if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
     res <- dplyr::left_join(
-      data.table::as.data.table(res),
       data.table::as.data.table(obj$target_mapping),
+      data.table::as.data.table(res),
       by = 'target_id')
+  }
+
+  if ( pval_aggregate ) {
+  	if (is.null(obj$target_mapping) ) {
+  			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
+  	}
+    res <- data.table::as.data.table(res)
+    res <- res[, .(
+    	num_aggregated_transcripts = length(!is.na(pval)),
+    	sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE),
+    	pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
+		by=eval(obj$gene_column)]
+
+	res <- res[, qval:=p.adjust(pval, 'BH')]
+	res <- as_df(res)
   }
 
   if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {
@@ -377,9 +425,12 @@ sleuth_results <- function(obj, test, test_type = 'wt',
     # this line uses dplyr's "left_join" syntax for "by"
     # to match "target_id" from the "res" table,
     # and the gene_column from the target_mapping table.
-    res <- dplyr::left_join(data.table::as.data.table(res),
-                            data.table::as.data.table(target_mapping),
-                            by = c("target_id" = obj$gene_column))
+    by_col <- "target_id"
+    names(by_col) <- obj$gene_column
+    res <- dplyr::left_join(data.table::as.data.table(target_mapping),
+                            data.table::as.data.table(res),
+                            by = by_col)
+    names(res)[1] <- "target_id"
   }
 
   res <- as_df(res)

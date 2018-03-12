@@ -221,7 +221,7 @@ get_kallisto_path <- function(path) {
       output$ext <- "tsv"
       output$path <- file.path(path, "abundance.tsv")
     } else {
-      stop(path, 'exists, but does not contain kallisto output (abundance.h5)')
+      stop(path, ' exists, but does not contain kallisto output (abundance.h5)')
     }
   } else if ( file.exists(path) ){
     # make an assumption that the user has kept the correct extension
@@ -234,7 +234,7 @@ get_kallisto_path <- function(path) {
     } else if (ext == 'tsv') {
       output$ext <- 'tsv'
     } else {
-      stop("'", path, "' exists, is not a recognized extension")
+      stop("'", path, "' exists, but does not have a recognized extension")
     }
     output$path <- path
   } else {

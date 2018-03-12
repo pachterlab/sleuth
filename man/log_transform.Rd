@@ -17,4 +17,3 @@ log(x + offset)
 \description{
 The default transformation function for converting the normalized counts.
 }
-
