@@ -398,24 +398,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       data.table::as.data.table(obj$target_mapping),
       data.table::as.data.table(res),
       by = 'target_id')
-  }
-
-  if ( pval_aggregate ) {
-  	if (is.null(obj$target_mapping) ) {
-  			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
-  	}
-    res <- data.table::as.data.table(res)
-    res <- res[, .(
-    	num_aggregated_transcripts = length(!is.na(pval)),
-    	sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE),
-    	pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
-		by=eval(obj$gene_column)]
-
-	res <- res[, qval:=p.adjust(pval, 'BH')]
-	res <- as_df(res)
-  }
-
-  if (show_all && !is.null(obj$target_mapping) && obj$gene_mode) {
+  } else if (!is.null(obj$target_mapping) && obj$gene_mode) {
     # after removing the target_id column
     # there are several redundant columns for each gene
     # this line gets the unique line for each gene
@@ -431,6 +414,22 @@ sleuth_results <- function(obj, test, test_type = 'wt',
                             data.table::as.data.table(res),
                             by = by_col)
     names(res)[1] <- "target_id"
+  }
+
+  if ( pval_aggregate ) {
+  	if (is.null(obj$target_mapping) ) {
+  			stop('Must provide transcript to gene mapping table in order to aggregate p-values. ',
+                             'Please rerun "sleuth_prep" using the "target_mapping" argument.')
+  	}
+    res <- data.table::as.data.table(res)
+    res <- res[, .(
+    	num_aggregated_transcripts = length(!is.na(pval)),
+    	sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE),
+    	pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
+		by=eval(obj$gene_column)]
+
+	res <- res[, qval:=p.adjust(pval, 'BH')]
+	res <- as_df(res)
   }
 
   res <- as_df(res)
