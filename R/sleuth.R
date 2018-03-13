@@ -927,7 +927,7 @@ transcripts_from_gene <- function(obj, test, test_type,
     stop("this sleuth object is in gene mode. Please use 'gene_from_gene' instead.")
   }
 
-  table <- sleuth_results(obj, test, test_type, which_model)
+  table <- sleuth_results(obj, test, test_type, which_model, pval_aggregate = FALSE)
   table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
   table <- dplyr::arrange_(table, gene_colname, ~qval)
   if (!(gene_name %in% table[, 2])) {
@@ -936,7 +936,7 @@ transcripts_from_gene <- function(obj, test, test_type,
   table$target_id[table[, 2] == gene_name]
 }
 
-                        
+
 #' Change sleuth transform counts function
 #'
 #' Replace the transformation function of a sleuth object for estimated counts
