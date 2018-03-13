@@ -36,16 +36,16 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       install.packages('shiny')")
   }
 
+  group_by_choices <- setdiff(names(obj$target_mapping, "target_id")
   if (obj$gene_mode) {
     counts_unit <- "scaled_reads_per_base"
-    bsg_choices <- setdiff(names(obj$target_mapping), c('target_id'))
-    index <- which(bsg_choices == obj$gene_column)
-    bsg_choices <- c(bsg_choices[index], bsg_choices[-index])
+    index <- which(group_by_choices == obj$gene_column)
+    group_by_choices <- c(group_by_choices[index], group_by_choices[-index])
     gene_mode_choice <- "true"
   } else {
     counts_unit <- "est_counts"
     gene_mode_choice <- "false"
-    bsg_choices <- c()
+
   }
 
   # set up for the different types of tests
@@ -138,10 +138,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                                    'You can find target_ids in the test table under Analyses.',
                                    'If you select a different column from "genes from",',
                                    'enter a gene identifier that matches that column.',
-                                   'The most significant gene by q-value is already entered.");',
+                                   'The most significant gene by q-value for the first test within the currently selected test type is already entered.");',
                                    '} </script>'),
-                      value = (obj$tests[[1]][[1]])[
-                        order(obj$tests[[1]][[1]]$qval),]$target_id[1])
+                      value = textOutput("default_top_hit"))
             ),
             column(3,
                    selectInput('bsg_var_color_by',
@@ -178,7 +177,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                                             'to select a gene instead of the target ID.',
                                             'The column you used to aggregate at the gene level is the default");',
                                             '} </script>'),
-                               choices = bsg_choices)
+                               choices = group_by_choices)
             )
           ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bsg_go', 'view')),
@@ -275,10 +274,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             textInput('hm_transcripts', label = HTML('enter target ids: ',
             '<button onclick="hm_transcripts()">?</button>',
             '<script> function hm_transcripts() {',
-            'alert("Enter a space-separated list of transcript names here to view a hierarchical clustering of those transcripts.");',
+            'alert("Enter a space-separated list of transcript names here to view a hierarchical clustering of those transcripts.",
+                   "The ten most significant transcripts for the first test of the currently selected test type have been listed for you by default.");',
             '} </script>'),
-            value = paste((obj$tests[[1]][[1]])[
-              order(obj$tests[[1]][[1]]$qval),]$target_id[1:10], collapse = " "))
+            value = textOutput("default_top_ten"))
               ),
           column(8, style = "margin-top:15px;",
             checkboxGroupInput('hm_covars',
@@ -1066,6 +1065,29 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       current_ui
     })
 
+    output$default_top_hit <- renderText({
+      default_test <- ifelse(length(valid_test_types) == 0, NULL,
+                             ifelse(input$settings_test_type == 'wt',
+                                    obj$tests[['wt']][[1]][[1]],
+                                    obj$tests[['lrt']][[1]])
+                            )
+      default_id <- ifelse(is.null(default_test), "No tests found. This feature won't work",
+                            default_test[order(default_test$qval), "target_id"][1])
+      default_id
+    })
+
+    output$default_top_ten <- renderText({
+      default_test <- ifelse(length(valid_test_types) == 0, NULL,
+                             ifelse(input$settings_test_type == 'wt',
+                                    obj$tests[['wt']][[1]][[1]],
+                                    obj$tests[['lrt']][[1]])
+                            )
+      default_ids <- ifelse(is.null(default_test), "No tests found. This feature won't work",
+                            default_test[order(default_test$qval), "target_id"][1:10])
+      default_ids <- paste(default_ids, collapse = " ")
+      default_ids
+    })
+
     output$qqplot <- renderPlot({
       poss_tests <- list_tests(obj, input$settings_test_type)
       current_test <- NULL
@@ -1566,7 +1588,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           'alert("View genes by their Ensemble gene ID (ens_gene), or by their external gene name (ext_gene).',
           'These gene names are from the gene annotation you used to add genes to your sleuth object.");',
           '} </script>'),
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          choices = group_by_choices)
       }
     })
 
@@ -1642,7 +1664,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           'alert("View genes by their Ensemble gene ID (ens_gene), or by their external gene name (ext_gene).',
           'These gene names are from the gene annotation you used to add genes to your sleuth object.");',
           '} </script>'),
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          choices = group_by_choices)
       }
     })
 
@@ -1666,10 +1688,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                                           '<script> function bs_var_input() {',
                                           'alert("Enter the target_id of a transcript here to view a boxplot of its technical variation.',
                                           'You can find target_ids in the test table under Analyses. The most significant transcript',
-                                          'by q-value is already entered.");',
+                                          'by q-value for the first test within the currently selected test type is already entered.");',
                                           '} </script>'),
-                             value = (obj$tests[[1]][[1]])[
-                               order(obj$tests[[1]][[1]]$qval),]$target_id[1])
+                             value = textOutput("default_top_hit"))
             ),
             column(4,
                    selectInput('bs_var_color_by',
@@ -1796,7 +1817,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                        'to select a gene.',
                        'The second column in target mapping is the default");',
                        '} </script>'),,
-          choices = setdiff(names(obj$target_mapping), c('target_id')))
+          choices = group_by_choices)
       }
     })
 
