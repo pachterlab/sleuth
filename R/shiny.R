@@ -1602,12 +1602,22 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
       if (!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
           mg <- input$mappingGroup
-          test_table <- sleuth_gene_table(obj, wb, input$settings_test_type,
-            input$which_model_de, mg)
-            saved_plots_and_tables$test_table <- test_table
-            test_table
+          test_table <- NULL
+          if (obj$pval_aggregate) {
+            # kind of hate myself for making the swap -HP
+            swap <- obj$gene_column
+            obj$gene_column <- mg
+            test_table <- sleuth_results(obj, wb, input$which_model_de)
+            obj$gene_column <- swap
+          } else {
+            test_table <- sleuth_gene_table(obj, wb, input$settings_test_type,
+              input$which_model_de, mg)
+          }
+          saved_plots_and_tables$test_table <- test_table
+          test_table
       } else {
-          test_table <- sleuth_results(obj, wb, input$which_model_de)
+          test_table <- sleuth_results(obj, wb, input$which_model_de,
+            pval_aggregate = FALSE)
           saved_plots_and_tables$test_table <- test_table
           test_table
       }
