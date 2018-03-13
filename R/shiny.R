@@ -36,7 +36,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       install.packages('shiny')")
   }
 
-  group_by_choices <- setdiff(names(obj$target_mapping, "target_id")
+  group_by_choices <- setdiff(names(obj$target_mapping), "target_id")
   if (obj$gene_mode) {
     counts_unit <- "scaled_reads_per_base"
     index <- which(group_by_choices == obj$gene_column)
