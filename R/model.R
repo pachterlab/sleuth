@@ -418,7 +418,8 @@ sleuth_results <- function(obj, test, test_type = 'wt',
 
   if ( pval_aggregate ) {
   	if (is.null(obj$target_mapping) ) {
-  			stop('Must provide transcript to gene mapping table in order to aggregate p-values')
+  			stop('Must provide transcript to gene mapping table in order to aggregate p-values. ',
+                             'Please rerun "sleuth_prep" using the "target_mapping" argument.')
   	}
     res <- data.table::as.data.table(res)
     res <- res[, .(
