@@ -36,16 +36,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       install.packages('shiny')")
   }
 
+  group_by_choices <- setdiff(names(obj$target_mapping, "target_id")
   if (obj$gene_mode) {
     counts_unit <- "scaled_reads_per_base"
-    bsg_choices <- names(obj$target_mapping)[2:length(names(obj$target_mapping))]
-    index <- which(bsg_choices == obj$gene_column)
-    bsg_choices <- c(bsg_choices[index], bsg_choices[-index])
+    index <- which(group_by_choices == obj$gene_column)
+    group_by_choices <- c(group_by_choices[index], group_by_choices[-index])
     gene_mode_choice <- "true"
   } else {
     counts_unit <- "est_counts"
     gene_mode_choice <- "false"
-    bsg_choices <- c()
   }
 
   # set up for the different types of tests
@@ -177,7 +176,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                                             'to select a gene instead of the target ID.',
                                             'The column you used to aggregate at the gene level is the default");',
                                             '} </script>'),
-                               choices = bsg_choices)
+                               choices = group_by_choices)
             )
           ),
           fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bsg_go', 'view')),
@@ -1588,7 +1587,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           'alert("View genes by their Ensemble gene ID (ens_gene), or by their external gene name (ext_gene).',
           'These gene names are from the gene annotation you used to add genes to your sleuth object.");',
           '} </script>'),
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          choices = group_by_choices)
       }
     })
 
@@ -1664,7 +1663,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           'alert("View genes by their Ensemble gene ID (ens_gene), or by their external gene name (ext_gene).',
           'These gene names are from the gene annotation you used to add genes to your sleuth object.");',
           '} </script>'),
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          choices = group_by_choices)
       }
     })
 
@@ -1817,7 +1816,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                        'to select a gene.',
                        'The second column in target mapping is the default");',
                        '} </script>'),,
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          choices = group_by_choices)
       }
     })
 
