@@ -664,7 +664,7 @@ plot_bootstrap <- function(obj,
   p <- p + ggtitle(target_id)
   p <- p + ylab(units)
   if (divide_groups) {
-    p <- p + facet_wrap(color_by, switch = 'x', scales = 'free_x')
+    p <- p + facet_wrap(color_by, strip.position = 'bottom', scales = 'free_x')
   }
 
   p
