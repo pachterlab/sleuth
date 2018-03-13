@@ -57,7 +57,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
   poss_wt <- list_tests(obj, 'wt')
   poss_lrt <- list_tests(obj, 'lrt')
-  valid_test_types <- ifelse(!is.null(poss_wt), c('Wald' = 'wt'), c())
+  valid_test_types <- if (!is.null(poss_wt)) {
+    c('Wald' = 'wt')
+  } else {
+    c()
+  }
   if (!is.null(poss_lrt)) {
     valid_test_types <- c(valid_test_types, c('likelihood ratio' = 'lrt'))
   }
