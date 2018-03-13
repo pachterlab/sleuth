@@ -131,7 +131,8 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     bias_normalized = bias_normalized,
     bias_observed = bias_observed,
     bootstrap = bs_samples,
-    fld = fld
+    fld = fld,
+    excluded_ids = character()
     )
   class(res) <- 'kallisto'
 
@@ -139,6 +140,7 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   attr(res, 'kallisto_version') <- rhdf5::h5read(fname, 'aux/kallisto_version')
   attr(res, 'start_time') <- rhdf5::h5read(fname, 'aux/start_time')
   attr(res, 'num_targets') <- nrow(abund)
+  attr(res, 'original_num_targets') <- nrow(abund)
   attr(res, 'num_mapped') <- sum(abund$est_counts)
   attr(res, 'num_processed') <- num_processed
 
@@ -200,6 +202,7 @@ read_kallisto_tsv <- function(fname) {
     len = length,
     eff_len = eff_length)
   abundance <- dplyr::arrange(abundance, target_id)
+  abundance$target_id <- as.character(abundance$target_id)
 
   result <- list(abundance = abundance, bootstrap = NULL)
   class(result) <- 'kallisto'
@@ -221,7 +224,7 @@ get_kallisto_path <- function(path) {
       output$ext <- "tsv"
       output$path <- file.path(path, "abundance.tsv")
     } else {
-      stop(path, 'exists, but does not contain kallisto output (abundance.h5)')
+      stop(path, ' exists, but does not contain kallisto output (abundance.h5)')
     }
   } else if ( file.exists(path) ){
     # make an assumption that the user has kept the correct extension
@@ -234,7 +237,7 @@ get_kallisto_path <- function(path) {
     } else if (ext == 'tsv') {
       output$ext <- 'tsv'
     } else {
-      stop("'", path, "' exists, is not a recognized extension")
+      stop("'", path, "' exists, but does not have a recognized extension")
     }
     output$path <- path
   } else {
@@ -332,50 +335,57 @@ trans_to_genes_from_gtf <- function(fname) {
   trans
 }
 
-# Write a kallisto object to HDF5
-#
-# Write a kallisto object to HDF5.
-#
-# @param kal the kallisto object to write out
-# @param fname the file name to write out to
-# @return the kallisto object \code{kal} invisibly.
-# @export
-write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = TRUE, compression = 6L) {
-  stopifnot( is(kal, "kallisto") )
-  stopifnot( is(fname, "character") )
-  stopifnot( is(compression, "integer") )
-  stopifnot( length(compression) == 1 )
+#' Write a kallisto object to HDF5
+#'
+#' Write a kallisto object to HDF5.
+#'
+#' @param kal the kallisto object to write out
+#' @param fname the file name to write out to
+#' @param overwrite whether the file should be overwritten if it exists
+#' @param write_bootstrap whether the bootstraps should be written to file
+#' @param compression an integer between 0 and 7 that indicates the level of compression
+#'    to use, with 0 being no compression and 7 being the highest supported by this method.
+#'    The default of 6 is a good choice for most applications.
+#' @return the kallisto object \code{kal} invisibly.
+#' @importFrom rhdf5 h5write.default
+#' @importFrom rhdf5 h5write
+#' @export
+write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE,
+                                write_bootstrap = TRUE, compression = 6L) {
+  stopifnot(is(kal, "kallisto"))
+  stopifnot(is(fname, "character"))
+  stopifnot(is(compression, "integer"))
+  stopifnot(length(compression) == 1)
 
   # TODO: ensure that all bootstraps are sorted according to abundance
   if (compression < 0 || compression > 7 ) {
-    stop("'compression' must be in [0, 7]")
+    stop("'compression' must be an integer between 0 and 7")
   }
 
   fname <- path.expand(fname)
 
   if (file.exists(fname)) {
     if (overwrite) {
-      warning(paste0("'", fname, "' already exists. Overwritting."))
+      warning(paste0("'", fname, "' already exists. Overwriting."))
       file.remove(fname)
     } else {
       stop(paste0("'", fname, "' already exists."))
     }
   }
 
-  if ( !rhdf5::h5createFile( fname ) ) {
+  if (!rhdf5::h5createFile(fname)) {
     stop(paste0("Error: Couldn't open '", fname, "' to write out."))
   }
 
   dims <- c(nrow(kal$abundance), 1)
-  cat("dims: ", class(dims), "\n")
+  cat("dims: ", dims, "\n")
 
   # write out auxilary info
   rhdf5::h5createGroup(fname, "aux")
-  # stopifnot( rhdf5::h5writeDataset(fname, "aux/ids", dims = dims,
-  #   storage.mode = "character", size = 100, level = compression) )
-  stopifnot( rhdf5::h5writeDataset(fname, "aux/ids", dims = dims,
-    storage.mode = "character", size = 100, level = compression) )
-  # rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
+
+  stopifnot(rhdf5::h5createDataset(fname, "aux/ids", dims = dims,
+                                   storage.mode = "character", size = 100,
+                                   level = compression))
 
   if (write_bootstrap) {
     rhdf5::h5write(length(kal$bootstrap), fname, "aux/num_bootstrap")
@@ -383,24 +393,23 @@ write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE, write_bootstrap = 
     rhdf5::h5write(0L, fname, "aux/num_bootstrap")
   }
 
+  rhdf5::h5write(kal$abundance$target_id, fname, "aux/ids")
   rhdf5::h5write(kal$abundance$eff_len, fname, "aux/eff_lengths")
   rhdf5::h5write(kal$abundance$len, fname, "aux/lengths")
-
-  # TODO: put lengths in aux
-  # TODO: put effective lengths in aux
-  # TODO: put version in aux
-
-  # rhdf5::h5createDataset(fname, "est_counts",
-  #   storage.mode = "double", level = compression)
+  rhdf5::h5write(kal$fld, fname, "aux/fld")
+  rhdf5::h5write(kal$bias_normalized, fname, "aux/bias_normalized")
+  rhdf5::h5write(kal$bias_observed, fname, "aux/bias_observed")
+  rhdf5::h5write(attributes(kal)$num_processed, fname, "aux/num_processed")
+  rhdf5::h5write(attributes(kal)$index_version, fname, "aux/index_version")
+  rhdf5::h5write(attributes(kal)$kallisto_version, fname, "aux/kallisto_version")
+  rhdf5::h5write(attributes(kal)$start_time, fname, "aux/start_time")
   rhdf5::h5write(kal$abundance$est_counts, fname, "est_counts")
 
   if (write_bootstrap && length(kal$bootstrap) > 0) {
     rhdf5::h5createGroup(fname, "bootstrap")
     for (i in seq_along(kal$bootstrap)) {
       bs <- kal$bootstrap[[i]]$est_counts
-      bs_name <- paste0("bootstrap/bs", i)
-      # rhdf5::h5createDataset(fname, bs_name,
-      #   storage.mode = "double", level = compression)
+      bs_name <- paste0("bootstrap/bs", i-1)
       rhdf5::h5write(bs, fname, bs_name)
     }
   }

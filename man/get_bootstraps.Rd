@@ -21,4 +21,3 @@ Currently not working because of a complete rewrite of the bootstrap code.
 If you are interested in getting the bootstraps, you can manually write some code
 using `read_kallisto()`. Please make sure to comment in the user group if you are using this function.
 }
-

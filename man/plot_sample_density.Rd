@@ -28,4 +28,3 @@ a \code{ggplot2} object
 \description{
 Plot the density of one particular sample
 }
-

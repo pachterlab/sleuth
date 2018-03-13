@@ -256,11 +256,12 @@ get_bootstrap_summary <- function(obj, target_id, units = 'est_counts') {
     stop(paste0("'", units, "' is invalid for 'units'. please see documentation"))
   }
 
-  if (is.null(obj$bs_quants)) {
-    if (units == 'est_counts') {
-      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE'")
+  if (is.null(obj$bs_quants) | is.null(obj$bs_quants[[1]][[units]])) {
+    if (units %in% c('est_counts', 'scaled_reads_per_base')) {
+      stop("bootstrap summary appears to be missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE'")
     } else {
-      stop("bootstrap summary missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE' and 'read_bootstrap_tpm = TRUE'")
+      stop("bootstrap summary appears to be missing. rerun sleuth_prep() with argument 'extra_bootstrap_summary = TRUE' ",
+           "and 'read_bootstrap_tpm = TRUE'")
     }
   }
 
@@ -376,13 +377,15 @@ process_bootstrap <- function(i, samp_name, kal_path,
                               read_bootstrap_tpm, gene_mode,
                               extra_bootstrap_summary,
                               target_id, mappings, which_ids,
-                              aggregation_column, transform_fun)
+                              aggregation_column, transform_fun,
+                              transform_fun_tpm, max_bootstrap)
 {
   dot(i)
   bs_quants <- list()
 
   num_bootstrap <- as.integer(rhdf5::h5read(kal_path$path,
                                             "aux/num_bootstrap"))
+  num_bootstrap <- min(num_bootstrap, max_bootstrap)
   if (num_bootstrap == 0) {
     stop(paste0("File ", kal_path, " has no bootstraps.",
                 "Please generate bootstraps using \"kallisto quant -b\"."))
@@ -396,17 +399,16 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                est_count_sf = est_count_sf)
 
   if (read_bootstrap_tpm) {
-    bs_quant_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm,
+    bs_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm,
                                 eff_len))
-    colnames(bs_quant_tpm) <- colnames(bs_mat)
+    colnames(bs_tpm) <- colnames(bs_mat)
 
     # gene level code is analogous here to below code
     if (gene_mode) {
-      colnames(bs_quant_tpm) <- target_id
       # Make bootstrap_num an explicit column; each is treated as a "sample"
       bs_tpm_df <- data.frame(bootstrap_num = c(1:num_bootstrap),
-                              bs_quant_tpm, check.names = F)
-      rm(bs_quant_tpm)
+                              bs_tpm, check.names = F)
+      rm(bs_tpm)
       # Make long tidy table; this step is much faster
       # using data.table melt rather than tidyr gather
       tidy_tpm <- data.table::melt(bs_tpm_df, id.vars = "bootstrap_num",
@@ -423,13 +425,14 @@ process_bootstrap <- function(i, samp_name, kal_path,
       # see: http://stackoverflow.com/a/31295592
       quant_tpm_formula <- paste("bootstrap_num ~",
                                  aggregation_column)
-      bs_quant_tpm <- data.table::dcast(tidy_tpm,
+      bs_tpm <- data.table::dcast(tidy_tpm,
                                         quant_tpm_formula, value.var = "tpm",
                                         fun.aggregate = sum)
-      bs_quant_tpm <- as.matrix(bs_quant_tpm[, -1])
+      bs_tpm <- as.matrix(bs_tpm[, -1])
       rm(tidy_tpm) # these tables are very large
     }
-    bs_quant_tpm <- aperm(apply(bs_quant_tpm, 2,
+    bs_tpm <- transform_fun_tpm(bs_tpm[, which_ids])
+    bs_quant_tpm <- aperm(apply(bs_tpm, 2,
                                 quantile))
     colnames(bs_quant_tpm) <- c("min", "lower", "mid",
                                 "upper", "max")
@@ -483,6 +486,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
     rm(tidy_bs, scaled_bs)
   }
 
+  bs_mat <- transform_fun(bs_mat[, which_ids])
   if (extra_bootstrap_summary) {
     bs_quant_est_counts <- aperm(apply(bs_mat, 2,
                                        quantile))
@@ -491,12 +495,9 @@ process_bootstrap <- function(i, samp_name, kal_path,
     bs_quants$est_counts <- bs_quant_est_counts
   }
 
-  bs_mat <- transform_fun(bs_mat)
   # If bs_mat was made at gene-level, already has column names
   # If at transcript-level, need to add target_ids
-  if(!gene_mode) {
-    colnames(bs_mat) <- target_id
-  } else {
+  if(gene_mode & extra_bootstrap_summary) {
     # rename est_counts to scaled_reads_per_base
     bs_quants$scaled_reads_per_base <- bs_quants$est_counts
     bs_quants$est_counts <- NULL
@@ -504,7 +505,14 @@ process_bootstrap <- function(i, samp_name, kal_path,
   # all_sample_bootstrap[, i] bootstrap point estimate of the inferential
   # variability in sample i
   # NOTE: we are only keeping the ones that pass the filter
-  bootstrap_result <- matrixStats::colVars(bs_mat[, which_ids])
+  bootstrap_result <- matrixStats::colVars(bs_mat)
 
-  list(index = i, bs_quants = bs_quants, bootstrap_result = bootstrap_result)
+  if(read_bootstrap_tpm) {
+    tpm_result <- matrixStats::colVars(bs_tpm)
+    list(index = i, bs_quants = bs_quants, bootstrap_result = bootstrap_result,
+         bootstrap_tpm_result = tpm_result)
+  } else {
+    list(index = i, bs_quants = bs_quants, bootstrap_result = bootstrap_result,
+         bootstrap_tpm_result = NULL)
+  }
 }

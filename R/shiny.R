@@ -45,6 +45,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
   } else {
     counts_unit <- "est_counts"
     gene_mode_choice <- "false"
+
   }
 
   # set up for the different types of tests

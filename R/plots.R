@@ -318,7 +318,7 @@ plot_pc_variance <- function(obj,
 #' @param units either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'
 #' @param trans a string pointing to a function to use for the transformation.
 #' @param grouping a string from the columns of \code{sample_to_covariates} in
-#' the sleuth object for which to group and color by
+#' the sleuth object for which to group and color by.
 #' @param offset the offset so that transformations such as log don't compute
 #' -Inf. If NULL, then will not add an offset
 #' @return a \code{ggplot2} object
@@ -331,18 +331,39 @@ plot_group_density <- function(obj,
   offset = 1
   ) {
 
-  units <- check_quant_mode(obj, units)
-
-  res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
-  # res <- NULL
-  # if (use_filtered) {
-  #   res <- obj$obs_norm_filt
-  # } else {
-  #   res <- obj$obs_norm
-  # }
+  units <- sleuth:::check_quant_mode(obj, units)
+  if (!all(grouping %in% colnames(obj$sample_to_covariates))) {
+    bad_names <- which(!(grouping %in% colnames(obj$sample_to_covariates)))
+    if(length(bad_names) > 1) {
+      formatted_names <- paste(grouping[bad_names], collapse = "', '")
+      formatted_names <- paste0("'", formatted_names, "'")
+      stop(paste(formatted_names, "are not column names in the 'obj$sample_to_covariates' table"))
+    } else {
+      formatted_name <- paste0("'", grouping[bad_names], "'")
+      stop(paste(formatted_name, "is not a column name in the 'obj$sample_to_covariates' table"))
+    }
+  }
 
   gdots <- list(target_id = ~target_id)
-  gdots[[grouping]] <- as.formula(paste0('~', grouping))
+  if (length(grouping) > 1) {
+    temp_s2c <- obj$sample_to_covariates
+    uniq_vals <- apply(temp_s2c[, grouping], 2, function(x) length(unique(x)))
+    if(any(uniq_vals == nrow(temp_s2c))) {
+      warning("You've selected at least one grouping column that is unique for each sample.\n",
+              "That makes the output identical to plot_sample_density for all samples.")
+    }
+    temp_s2c$grouping <- do.call(paste, append(as.list(temp_s2c[, grouping]), list(sep = " and ")))
+    res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = FALSE)
+    res <- dplyr::left_join(data.table::as.data.table(res), 
+            data.table::as.data.table(temp_s2c), 
+            by = "sample")
+    gdots[["grouping"]] <- as.formula('~grouping')
+    grouping <- "grouping"
+  } else {
+    res <- kallisto_table(obj, use_filtered = use_filtered, include_covariates = TRUE)
+    gdots[[grouping]] <- as.formula(paste0('~', grouping))
+  }
+
   res <- dplyr::group_by_(res, .dots = gdots)
 
   mean_str <- paste0('mean(', units, ' )')
@@ -611,6 +632,12 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
       ' Suggestions? Email us.')
   }
 
+  which_var <- obj$fits[[which_model]]$which_var
+  if (which_var == "obs_counts") {
+    x_label <- "counts"
+  } else {
+    x_label <- "tpms"
+  }
   res <- sleuth_results(obj, test, test_type, which_model, rename_cols = FALSE,
     show_all = FALSE)
   res <- dplyr::mutate(res, significant = qval < sig_level)
@@ -618,7 +645,7 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
   p <- ggplot(res, aes(mean_obs, b))
   p <- p + geom_point(aes(colour = significant), alpha = point_alpha)
   p <- p + scale_colour_manual(values = c('black', sig_color))
-  p <- p + xlab('mean( log( counts + 0.5 ) )')
+  p <- p + xlab(paste('mean( log(', x_label, '+ 0.5 ) )'))
   p <- p + ylab(paste0('beta: ', test))
 
   if (!is.null(highlight)) {
@@ -728,17 +755,25 @@ plot_fld.kallisto <- function(obj) {
 #'
 #' @param obj a \code{sleuth} object
 #' @param use_filtered if TRUE, use filtered data. otherwise, use everything
-#' @param color_high the 'high' color
-#' @param color_low the 'low' color
+#' @param color_high the 'high' color (to label samples that are close)
+#' @param color_low the 'low' color (to label samples that are far apart)
 #' @param x_axis_angle the angle at which to put the x-axis labels
+#' @param annotation_cols a character vector of covariates from
+#'   \code{sample_to_covariates} that should be annotated on the heatmap
+#' @param cluster_bool whether the rows and columns should be hierarchically
+#'   clustered. default is \code{TRUE}
+#' @param ... additional arguments to customize the heatmap. passed to
+#'   \code{pheatmap}. See ?pheatmap for documentation on additional options.
 #' @return a \code{ggplot2} object
 #' @export
 plot_sample_heatmap <- function(obj,
   use_filtered = TRUE,
   color_high = 'white',
   color_low = 'dodgerblue',
-  x_axis_angle = 50
-  ) {
+  x_axis_angle = 50,
+  annotation_cols = setdiff(colnames(obj$sample_to_covariates), 'sample'),
+  cluster_bool = TRUE,
+  ...) {
   abund <- NULL
   if (use_filtered) {
     abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm',
@@ -749,18 +784,38 @@ plot_sample_heatmap <- function(obj,
   }
   all_pairs <- apply_all_pairs(abund, jsd)
 
-  all_pairs <- reshape2::melt(all_pairs, varnames = c('sample_x', 'sample_y'),
-    value.name = 'jsd')
+  s2c <- obj$sample_to_covariates
+  if (is.null(annotation_cols)) {
+    s2c <- NA
+  } else if (!all(annotation_cols %in% colnames(s2c))) {
+    bad_cols <- which(!(annotation_cols %in% colnames(s2c)))
+    formatted_cols <- paste(annotation_cols[bad_cols], collapse = ", ")
+    stop("At least one covariate selected in 'annotation_cols' does not exist.",
+         "\nHere are the covariates that do not exist: ", formatted_cols)
+  } else {
+    rownames(s2c) <- s2c$sample
+    s2c <- s2c[, annotation_cols, drop = FALSE]
+  }
 
-  p <- ggplot(all_pairs, aes(sample_x, sample_y))
-  p <- p + geom_tile(aes(fill = jsd))
-  p <- p + geom_text(aes(label = round(jsd, 3)))
-  p <- p + scale_fill_gradient(high = color_high, low = color_low)
-  p <- p + theme(axis.text.x = element_text(angle = x_axis_angle, hjust = 1))
-  p <- p + xlab('')
-  p <- p + ylab('')
-
-  p
+  colors <- colorRampPalette(c(color_high, color_low))(100)
+  # the PDF code prevents the heatmap from printing before we modify the plot
+  pdf(file = NULL)
+  p <- pheatmap::pheatmap(all_pairs, annotation_col = s2c, color = colors,
+                          cluster_rows = cluster_bool,
+                          cluster_cols = cluster_bool,
+                          clustering_distance_cols = dist(all_pairs),
+                          clustering_distance_rows = dist(all_pairs),
+                          treeheight_row = 0, # remove redundant row dendrogram
+                          ...)
+  invisible(dev.off())
+  # modify the column labels with the x_axis_angle
+  # subtracting from 360 degrees to get it to align well without modifying
+  # anything else
+  p$gtable$grobs[[3]]$rot <- 360 - x_axis_angle
+  # remove redundant y-axis labels
+  p$gtable$grobs[[4]]$label <- NULL
+  # this sends the graphic back
+  gridExtra::grid.arrange(p$gtable)
 }
 
 #' Plot volcano plot
@@ -889,7 +944,7 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
       highlight <- dplyr::semi_join(res, highlight, by = 'target_id')
     })
     if (nrow(highlight) > 0) {
-      p <- p + geom_point(aes(mean_obs, b), data = highlight, colour = highlight_color)
+      p <- p + geom_point(aes(theoretical, observed), data = highlight, colour = highlight_color)
     } else {
       warning("Couldn't find any transcripts from highlight set in this test.
         They were probably filtered out.")
@@ -906,14 +961,34 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
 #' @param transcripts a vector of strings containing a list of transcripts to be plotted in a heatmap
 #' @param obj a \code{sleuth} object
 #' @param units a string specifying which units to use, either tpm or est_counts (scaled_reads_per_base for gene_mode)
-#' @param trans a string specifying a function to transform the data by
+#' @param trans a function or a string specifying a function to transform
+#'   the data by
+#' @param cluster_transcripts whether the transcripts also should be clustered.
+#'   default is \code{FALSE}
+#' @param offset how much should be added to estimated expression before
+#'   transformation? Default is 1.
+#' @param color_high the 'high expression' color (default: dark red)
+#' @param color_mide the 'medium expression' color (default: yellow)
+#' @param color_low the 'low expression' color (default: light green)
+#' @param x_axis_angle the angle at which to put the x-axis labels
+#' @param annotation_cols a character vector of covariates from
+#'   \code{sample_to_covariates} that should be annotated on the heatmap
+#' @param ... additional arguments to customize the heatmap. passed to
+#'   \code{pheatmap}. See ?pheatmap for documentation on additional options.
 #' @return a \code{ggplot} object
 #' @export
 plot_transcript_heatmap <- function(obj,
   transcripts,
   units = 'tpm',
   trans = 'log',
-  offset = 1) {
+  cluster_transcripts = FALSE,
+  offset = 1,
+  color_high = '#581845',
+  color_mid = '#FFC300',
+  color_low = '#DAF7A6',
+  x_axis_angle = 50,
+  annotation_cols = setdiff(colnames(obj$sample_to_covariates), 'sample'),
+  ...) {
 
   units <- check_quant_mode(obj, units)
 
@@ -931,6 +1006,10 @@ plot_transcript_heatmap <- function(obj,
   } else if (units == 'est_counts') {
     tabd_df <- dplyr::select(tabd_df, target_id, sample, est_counts)
     tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
+  } else if (units == 'scaled_reads_per_base') {
+    tabd_df <- dplyr::select(tabd_df, target_id, sample, scaled_reads_per_base)
+    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample,
+                               value.var = 'scaled_reads_per_base')
   } else {
     stop("Didn't recognize the following unit: ", units)
   }
@@ -938,80 +1017,46 @@ plot_transcript_heatmap <- function(obj,
   rownames(tabd_df) <- tabd_df$target_id
   tabd_df$target_id <- NULL
 
-  p <- NULL
   if (nchar(trans) > 0 && !is.null(trans)) {
     tFunc <- eval(parse(text = trans))
-    p <- ggPlotExpression(as.matrix(tFunc(tabd_df + offset)), clustRows = FALSE)
+    trans_mat <- as.matrix(tFunc(tabd_df + offset))
+  } else if (is.function(trans)){
+    trans_mat <- as.matrix(trans(tabd_df + offset))
   } else {
-    p <- ggPlotExpression(as.matrix(tabd_df), clustRows = FALSE)
+    trans_mat <- as.matrix(tabd_df)
   }
 
-  p
-}
+  s2c <- obj$sample_to_covariates
+  if (is.null(annotation_cols)) {
+    s2c <- NA
+  } else if (!all(annotation_cols %in% colnames(s2c))) {
+    bad_cols <- which(!(annotation_cols %in% colnames(s2c)))
+    formatted_cols <- paste(annotation_cols[bad_cols], collapse = ", ")
+    stop("At least one covariate selected in 'annotation_cols' does not exist.",
+         "\nHere are the covariates that do not exist: ", formatted_cols)
+  } else {
+    rownames(s2c) <- s2c$sample
+    s2c <- s2c[, annotation_cols, drop = FALSE]
+  }
 
-
-# Heatmap of expression
-#
-# Plot all of the points in an expression matrix
-#
-# @param exMat the expression matrix
-# @param clustRows if TRUE, cluster the rows by hierarchical clustering.
-# @param clustCols if TRUE, cluster the columns by hierarchical clustering.
-# @param rowNames if TRUE, print the row names on the plot
-# @param colNames if TRUE, print the column names on the plot
-# @return a ggplot object
-ggPlotExpression <- function(exMat, clustRows = TRUE, clustCols = TRUE,
-                             rowNames = TRUE, colNames = TRUE) {
-    if (is(exMat, 'matrix')) {
-        exMat <- as.matrix(exMat)
-        stopifnot(class(exMat) == 'matrix')
-    }
-    exMat <- t(exMat)
-    rowOrder <- 1:nrow(exMat)
-    colOrder <- 1:ncol(exMat)
-    if (clustRows)
-        rowOrder <- orderByDendrogram(exMat)
-    if (clustCols)
-        colOrder <- orderByDendrogram(t(exMat))
-    exMat <- exMat[rowOrder, colOrder]
-    meltMat <- reshape2::melt(exMat, varnames = c("x", "y"))
-    breaksM <- round(seq(min(meltMat$value, na.rm = T), max(meltMat$value, na.rm = T),
-                         length.out = 10), 3)
-                         #print(rownames(exMat))
-    if (is.null(colnames(exMat)))
-        colnames(exMat) <- 1:ncol(exMat)
-    meltMat$y <- factor(meltMat$y, levels = colnames(exMat))
-    meltMat$x <- factor(meltMat$x, levels = rownames(exMat))
-    p <- ggplot(meltMat, aes(x, y, fill = value))
-    p <- p + geom_tile() + scale_fill_gradientn(colours = heat.colors(20),
-          guide = guide_legend(title = "Expression: ",
-                               reverse = T, size = 14))
-    p <- p + theme_bw() + theme(legend.text = element_text(size = 14),
-     legend.title = element_text(size = 14),
-     legend.direction = 'vertical',
-     legend.position = 'top',
-     legend.background = element_rect(fill = "gray95", colour = "black", size = 0.5, linetype = 1),
-     axis.title = element_blank())
-    if (rowNames)
-        p <- p + theme(axis.text.x = element_text(angle = 90, size = 14))
-    else
-        p <- p + theme(axis.text.x = element_text(size = 0))
-
-    if (colNames)
-        p <- p + theme(axis.text.y = element_text(size = 14))
-    else
-        p <- p + theme(axis.text.y = element_text(size = 0))
-
-    p
-    #list(plot = p, rowOrder = rowOrder, colOrder = colOrder)
-}
-
-# Order by dendrogram
-#
-# @param mat a matrix where the rows are observations and the columns are different dimensions on the matrix
-# @return a vector of label orderings
-orderByDendrogram <- function(mat) {
-    hc <- hclust(dist(mat))
-    dc <- as.dendrogram(hc)
-    order.dendrogram(dc)
+  colors <- colorRampPalette(c(color_low, color_mid, color_high))(100)
+  # the PDF code prevents the heatmap from printing before we modify the plot
+  pdf(file = NULL)
+  if (cluster_transcripts) {
+    p <- pheatmap::pheatmap(trans_mat, annotation_col = s2c, color = colors,
+                            cluster_cols = TRUE,
+                            cluster_rows = cluster_transcripts,
+                            ...)
+  } else {
+    p <- pheatmap::pheatmap(trans_mat, annotation_col = s2c, color = colors,
+                            cluster_cols = TRUE,
+                            ...)
+  }
+  invisible(dev.off())
+  # modify the column labels with the x_axis_angle
+  # subtracting from 360 degrees to get it to align well without modifying
+  # anything else
+  p$gtable$grobs[[3]]$rot <- 360 - x_axis_angle
+  # this sends the graphic back
+  gridExtra::grid.arrange(p$gtable)
 }
