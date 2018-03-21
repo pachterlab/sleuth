@@ -384,21 +384,30 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if (show_all && !obj$gene_mode) {
-    tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
+  if (show_all) {
+    if (obj$gene_mode) {
+      tids <- unique(
+        obj$target_mapping[, obj$gene_column])
+      by_col <- "target_id"
+      names(by_col) <- obj$gene_column
+    } else {
+      tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
+      by_col <- 'target_id'
+    }
     res <- dplyr::left_join(
       data.table::as.data.table(tids),
       data.table::as.data.table(res),
-      by = 'target_id'
+      by = by_col
       )
+    names(res)[1] <- "target_id"
   }
 
   if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
-    res <- dplyr::left_join(
+    res <- dplyr::right_join(
       data.table::as.data.table(obj$target_mapping),
       data.table::as.data.table(res),
       by = 'target_id')
-  } else if (!is.null(obj$target_mapping) && obj$gene_mode) {
+  } else if (obj$gene_mode) {
     # after removing the target_id column
     # there are several redundant columns for each gene
     # this line gets the unique line for each gene
@@ -410,9 +419,9 @@ sleuth_results <- function(obj, test, test_type = 'wt',
     # and the gene_column from the target_mapping table.
     by_col <- "target_id"
     names(by_col) <- obj$gene_column
-    res <- dplyr::left_join(data.table::as.data.table(target_mapping),
-                            data.table::as.data.table(res),
-                            by = by_col)
+    res <- dplyr::right_join(data.table::as.data.table(target_mapping),
+                             data.table::as.data.table(res),
+                             by = by_col)
     names(res)[1] <- "target_id"
   }
 
