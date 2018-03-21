@@ -182,6 +182,14 @@ sleuth_prep <- function(
     stop("The design matrix number of rows are not equal to the number of rows in the sample_to_covariates argument.")
   }
 
+  if (!is(filter_fun, 'function')) {
+    stop("filter_fun must be a function")
+  }
+
+  if (!is.null(filter_target_id) & !is.character(filter_target_id)) {
+    stop("if filter_target_id is used, it must be a character vector")
+  }
+
   if (!is(norm_fun_counts, 'function')) {
     stop("norm_fun_counts must be a function")
   }
@@ -318,6 +326,10 @@ sleuth_prep <- function(
       sample_to_covariates$sample)
     filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
     filter_true <- filter_bool[filter_bool]
+
+    if (sum(filter_bool) == 0) {
+      stop("Zero targets passed the filter you used. Please double check the filter used.")
+    }
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
     est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool, , drop = FALSE])
