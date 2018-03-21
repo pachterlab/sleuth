@@ -84,6 +84,8 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}. You can fit multiple covariates by joining them with '+' (see example)
 #' @param filter_fun the function to use when filtering.
+#' @param filter_target_id character vector of target_ids to filter using methods that can't be implemented
+#' using `filter_fun`. If non-NULL, this will override `filter_fun`.
 #' @param target_mapping a \code{data.frame} that has at least one column
 #' 'target_id' and others that denote the mapping for each target. if it is not
 #' \code{NULL}, \code{target_mapping} is joined with many outputs where it
@@ -124,6 +126,7 @@ sleuth_prep <- function(
   sample_to_covariates,
   full_model = NULL,
   filter_fun = basic_filter,
+  filter_target_id = NULL,
   target_mapping = NULL,
   max_bootstrap = NULL,
   norm_fun_counts = norm_factors,
@@ -324,7 +327,14 @@ sleuth_prep <- function(
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
       sample_to_covariates$sample)
-    filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
+    if(!is.null(filter_target_id)) {
+       msg("A list of target IDs for filtering was found. Using this for filtering")
+       target_ids <- rownames(est_counts_spread)
+       filter_bool <- target_ids %in% filter_target_id
+       names(filter_bool) <- target_ids
+    } else {
+      filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
+    }
     filter_true <- filter_bool[filter_bool]
 
     if (sum(filter_bool) == 0) {

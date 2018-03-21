@@ -5,7 +5,8 @@
 \title{Constructor for a 'sleuth' object}
 \usage{
 sleuth_prep(sample_to_covariates, full_model = NULL,
-  filter_fun = basic_filter, target_mapping = NULL, max_bootstrap = NULL,
+  filter_fun = basic_filter, filter_target_id = NULL,
+  target_mapping = NULL, max_bootstrap = NULL,
   norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
   aggregation_column = NULL, read_bootstrap_tpm = FALSE,
   extra_bootstrap_summary = FALSE, transformation_function = log_transform,
@@ -25,6 +26,9 @@ of the experiment OR a design matrix. It must be consistent with the data.frame 
 \code{sample_to_covariates}. You can fit multiple covariates by joining them with '+' (see example)}
 
 \item{filter_fun}{the function to use when filtering.}
+
+\item{filter_target_id}{character vector of target_ids to filter using methods that can't be implemented
+using `filter_fun`. If non-NULL, this will override `filter_fun`.}
 
 \item{target_mapping}{a \code{data.frame} that has at least one column
 'target_id' and others that denote the mapping for each target. if it is not
