@@ -204,6 +204,7 @@ sleuth_prep <- function(
   ##############################
 
   msg('reading in kallisto results')
+  sample_to_covariates <- as.data.frame(sample_to_covariates)
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
   if(nrow(sample_to_covariates) == 1 && !is.null(full_model)) {
