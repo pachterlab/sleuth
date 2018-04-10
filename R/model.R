@@ -287,6 +287,9 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' \code{NA} values in most columns.
 #' @param pval_aggregate if \code{TRUE} and both \code{target_mapping} and \code{aggregation_column} were provided,
 #' to \code{sleuth_prep}, use lancaster's method to aggregate p-values by the \code{aggregation_column}.
+#' @param weight_func if \code{pval_aggregate} is \code{TRUE}, then this is used to weight the p-values for
+#' lancaster's method. This function must take the observed means of the transcripts as the only defined argument. The default is
+#' \code{identity}.
 #' @return a \code{data.frame} with the following columns:
 #' @return target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
 #' @return ...: if there is a target mapping data frame, all of the annotations columns are added from \code{obj$target_mapping} before the other columns.
@@ -313,7 +316,8 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
   which_model = 'full', rename_cols = TRUE, show_all = TRUE,
-  pval_aggregate = obj$pval_aggregate) {
+  pval_aggregate = obj$pval_aggregate,
+  weight_func = identity) {
   stopifnot( is(obj, 'sleuth') )
 
   if (test_type == 'wt' && !model_exists(obj, which_model)) {
@@ -390,13 +394,17 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       stop('Must provide transcript to gene mapping table in order to aggregate p-values. ',
            'Please rerun "sleuth_prep" using the "target_mapping" argument.')
     }
+    if (length(which(weight_func(res$mean_obs) < 0)) > 0) {
+      stop('The provided weighting function for the mean observations results in ',
+           'negative values, which are not allowed for the lancaster method.')
+    }
     t2g <- dplyr::select(obj$target_mapping, target_id, eval(obj$gene_column))
     res <- dplyr::right_join(data.table::as.data.table(t2g),
                              res, by = "target_id")
     res <- data.table::as.data.table(res)
     res <- res[, .(num_aggregated_transcripts = length(!is.na(pval)),
                    sum_mean_obs_counts = sum(mean_obs, na.rm = TRUE),
-                   pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
+                   pval = as.numeric(aggregation::lancaster(pval, weight_func(mean_obs)))),
                by = eval(obj$gene_column)]
     res <- res[, qval := p.adjust(pval, 'BH')]
     names(res)[1] <- "target_id"
