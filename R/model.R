@@ -385,24 +385,6 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if (show_all) {
-    if (obj$gene_mode) {
-      tids <- unique(
-        obj$target_mapping[, obj$gene_column])
-      by_col <- "target_id"
-      names(by_col) <- obj$gene_column
-    } else {
-      tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
-      by_col <- 'target_id'
-    }
-    res <- dplyr::left_join(
-      data.table::as.data.table(tids),
-      res,
-      by = by_col
-      )
-    names(res)[1] <- "target_id"
-  }
-
   if (pval_aggregate) {
     if (is.null(obj$target_mapping) ) {
       stop('Must provide transcript to gene mapping table in order to aggregate p-values. ',
@@ -417,17 +399,35 @@ sleuth_results <- function(obj, test, test_type = 'wt',
                    pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
                by = eval(obj$gene_column)]
     res <- res[, qval := p.adjust(pval, 'BH')]
+    names(res)[1] <- "target_id"
   }
 
+  if (show_all) {
+    if (obj$gene_mode | pval_aggregate) {
+      tids <- unique(dplyr::select(
+        obj$target_mapping, eval(obj$gene_column)))
+      by_col <- "target_id"
+      names(by_col) <- obj$gene_column
+    } else {
+      tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
+      by_col <- 'target_id'
+    }
+    res <- dplyr::left_join(
+      data.table::as.data.table(tids),
+      res,
+      by = by_col
+      )
+    names(res)[1] <- "target_id"
+  }
 
-  if (obj$gene_mode) {
+  if (obj$gene_mode | pval_aggregate) {
     # after removing the target_id column
     # there are several redundant columns for each gene
     # this line gets the unique line for each gene
     target_mapping <- unique(dplyr::select(
                                obj$target_mapping,
                                -target_id))
-    if (any(duplicated(target_mapping[, obj$gene_column]))) {
+    if (any(duplicated(dplyr::select(target_mapping, eval(obj$gene_column))))) {
       warning("Warning: the target mapping for the gene-level has multiple entries for at least one gene. ",
               "Is it possible that you used a target_mapping with transcript metadata rather than gene metadata? ",
               "All entries for all genes will be included in the final table, which will results in some duplicate entries.")
@@ -441,18 +441,6 @@ sleuth_results <- function(obj, test, test_type = 'wt',
                              res,
                              by = by_col)
     names(res)[1] <- "target_id"
-  } else if (pval_aggregate) {
-    target_mapping <- unique(dplyr::select(
-                               obj$target_mapping,
-                               -target_id))
-    if (any(duplicated(target_mapping[, obj$gene_column]))) {
-      warning("Warning: the target mapping for the gene-level has multiple entries for at least one gene. ", 
-              "Is it possible that you used a target_mapping with transcript metadata rather than gene metadata? ", 
-              "All entries for all genes will be included in the final table, which will results in some duplicate entries.")
-    }
-    res <- dplyr::right_join(data.table::as.data.table(target_mapping),
-                             res,
-                             by = obj$gene_column)
   } else if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
     res <- dplyr::right_join(
       data.table::as.data.table(obj$target_mapping),
