@@ -839,14 +839,16 @@ get_col <- function(obj, ...) {
 #' @export
 summary.sleuth <- function(obj, covariates = TRUE) {
   mapped_reads <- sapply(obj$kal, function(k) attr(k, 'num_mapped'))
-  n_bs <- sapply(obj$kal, function(k) length(k$bootstrap))
+  n_bs <- sapply(obj$kal, function(k) attr(k, 'num_bootstrap_found'))
+  n_bs_read <- sapply(obj$kal, function(k) attr(k, 'num_bootstrap_read'))
   n_processed <- sapply(obj$kal, function(k) attr(k, 'num_processed'))
 
   res <- adf(sample = obj$sample_to_covariates[['sample']],
     reads_mapped = mapped_reads,
     reads_proc = n_processed,
     frac_mapped = round(mapped_reads / n_processed, 4),
-    bootstraps = n_bs
+    bootstraps_present = n_bs,
+    bootstraps_used = n_bs_read
     )
   if (covariates) {
     res <- dplyr::left_join(res, obj$sample_to_covariates, by = 'sample')
