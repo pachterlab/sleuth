@@ -377,6 +377,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
+  res <- data.table::as.data.table(res)
   if (rename_cols) {
     res <- dplyr::rename(res,
       tech_var = sigma_q_sq,
@@ -384,52 +385,67 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       )
   }
 
-  if (show_all && !obj$gene_mode) {
-    tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
-    res <- dplyr::left_join(
-      data.table::as.data.table(tids),
-      data.table::as.data.table(res),
-      by = 'target_id'
-      )
+  if (pval_aggregate) {
+    if (is.null(obj$target_mapping) ) {
+      stop('Must provide transcript to gene mapping table in order to aggregate p-values. ',
+           'Please rerun "sleuth_prep" using the "target_mapping" argument.')
+    }
+    t2g <- dplyr::select(obj$target_mapping, target_id, eval(obj$gene_column))
+    res <- dplyr::right_join(data.table::as.data.table(t2g),
+                             res, by = "target_id")
+    res <- data.table::as.data.table(res)
+    res <- res[, .(num_aggregated_transcripts = length(!is.na(pval)),
+                   sum_mean_obs_counts = sum(mean_obs, na.rm = TRUE),
+                   pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
+               by = eval(obj$gene_column)]
+    res <- res[, qval := p.adjust(pval, 'BH')]
+    names(res)[1] <- "target_id"
   }
 
-  if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
+  if (show_all) {
+    if (obj$gene_mode | pval_aggregate) {
+      tids <- unique(dplyr::select(
+        obj$target_mapping, eval(obj$gene_column)))
+      by_col <- "target_id"
+      names(by_col) <- obj$gene_column
+    } else {
+      tids <- adf(target_id = obj$kal[[1]]$abundance$target_id)
+      by_col <- 'target_id'
+    }
     res <- dplyr::left_join(
-      data.table::as.data.table(obj$target_mapping),
-      data.table::as.data.table(res),
-      by = 'target_id')
-  } else if (!is.null(obj$target_mapping) && obj$gene_mode) {
+      data.table::as.data.table(tids),
+      res,
+      by = by_col
+      )
+    names(res)[1] <- "target_id"
+  }
+
+  if (obj$gene_mode | pval_aggregate) {
     # after removing the target_id column
     # there are several redundant columns for each gene
     # this line gets the unique line for each gene
     target_mapping <- unique(dplyr::select(
                                obj$target_mapping,
                                -target_id))
+    if (any(duplicated(dplyr::select(target_mapping, eval(obj$gene_column))))) {
+      warning("Warning: the target mapping for the gene-level has multiple entries for at least one gene. ",
+              "Is it possible that you used a target_mapping with transcript metadata rather than gene metadata? ",
+              "All entries for all genes will be included in the final table, which will results in some duplicate entries.")
+    }
     # this line uses dplyr's "left_join" syntax for "by"
     # to match "target_id" from the "res" table,
     # and the gene_column from the target_mapping table.
     by_col <- "target_id"
     names(by_col) <- obj$gene_column
-    res <- dplyr::left_join(data.table::as.data.table(target_mapping),
-                            data.table::as.data.table(res),
-                            by = by_col)
+    res <- dplyr::right_join(data.table::as.data.table(target_mapping),
+                             res,
+                             by = by_col)
     names(res)[1] <- "target_id"
-  }
-
-  if ( pval_aggregate ) {
-  	if (is.null(obj$target_mapping) ) {
-  			stop('Must provide transcript to gene mapping table in order to aggregate p-values. ',
-                             'Please rerun "sleuth_prep" using the "target_mapping" argument.')
-  	}
-    res <- data.table::as.data.table(res)
-    res <- res[, .(
-    	num_aggregated_transcripts = length(!is.na(pval)),
-    	sum_mean_obs_counts = sum(mean_obs, na.rm=TRUE),
-    	pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
-		by=eval(obj$gene_column)]
-
-	res <- res[, qval:=p.adjust(pval, 'BH')]
-	res <- as_df(res)
+  } else if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
+    res <- dplyr::right_join(
+      data.table::as.data.table(obj$target_mapping),
+      res,
+      by = 'target_id')
   }
 
   res <- as_df(res)

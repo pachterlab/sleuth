@@ -107,15 +107,19 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   }
 
   bs_samples <- list()
+  num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
+  if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap) {
+    num_bs <- max_bootstrap
+  } else {
+    num_bs <- num_bootstrap
+  }
   if (read_bootstrap) {
-    num_bootstrap <- as.integer(rhdf5::h5read(fname, "aux/num_bootstrap"))
     if (num_bootstrap > 0) {
       msg("Found ", num_bootstrap, " bootstrap samples")
       if (!is.null(max_bootstrap) && max_bootstrap < num_bootstrap) {
         msg("Only reading ", max_bootstrap, " bootstrap samples")
-        num_bootstrap <- max_bootstrap
       }
-      bs_samples <- lapply(0:(num_bootstrap[1] - 1),
+      bs_samples <- lapply(0:(num_bs[1] - 1),
         function(i) {
           .read_bootstrap_hdf5(fname, i, abund)
         })
@@ -143,7 +147,8 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
   attr(res, 'original_num_targets') <- nrow(abund)
   attr(res, 'num_mapped') <- sum(abund$est_counts)
   attr(res, 'num_processed') <- num_processed
-
+  attr(res, 'num_bootstrap_found') <- num_bootstrap
+  attr(res, 'num_bootstrap_used') <- num_bs
   invisible(res)
 }
 
