@@ -377,7 +377,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
                               read_bootstrap_tpm, gene_mode,
                               extra_bootstrap_summary,
                               target_id, mappings, which_ids,
-                              aggregation_column, transform_fun,
+                              aggregation_column, transform_fun_counts,
                               transform_fun_tpm, max_bootstrap)
 {
   dot(i)
@@ -486,7 +486,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
     rm(tidy_bs, scaled_bs)
   }
 
-  bs_mat <- transform_fun(bs_mat[, which_ids])
+  bs_mat <- transform_fun_counts(bs_mat[, which_ids])
   if (extra_bootstrap_summary) {
     bs_quant_est_counts <- aperm(apply(bs_mat, 2,
                                        quantile))

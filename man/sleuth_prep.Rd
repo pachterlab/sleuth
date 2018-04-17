@@ -4,18 +4,13 @@
 \alias{sleuth_prep}
 \title{Constructor for a 'sleuth' object}
 \usage{
-sleuth_prep(sample_to_covariates, full_model = NULL,
-  filter_fun = basic_filter, filter_target_id = NULL,
-  target_mapping = NULL, max_bootstrap = NULL,
-  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors,
-  aggregation_column = NULL, read_bootstrap_tpm = FALSE,
-  extra_bootstrap_summary = FALSE, transformation_function = log_transform,
-  transformation_function_tpm = identity, num_cores = max(1L,
-  parallel::detectCores() - 1L), ...)
+sleuth_prep(sample_to_covariates, full_model = NULL, target_mapping = NULL,
+  aggregation_column = NULL, num_cores = max(1L, parallel::detectCores() -
+  1L), ...)
 }
 \arguments{
 \item{sample_to_covariates}{a \code{data.frame} which contains a mapping
-from \code{sample} (a column) to some set of experimental conditions or
+from \code{sample} (a required column) to some set of experimental conditions or
 covariates. The column \code{path} is also required, which is a character
 vector where each element points to the corresponding kallisto output directory. The column
 \code{sample} should be in the same order as the corresponding entry in
@@ -25,11 +20,6 @@ vector where each element points to the corresponding kallisto output directory.
 of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
 \code{sample_to_covariates}. You can fit multiple covariates by joining them with '+' (see example)}
 
-\item{filter_fun}{the function to use when filtering.}
-
-\item{filter_target_id}{character vector of target_ids to filter using methods that can't be implemented
-using `filter_fun`. If non-NULL, this will override `filter_fun`.}
-
 \item{target_mapping}{a \code{data.frame} that has at least one column
 'target_id' and others that denote the mapping for each target. if it is not
 \code{NULL}, \code{target_mapping} is joined with many outputs where it
@@ -37,35 +27,15 @@ might be useful. For example, you might have columns 'target_id',
 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
 mappings.}
 
-\item{max_bootstrap}{maximum number of bootstrap values to read for each
-transcript.}
-
-\item{norm_fun_counts}{a function to perform between sample normalization on the estimated counts.}
-
-\item{norm_fun_tpm}{a function to perform between sample normalization on the TPM}
-
-\item{aggregation_column}{a string of the column name in \code{\link{target_mapping}} to aggregate targets}
-
-\item{read_bootstrap_tpm}{read and compute summary statistics on bootstraps on the TPM;
-needed for some plots (e.g. \code{\link{plot_bootstrap}}), and needed if TPM values are used for
-\code{\link{sleuth_fit}}.}
-
-\item{extra_bootstrap_summary}{if \code{TRUE}, compute extra summary
-statistics for estimated counts; needed for some plots (e.g. \code{\link{plot_bootstrap}}).
-NOTE: Unnecessary for typical analyses}
-
-\item{transformation_function}{the transformation that should be applied
-to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
-NOTE: be sure you know what you're doing before you change this.}
-
-\item{transformation_function_tpm}{the transformation that should be applied
-to the TPM values. Default is \code{'x'} (i.e. the identity function / no transformation)
-NOTE: be sure you know what you're doing before you change this.}
+\item{aggregation_column}{a string of the column name in \code{\link{target_mapping}} to aggregate targets
+(typically to summarize the data on the gene level). The aggregation is done using a p-value aggregation
+method when generating the results table. See \code{\link{sleuth_results}} for more information.}
 
 \item{num_cores}{an integer of the number of computer cores mclapply should use
 to speed up sleuth preparation}
 
-\item{...}{additional arguments passed to the filter function}
+\item{...}{any of several other arguments that can be used as advanced options for
+sleuth preparation. See details.}
 }
 \value{
 a \code{sleuth} object containing all kallisto samples, metadata,
@@ -76,6 +46,69 @@ A sleuth is a group of kallistos. Borrowing this terminology, a 'sleuth' object 
 a group of kallisto results, and can then operate on them while
 accounting for covariates, sequencing depth, technical and biological
 variance.
+}
+\details{
+This method takes a list of samples with kallisto results and returns a sleuth
+  object with the defined normalization of the data across samples (default is the DESeq method;
+  See \code{\link{basic_filter}}), and then the defined transformation of the data (default is log(x + 0.5)).
+  This also collects all of the bootstraps for the modeling done using \code{\link{sleuth_fit}}. This
+  function also takes several advanced options that can be used to customize your analysis.
+  Here are the advanced options for \code{sleuth_prep}:
+
+  Extra arguments related to Bootstrap Summarizing:
+  \itemize{
+    \item \code{extra_bootstrap_summary}: if \code{TRUE}, compute extra summary
+    statistics for estimated counts. This is not necessary for typical analyses; it is only needed
+    for certain plots (e.g. \code{\link{plot_bootstrap}}). Default is \code{FALSE}.
+    \item \code{read_bootstrap_tpm}: read and compute summary statistics on bootstraps on the TPM.
+    This is not necessary for typical analyses; it is only needed for some plots (e.g. \code{\link{plot_bootstrap}})
+    and if TPM values are used for \code{\link{sleuth_fit}}. Default is \code{FALSE}.
+    \item \code{max_bootstrap}: the maximum number of bootstrap values to read for each
+    transcript. Setting this lower than the total bootstraps available will save some time, but
+    will likely decrease the accuracy of the estimation of the inferential noise.
+  }
+
+  Advanced Options for Filtering:
+  \itemize{
+    \item \code{filter_fun}: the function to use when filtering. This function will be applied to the raw counts
+    on a row-wise basis, meaning that each feature will be considered individually. The default is to filter out
+    any features that do not have at least 5 estimated counts in at least 47% of the samples (see \code{\link{basic_filter}}
+    for more information). If the preferred filtering method requires a matrix-wide transformation or otherwise
+    needs to consider multiple features simultaneously instead of independently, please consider using
+    \code{filter_target_id} below.
+    \item \code{filter_target_id}: character vector of target_ids to filter using methods that
+    can't be implemented using \code{filter_fun}. If non-NULL, this will override \code{filter_fun}.
+  }
+
+  Advanced Options for the Normalization Step:
+  (NOTE: Be sure you know what you're doing before you use these options)
+  \itemize{
+    \item \code{normalize}: boolean for whether normalization and other steps should be performed.
+    If this is set to false, bootstraps will not be read and transformation of the data will not be done.
+    This should only be set to \code{FALSE} if one desires to do a quick check of the raw data.
+    The default is \code{TRUE}.
+    \item \code{norm_fun_counts}: a function to perform between sample normalization on the estimated counts.
+    The default is the DESeq method. See \code{\link{norm_factors}} for details.
+    \item \code{norm_fun_tpm}: a function to perform between sample normalization on the TPM.
+    The default is the DESeq method. See \code{\link{norm_factors}} for details.
+  }
+
+  Advanced Options for the Transformation Step:
+  (NOTE: Be sure you know what you're doing before you use these options)
+  \itemize{
+    \item \code{transform_fun_counts}: the transformation that should be applied
+    to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset).
+    \item \code{transform_fun_tpm}: the transformation that should be applied
+    to the TPM values. Default is \code{'x'} (i.e. the identity function / no transformation)
+  }
+
+  Advanced Options for Gene Aggregation:
+  \itemize{
+    \item \code{gene_mode}: Set this to \code{TRUE} to get the old counts-aggregation method
+    for doing gene-level analysis. This requires \code{aggregation_column} to be set. If 
+    \code{TRUE}, this will override the p-value aggregation mode, but will allow for gene-centric
+    modeling, plotting, and results.
+  }
 }
 \examples{
 # Assume we have run kallisto on a set of samples, and have two treatments,
