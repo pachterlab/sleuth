@@ -94,7 +94,7 @@ plot_pca <- function(obj,
   point_alpha = 0.8,
   ...) {
   stopifnot( is(obj, 'sleuth') )
-
+  stopifnot( check_norm_status(obj) )
   units <- check_quant_mode(obj, units)
 
   mat <- NULL
@@ -160,6 +160,7 @@ plot_loadings <- function(obj,
   ...) {
 
   stopifnot( is(obj, 'sleuth') )
+  stopifnot( check_norm_status(obj) )
   #filtering?? doesn't work right now
 
   units <- check_quant_mode(obj, units)
@@ -262,6 +263,7 @@ plot_pc_variance <- function(obj,
   PC_relative = NULL,
   ...) {
 
+  stopifnot(check_norm_status(obj))
   units <- check_quant_mode(obj, units)
 
   # mat <- NULL
@@ -408,6 +410,7 @@ plot_sample_density <- function(obj,
   ) {
   res <- NULL
 
+  stopifnot(check_norm_status(obj))
   units <- check_quant_mode(obj, units)
 
   if (use_filtered) {
@@ -466,6 +469,7 @@ plot_scatter <- function(obj,
   ylim = NULL
   ) {
 
+  stopifnot(check_norm_status(obj))
   units <- check_quant_mode(obj, units)
 
   abund <- NULL
@@ -549,6 +553,11 @@ plot_vars <- function(obj,
   ) {
   stopifnot( is(obj, 'sleuth') )
 
+  if ( !model_exists(obj, which_model) ) {
+    stop("'", which_model, "' is not a valid model. Please see models(",
+      substitute(obj), ") for a list of fitted models")
+  }
+
   if(!obj$fits[[which_model]]$transform_synced) {
     stop("Model '", which_model, "' was not computed using the sleuth object's",
          " current transform function. Please rerun sleuth_fit for this model.")
@@ -625,6 +634,11 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
   ) {
   stopifnot( is(obj, 'sleuth') )
 
+  if ( !model_exists(obj, which_model) ) {
+    stop("'", which_model, "' is not a valid model. Please see models(",
+      substitute(obj), ") for a list of fitted models")
+  }
+
   if ( test_type == 'lrt' ) {
     stop(
       'Currently only works for the Wald test.',
@@ -680,6 +694,7 @@ plot_bootstrap <- function(obj,
   x_axis_angle = 50,
   divide_groups = TRUE
   ) {
+  stopifnot(check_norm_status(obj))
   units <- check_quant_mode(obj, units)
 
   df <- get_bootstrap_summary(obj, target_id, units)
@@ -774,6 +789,7 @@ plot_sample_heatmap <- function(obj,
   annotation_cols = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   cluster_bool = TRUE,
   ...) {
+  stopifnot(check_norm_status(obj))
   abund <- NULL
   if (use_filtered) {
     abund <- spread_abundance_by(obj$obs_norm_filt, 'tpm',
@@ -990,6 +1006,7 @@ plot_transcript_heatmap <- function(obj,
   annotation_cols = setdiff(colnames(obj$sample_to_covariates), 'sample'),
   ...) {
 
+  stopifnot(check_norm_status(obj))
   units <- check_quant_mode(obj, units)
 
   if(!all(transcripts %in% obj$obs_norm$target_id)) {

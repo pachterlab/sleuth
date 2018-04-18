@@ -51,6 +51,7 @@
 #' @export
 sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, which_var = 'obs_counts', ...) {
   stopifnot( is(obj, 'sleuth') )
+  stopifnot( check_norm_status(obj) )
   which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
 
   if (is.null(obj$bs_summary[[which_var]])) {
@@ -381,7 +382,7 @@ me_white_var <- function(df, sigma_col, sigma_q_col, X, tXX_inv) {
 
 
 
-#' @export
+# DEPRECATED
 bs_sigma_summary <- function(obj, transform = identity, norm_by_length = FALSE) {
   # if (norm_by_length) {
   #   scaling_factor <- get_scaling_factors(obj$obs_raw)
