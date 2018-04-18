@@ -22,23 +22,47 @@
 #' \code{sleuth}. It performs the technical variance estimation from the boostraps, biological
 #' variance estimation, and shrinkage estimation.
 #'
-#' For most users, simply providing the sleuth object should be sufficient. By
-#' default, this behavior will fit the full model initially specified and store
-#' it in the sleuth object under 'full'.
-#'
-#' To see which models have been fit, users will likely find the function
-#' \code{\link{models}} helpful.
-#'
 #' @param obj a \code{sleuth} object
 #' @param formula an R formula specifying the design to fit OR a design matrix.
 #' If you are interested in only fitting the model that was specified in \code{sleuth_prep}
 #' you do not need to specify it again (will be fit as the 'full' model).
 #' @param fit_name the name to store the fit in the sleuth object (at so$fits$fit_name).
 #' If \code{NULL}, the model will be named 'full'.
-#' @param which_var which kind of data (counts or TPMs) should be fit? only accepts
-#' \code{'obs_counts'} (default) or \code{'obs_tpm'}
-#' @param ... additional arguments passed to \code{sliding_window_grouping} and
-#' \code{shrink_df}
+#' @param ... advanced options for \code{sleuth_fit}. See details.
+#'
+#' @details For most users, simply providing the sleuth object should be sufficient. By
+#' default, this behavior will fit the full model initially specified and store
+#' it in the sleuth object under 'full'.
+#'
+#' To see which models have been fit, users will likely find the function
+#' \code{\link{models}} helpful.
+#'
+#' There are some advanced options for users how wish to customize the fitting procedure.
+#' Note that these options have not been thoroughly tested, so their effect on the accuracy
+#' of the results are unknown. Here are those advanced options:
+#' 
+#' Advanced options for modeling choice:
+#' 
+#' \itemize{  
+#'   \item \code{which_var}: which kind of data (counts or TPMs) should be fit? Sleuth by
+#'   default models the estimated counts, but can model the TPMs. This argument only accepts
+#'   \code{'obs_counts'} (default) or \code{'obs_tpm'}. Note that if \code{gene_mode} is \code{TRUE},
+#'   and transcript counts were aggregated to the gene-level, \code{'obs_counts'} will model
+#'   the \code{'scaled_reads_per_base'} summary statistic.
+#' }
+#'
+#' Advanced options for the sliding window shrinkage procedure (these options are passed to
+#' \code{\link{sliding_window_grouping}}):
+#'
+#' \itemize{
+#'   \item \code{n_bins}: the number of bins that the data should be split for the sliding window shrinkage
+#'   using the mean-variance curve. The default is 100.
+#'   \item \code{lwr}: the lower range of variances within each bin that should be included for the shrinkage
+#'   procedure. The default is 0.25 (meaning the 25th percentile).
+#'   \item \code{upr}: the upper range of variances within each bin that should be included for the shrinkage
+#'   procedure. The default is 0.75 (meaning the 75th percentile).
+#' }
+#'
 #' @return a sleuth object with updated attributes.
 #' @examples # If you specified the formula in sleuth_prep, you can simply run to run the full model
 #' so <- sleuth_fit(so)
@@ -49,9 +73,32 @@
 #' \code{\link{sleuth_wt}} to test whether a coefficient is zero,
 #' \code{\link{sleuth_lrt}} to test nested models.
 #' @export
-sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, which_var = 'obs_counts', ...) {
+sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   stopifnot( is(obj, 'sleuth') )
   stopifnot( check_norm_status(obj) )
+
+  extra_opts <- list(...)
+  if ('which_var' %in% names(extra_opts)) {
+    which_var <- extra_opts$which_var
+  } else {
+    which_var <- 'obs_counts'
+  }
+  if ('n_bins' %in% names(extra_opts)) {
+    n_bins <- extra_opts$n_bins
+  } else {
+    n_bins <- 100
+  }
+  if ('lwr' %in% names(extra_opts)) {
+    lwr <- extra_opts$lwr
+  } else {
+    lwr <- 0.25
+  }
+  if ('upr' %in% names(extra_opts)) {
+    upr <- extra_opts$lwr
+  } else {
+    upr <- 0.75
+  }
+
   which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
 
   if (is.null(obj$bs_summary[[which_var]])) {
@@ -118,9 +165,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, which_var = 'obs_co
   # simple fix
   msg('shrinkage estimation')
   swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
-    ignore_zeroes = TRUE, ...)
-
-  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr', ...)
+    n_bins = n_bins, lwr = lwr, upr = upr, ignore_zeroes = TRUE)
+  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr')
   l_smooth <- dplyr::select(
     dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
     -shrink)
