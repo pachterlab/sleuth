@@ -7,6 +7,7 @@ Authors@R: c(
 Description: Investigate transcript abundance from "kallisto" and differential
     expression analysis from RNA-Seq data.
 License: GPL-3
+Encoding: UTF-8
 LazyData: true
 URL: https://github.com/pachterlab/sleuth
 BugReports: https://github.com/pachterlab/sleuth/issues
