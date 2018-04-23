@@ -34,6 +34,7 @@
 #' @param smooth_size the size of the line
 #' @param smooth_color the color of the smooth line
 #' @return a \code{ggplot} object
+#' @import ggplot2
 #' @export
 plot_mean_var <- function(obj,
   which_model = 'full',
@@ -82,6 +83,7 @@ plot_mean_var <- function(obj,
 #' @param text_labels if TRUE, use text labels instead of points
 #' @param color_by a variable to color by. if NA, then will leave all as 'black'
 #' @return a gpplot object
+#' @import ggplot2
 #' @export
 plot_pca <- function(obj,
   pc_x = 1L,
@@ -148,6 +150,7 @@ plot_pca <- function(obj,
 #' @param scale scale or not
 #' @param pca_loading_abs default true, to see all PC's magnitude (recommended)
 #' @return a ggplot object
+#' @import ggplot2
 #' @export
 plot_loadings <- function(obj,
   use_filtered = TRUE,
@@ -254,6 +257,7 @@ plot_loadings <- function(obj,
 #' @param scale determines scaling
 #' @param PC_relative gives the option to compare subsequent principal components and their contributions
 #' @return a ggplot object
+#' @import ggplot2
 #' @export
 plot_pc_variance <- function(obj,
   use_filtered = TRUE,
@@ -324,6 +328,7 @@ plot_pc_variance <- function(obj,
 #' @param offset the offset so that transformations such as log don't compute
 #' -Inf. If NULL, then will not add an offset
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_group_density <- function(obj,
   use_filtered = TRUE,
@@ -400,6 +405,7 @@ plot_group_density <- function(obj,
 #' @param offset the offset so that transformations such as log don't compute
 #' -Inf. If NULL, then will not add an offset
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_sample_density <- function(obj,
   which_sample = obj$sample_to_covariates$sample[1],
@@ -454,6 +460,7 @@ plot_sample_density <- function(obj,
 #' @param xlim a numeric vector of length two denoting the x limits
 #' @param ylim same as xlim but for the y-axis
 #' @return a ggplot object for the scatterplot
+#' @import ggplot2
 #' @export
 plot_scatter <- function(obj,
   sample_x = obj$sample_to_covariates$sample[1],
@@ -538,6 +545,7 @@ plot_scatter <- function(obj,
 #' These points will be highlighted in the plot. if \code{NULL}, no points will be highlighted.
 #' @param highlight_color the color to highlight points.
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_vars <- function(obj,
   test = NULL,
@@ -624,6 +632,7 @@ plot_vars <- function(obj,
 #' test
 #' @param point_alpha the alpha for the points
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
   sig_level = 0.10,
@@ -686,6 +695,7 @@ plot_ma <- function(obj, test, test_type = 'wt', which_model = 'full',
 #' @param color_by a column in the sample to covariates to color by
 #' @param x_axis_angle the angle of the x-axis labels
 #' @return a ggplot2 object
+#' @import ggplot2
 #' @export
 plot_bootstrap <- function(obj,
   target_id,
@@ -724,6 +734,7 @@ plot_fld <- function(x, ...) {
 #' @param obj a sleuth object
 #' @param sample either the sample index (an integer or numeric), or the sample id (a character of length 1)
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_fld.sleuth <- function(obj, sample) {
   stopifnot( length(sample) == 1 )
@@ -746,6 +757,7 @@ plot_fld.sleuth <- function(obj, sample) {
 #'
 #' @param obj a kallisto object
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_fld.kallisto <- function(obj) {
   if ( length(obj$fld) == 1 && all(is.na(obj$fld)) ) {
@@ -780,6 +792,7 @@ plot_fld.kallisto <- function(obj) {
 #' @param ... additional arguments to customize the heatmap. passed to
 #'   \code{pheatmap}. See ?pheatmap for documentation on additional options.
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_sample_heatmap <- function(obj,
   use_filtered = TRUE,
@@ -851,6 +864,7 @@ plot_sample_heatmap <- function(obj,
 #' @param highlight a \code{data.frame} with one column, \code{target_id}.
 #' These points will be displayed below in a table.
 #' @return a \code{ggplot} object
+#' @import ggplot2
 #' @export
  plot_volcano <- function(obj, test, test_type = 'wt', which_model = 'full',
     sig_level = 0.10,
@@ -903,6 +917,7 @@ plot_sample_heatmap <- function(obj,
 #' @param highlight_color the color to highlight points.
 #' @param line_color what color to make the QQ line
 #' @return a \code{ggplot2} object
+#' @import ggplot2
 #' @export
 plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
   sig_level = 0.10,
@@ -992,6 +1007,7 @@ plot_qq <- function(obj, test, test_type = 'wt', which_model = 'full',
 #' @param ... additional arguments to customize the heatmap. passed to
 #'   \code{pheatmap}. See ?pheatmap for documentation on additional options.
 #' @return a \code{ggplot} object
+#' @import ggplot2
 #' @export
 plot_transcript_heatmap <- function(obj,
   transcripts,

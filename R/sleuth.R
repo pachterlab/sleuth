@@ -895,9 +895,8 @@ sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
     data.table::data.table(data.table(counts_bs)),
     #by = c("target_id", "sample", "condition")
     by = c("target_id", "sample")
-    ) %>%
-    as.data.frame(stringsAsFactors = FALSE)
-
+    )
+  s_bs <- adf(s_bs)
   obj$bootstrap_summary <- s_bs
 
   obj
@@ -937,6 +936,7 @@ spread_abundance_by <- function(abund, var, which_order) {
   result[, which_order, drop = FALSE]
 }
 
+#' @importFrom dplyr %>%
 #' @export
 melt_bootstrap_sleuth <- function(obj) {
   # TODO: make this into a S3 function
@@ -1023,6 +1023,7 @@ obs_to_matrix <- function(obj, value_name) {
 #'
 #' @param obj a sleuth object
 #' @param col_name a column to extract
+#' @importFrom dplyr %>%
 #' @return a data.frame with columns \code{sample} and column \code{col_name}
 get_col <- function(obj, ...) {
   n_samples <- nrow(obj$design_matrix)

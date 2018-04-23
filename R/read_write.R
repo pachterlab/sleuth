@@ -261,9 +261,11 @@ print.sleuth <- function(obj) {
 }
 
 
+# @importFrom dplyr %>%
 # @export
 kv_vec_to_df <- function(x, cols = c("gene_id", "transcript_id")) {
   stopifnot(length(x) %% 2 == 0)
+  `%>%` <- dplyr::`%>%`
 
   key_idx <- seq(1, length(x), 2)
   val_idx <- key_idx + 1
@@ -277,18 +279,22 @@ kv_vec_to_df <- function(x, cols = c("gene_id", "transcript_id")) {
   res[cols]
 }
 
+# @importFrom dplyr %>%
 # @export
 gtf_attributes_to_gene_trans <- function(gtf_attr) {
   stopifnot(is(gtf_attr, "character"))
+  `%>%` <- dplyr::`%>%`
 
   lapply(strsplit(gtf_attr, " "), kv_vec_to_df) %>%
     rbind_all()
 }
 
+# @importFrom dplyr %>%
 # @export
 gtf_gene_names <- function(gtf_attr) {
   stopifnot(is(gtf_attr, "character"))
   all_attr <- strsplit(gtf_attr, " ")
+  `%>%` <- dplyr::`%>%`
 
   gene_id <- vector("character", length(all_attr))
   trans_id <- vector("character", length(all_attr))
