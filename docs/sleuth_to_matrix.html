@@ -40,4 +40,19 @@ or &quot;est_counts&quot;)</p>
 </table>
 
 
+<h3>Value</h3>
+
+<p>a <code>list</code> with an attribute 'data', which contains a matrix of target_ids
+and transcript expression in <code>which_units</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre>
+sleuth_matrix &lt;- sleuth_to_matrix(sleuth_obj, 'obs_norm', 'tpm')
+head(sleuth_matrix$data) # look at first 5 transcripts, sorted by name
+</pre>
+
+
 </body></html>

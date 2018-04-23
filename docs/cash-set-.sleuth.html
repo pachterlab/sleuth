@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Extend internal '$&lt;-' for sleuth object</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for $&amp;lt;-.sleuth"><tr><td>$&lt;-.sleuth</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Extend internal '$&lt;-' for sleuth object</h2>
+
+<h3>Description</h3>
+
+<p>Extend internal '$&lt;-' for sleuth object
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+## S3 replacement method for class 'sleuth'
+obj$name &lt;- value
+</pre>
+
+
+<h3>Details</h3>
+
+<p>: This extension is mainly to address two cases:
+</p>
+
+<ul>
+<li><p> case 1: when <code>transform_fun_counts</code> or
+<code>transform_fun_tpm</code>is changed by user. This informs
+the user that <code>sleuth_prep</code> and <code>sleuth_fit</code> need
+to be rerun.
+</p>
+</li>
+<li><p> case 2: when gene_mode or pval_aggregate are modified.
+This warns the user if there is a conflict between these two
+mutually exclusive modes, and overrides the one that was left unmodified
+by the user. This also warns the user if unexpected behavior is likely to occur.
+</p>
+</li></ul>
+
+<p>Otherwise it acts normally.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre>
+obj$transform_fun_counts &lt;- function(x) log2(x+0.5)
+</pre>
+
+
+</body></html>

@@ -19,9 +19,9 @@ variance.
 <h3>Usage</h3>
 
 <pre>
-sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
-  target_mapping = NULL, max_bootstrap = NULL,
-  norm_fun_counts = norm_factors, norm_fun_tpm = norm_factors, ...)
+sleuth_prep(sample_to_covariates, full_model = NULL, target_mapping = NULL,
+  aggregation_column = NULL, num_cores = max(1L, parallel::detectCores() -
+  1L), ...)
 </pre>
 
 
@@ -30,8 +30,8 @@ sleuth_prep(sample_to_covariates, full_model, filter_fun = basic_filter,
 <table summary="R argblock">
 <tr valign="top"><td><code>sample_to_covariates</code></td>
 <td>
-<p>is a <code>data.frame</code> which contains a mapping
-from <code>sample</code> (a column) to some set of experimental conditions or
+<p>a <code>data.frame</code> which contains a mapping
+from <code>sample</code> (a required column) to some set of experimental conditions or
 covariates. The column <code>path</code> is also required, which is a character
 vector where each element points to the corresponding kallisto output directory. The column
 <code>sample</code> should be in the same order as the corresponding entry in
@@ -39,13 +39,9 @@ vector where each element points to the corresponding kallisto output directory.
 </td></tr>
 <tr valign="top"><td><code>full_model</code></td>
 <td>
-<p>is a <code>formula</code> which explains the full model (design)
+<p>an R <code>formula</code> which explains the full model (design)
 of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
-<code>sample_to_covariates</code>.</p>
-</td></tr>
-<tr valign="top"><td><code>filter_fun</code></td>
-<td>
-<p>the function to use when filtering.</p>
+<code>sample_to_covariates</code>. You can fit multiple covariates by joining them with '+' (see example)</p>
 </td></tr>
 <tr valign="top"><td><code>target_mapping</code></td>
 <td>
@@ -54,26 +50,118 @@ of the experiment OR a design matrix. It must be consistent with the data.frame 
 <code>NULL</code>, <code>target_mapping</code> is joined with many outputs where it
 might be useful. For example, you might have columns 'target_id',
 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
-mappings.</p>
+mappings. Note that sleuth_prep will treat all columns as having the 'character' data type.</p>
 </td></tr>
-<tr valign="top"><td><code>max_bootstrap</code></td>
+<tr valign="top"><td><code>aggregation_column</code></td>
 <td>
-<p>maximum number of bootstrap values to read for each
-transcript.</p>
+<p>a string of the column name in <code>target_mapping</code> to aggregate targets
+(typically to summarize the data on the gene level). The aggregation is done using a p-value aggregation
+method when generating the results table. See <code>sleuth_results</code> for more information.</p>
 </td></tr>
-<tr valign="top"><td><code>norm_fun_counts</code></td>
+<tr valign="top"><td><code>num_cores</code></td>
 <td>
-<p>a function to perform between sample normalization on the estimated counts.</p>
-</td></tr>
-<tr valign="top"><td><code>norm_fun_tpm</code></td>
-<td>
-<p>a function to perform between sample normalization on the TPM</p>
+<p>an integer of the number of computer cores mclapply should use
+to speed up sleuth preparation</p>
 </td></tr>
 <tr valign="top"><td><code>...</code></td>
 <td>
-<p>additional arguments passed to the filter function</p>
+<p>any of several other arguments that can be used as advanced options for
+sleuth preparation. See details.</p>
 </td></tr>
 </table>
+
+
+<h3>Details</h3>
+
+<p>This method takes a list of samples with kallisto results and returns a sleuth
+object with the defined normalization of the data across samples (default is the DESeq method;
+See <code>basic_filter</code>), and then the defined transformation of the data (default is log(x + 0.5)).
+This also collects all of the bootstraps for the modeling done using <code>sleuth_fit</code>. This
+function also takes several advanced options that can be used to customize your analysis.
+Here are the advanced options for <code>sleuth_prep</code>:
+</p>
+<p>Extra arguments related to Bootstrap Summarizing:
+</p>
+
+<ul>
+<li> <p><code>extra_bootstrap_summary</code>: if <code>TRUE</code>, compute extra summary
+statistics for estimated counts. This is not necessary for typical analyses; it is only needed
+for certain plots (e.g. <code>plot_bootstrap</code>). Default is <code>FALSE</code>.
+</p>
+</li>
+<li> <p><code>read_bootstrap_tpm</code>: read and compute summary statistics on bootstraps on the TPM.
+This is not necessary for typical analyses; it is only needed for some plots (e.g. <code>plot_bootstrap</code>)
+and if TPM values are used for <code>sleuth_fit</code>. Default is <code>FALSE</code>.
+</p>
+</li>
+<li> <p><code>max_bootstrap</code>: the maximum number of bootstrap values to read for each
+transcript. Setting this lower than the total bootstraps available will save some time, but
+will likely decrease the accuracy of the estimation of the inferential noise.
+</p>
+</li></ul>
+
+<p>Advanced Options for Filtering:
+</p>
+
+<ul>
+<li> <p><code>filter_fun</code>: the function to use when filtering. This function will be applied to the raw counts
+on a row-wise basis, meaning that each feature will be considered individually. The default is to filter out
+any features that do not have at least 5 estimated counts in at least 47
+for more information). If the preferred filtering method requires a matrix-wide transformation or otherwise
+needs to consider multiple features simultaneously instead of independently, please consider using
+<code>filter_target_id</code> below.
+</p>
+</li>
+<li> <p><code>filter_target_id</code>: character vector of target_ids to filter using methods that
+can't be implemented using <code>filter_fun</code>. If non-NULL, this will override <code>filter_fun</code>.
+</p>
+</li></ul>
+
+<p>Advanced Options for the Normalization Step:
+(NOTE: Be sure you know what you're doing before you use these options)
+</p>
+
+<ul>
+<li> <p><code>normalize</code>: boolean for whether normalization and other steps should be performed.
+If this is set to false, bootstraps will not be read and transformation of the data will not be done.
+This should only be set to <code>FALSE</code> if one desires to do a quick check of the raw data.
+The default is <code>TRUE</code>.
+</p>
+</li>
+<li> <p><code>norm_fun_counts</code>: a function to perform between sample normalization on the estimated counts.
+The default is the DESeq method. See <code>norm_factors</code> for details.
+</p>
+</li>
+<li> <p><code>norm_fun_tpm</code>: a function to perform between sample normalization on the TPM.
+The default is the DESeq method. See <code>norm_factors</code> for details.
+</p>
+</li></ul>
+
+<p>Advanced Options for the Transformation Step:
+(NOTE: Be sure you know what you're doing before you use these options)
+</p>
+
+<ul>
+<li> <p><code>transform_fun_counts</code>: the transformation that should be applied
+to the normalized counts. Default is <code>'log(x+0.5)'</code> (i.e. natural log with 0.5 offset).
+</p>
+</li>
+<li> <p><code>transform_fun_tpm</code>: the transformation that should be applied
+to the TPM values. Default is <code>'x'</code> (i.e. the identity function / no transformation)
+</p>
+</li></ul>
+
+<p>Advanced Options for Gene Aggregation:
+</p>
+
+<ul>
+<li> <p><code>gene_mode</code>: Set this to <code>TRUE</code> to get the old counts-aggregation method
+for doing gene-level analysis. This requires <code>aggregation_column</code> to be set. If 
+<code>TRUE</code>, this will override the p-value aggregation mode, but will allow for gene-centric
+modeling, plotting, and results.
+</p>
+</li></ul>
+
 
 
 <h3>Value</h3>
@@ -85,9 +173,20 @@ and summary statistics
 
 <h3>See Also</h3>
 
-<p><code>sleuth_fit</code> to fit a model, <code>sleuth_test</code> to
-test whether a coeffient in the model is zero
+<p><code>sleuth_fit</code> to fit a model, <code>sleuth_wt</code> or
+<code>sleuth_lrt</code> to perform hypothesis testing
 </p>
+
+
+<h3>Examples</h3>
+
+<pre>
+# Assume we have run kallisto on a set of samples, and have two treatments,
+genotype and drug.
+colnames(s2c)
+# [1] "sample"  "genotype"  "drug"  "path"
+so &lt;- sleuth_prep(s2c, ~genotype + drug)
+</pre>
 
 
 </body></html>

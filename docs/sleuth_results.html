@@ -1,15 +1,15 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Extract Wald test results from a sleuth object</title>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Extract Wald or Likelihood Ratio test results from a sleuth...</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="R.css" />
 </head><body>
 
 <table width="100%" summary="page for sleuth_results"><tr><td>sleuth_results</td><td style="text-align: right;">R Documentation</td></tr></table>
 
-<h2>Extract Wald test results from a sleuth object</h2>
+<h2>Extract Wald or Likelihood Ratio test results from a sleuth object</h2>
 
 <h3>Description</h3>
 
-<p>This function extracts Wald test results from a sleuth object.
+<p>This function extracts Wald or Likelihood Ratio test results from a sleuth object.
 </p>
 
 
@@ -17,7 +17,8 @@
 
 <pre>
 sleuth_results(obj, test, test_type = "wt", which_model = "full",
-  rename_cols = TRUE, show_all = TRUE)
+  rename_cols = TRUE, show_all = TRUE,
+  pval_aggregate = obj$pval_aggregate, ...)
 </pre>
 
 
@@ -30,16 +31,21 @@ sleuth_results(obj, test, test_type = "wt", which_model = "full",
 </td></tr>
 <tr valign="top"><td><code>test</code></td>
 <td>
-<p>a character denoting the test to extract</p>
+<p>a character string denoting the test to extract. Possible tests can be found by using <code>models(obj)</code>.</p>
+</td></tr>
+<tr valign="top"><td><code>test_type</code></td>
+<td>
+<p>'wt' for Wald test or 'lrt' for Likelihood Ratio test.</p>
 </td></tr>
 <tr valign="top"><td><code>which_model</code></td>
 <td>
-<p>a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.</p>
+<p>a character string denoting the model. If extracting a wald test, use the model name.
+Not used if extracting a likelihood ratio test.</p>
 </td></tr>
 <tr valign="top"><td><code>rename_cols</code></td>
 <td>
 <p>if <code>TRUE</code> will rename some columns to be shorter and
-consistent with vignette</p>
+consistent with the vignette</p>
 </td></tr>
 <tr valign="top"><td><code>show_all</code></td>
 <td>
@@ -47,20 +53,162 @@ consistent with vignette</p>
 passing filters). The transcripts that do not pass filters will have
 <code>NA</code> values in most columns.</p>
 </td></tr>
+<tr valign="top"><td><code>pval_aggregate</code></td>
+<td>
+<p>if <code>TRUE</code> and both <code>target_mapping</code> and <code>aggregation_column</code> were provided,
+to <code>sleuth_prep</code>, use lancaster's method to aggregate p-values by the <code>aggregation_column</code>.</p>
+</td></tr>
+<tr valign="top"><td><code>...</code></td>
+<td>
+<p>advanced options for sleuth_results. See details.</p>
+</td></tr>
 </table>
+
+
+<h3>Details</h3>
+
+<p>The columns returned by this function will depend on a few factors: whether the test is a Wald test or
+Likelihood Ratio test, and whether <code>pval_aggregate</code> is <code>TRUE</code>.
+</p>
+<p>The sleuth model is a measurement error in the response model. It attempts to segregate the variation due to
+the inference procedure by kallisto from the variation due to the covariates &ndash; the biological and technical
+factors of the experiment (represented by the columns in <code>obj$sample_to_covariates</code>). For the Wald test,
+the 'b' column represents the estimate of the selected coefficient. In the default setting, it is analogous to,
+but not equivalent to, the fold-change. The transformed values are on the natural-log scale, and so the
+the estimated coefficient is also on the natural-log scale. This value is taking into account the estimated
+'inferential variance' estimated from the kallisto bootstraps.
+</p>
+<p>If the user wishes to get gene-level results from this function, there are two ways of doing so:
+</p>
+
+<ul>
+<li><p> p-value aggregation mode: if <code>pval_aggregate</code> argument is TRUE, this function will
+aggregate the transcript-level p-values to the gene-level using the lancaster method. See below for advanced
+options related to this mode. This is the recommended way to do gene-level aggregation. See the paper
+</p>
+</li>
+<li><p> count aggregation mode: This is the gene-level aggregation method introduced in sleuth version 0.28.1.
+This mode is activated if <code>obj$gene_mode</code> is <code>TRUE</code>. In this mode, the modeling and testing was done
+using aggregated counts (or TPMs), and so the results are same as for the transcript-level results, except the 
+target IDs are now gene IDs instead of transcript IDs.
+</p>
+</li></ul>
+
+<p>An important note if <code>pval_aggregate</code> or the old <code>gene_mode</code> is <code>TRUE</code>: when combining the
+gene annotations from <code>obj$target_mapping</code>, all of the columns except for the transcript ID,
+<code>obj$target_mapping$target_id</code>, will be included. If there are transcript-level entries for any of the other
+columns, this will result in duplicate rows in the results table (usually an undesirable result).
+</p>
+<p>Here are advanced options for customizing the p-value aggregation procedure:
+</p>
+
+<ul>
+<li> <p><code>weight_func</code>: if <code>pval_aggregate</code> is <code>TRUE</code>, then this is used to weight the p-values for
+lancaster's method. This function must take the observed means of the transcripts as the only defined argument.
+The default is <code>identity</code>.
+</p>
+</li></ul>
+
 
 
 <h3>Value</h3>
 
-<p>a <code>data.frame</code>
+<p>If <code>pval_aggregate</code> is <code>FALSE</code>, returns a <code>data.frame</code> with the following columns:
 </p>
+
+<ul>
+<li> <p><code>target_id</code>: transcript name, e.g. &quot;ENST#####&quot; (dependent on the transcriptome used in kallisto).
+If <code>gene_mode</code> is TRUE, this will instead be the IDs specified by the <code>obj$gene_column</code> from <code>obj$target_mapping</code>.
+</p>
+</li>
+<li> <p><code>...</code>: if there is a target mapping data frame, all of the annotations columns are added from
+<code>obj$target_mapping</code> before the other columns.
+</p>
+</li>
+<li> <p><code>pval</code>: p-value of the chosen model
+</p>
+</li>
+<li> <p><code>qval</code>: false discovery rate adjusted p-value, using Benjamini-Hochberg (see <code>p.adjust</code>)
+</p>
+</li>
+<li> <p><code>test_stat</code> (LRT only): Chi-squared test statistic (likelihood ratio test). Only seen with Likelihood Ratio test results.
+</p>
+</li>
+<li> <p><code>rss</code> (LRT only): the residual sum of squares under the &quot;null model&quot;. Only seen with Likelihood Ratio test results.
+</p>
+</li>
+<li> <p><code>degrees_free</code> (LRT only): the degrees of freedom (equal to difference between the two models). Only seen with Likelihood Ratio test results.
+</p>
+</li>
+<li> <p><code>b</code> (Wald only): 'beta' value (effect size). Technically a biased estimator of the fold change. Only seen with Wald test results.
+</p>
+</li>
+<li> <p><code>se_b</code> (Wald only): standard error of the beta. Only seen with Wald test results.
+</p>
+</li>
+<li> <p><code>mean_obs</code>: mean of natural log counts of observations
+</p>
+</li>
+<li> <p><code>var_obs</code>: variance of observation
+</p>
+</li>
+<li> <p><code>tech_var</code>: technical variance of observation from the bootstraps (named 'sigma_q_sq' if rename_cols is <code>FALSE</code>)
+</p>
+</li>
+<li> <p><code>sigma_sq</code>: raw estimator of the variance once the technical variance has been removed
+</p>
+</li>
+<li> <p><code>smooth_sigma_sq</code>: smooth regression fit for the shrinkage estimation
+</p>
+</li>
+<li> <p><code>final_simga_sq</code>: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
+(named 'smooth_sigma_sq_pmax' if rename_cols is <code>FALSE</code>)
+</p>
+</li></ul>
+
+<p>If <code>pval_aggregate</code> is <code>TRUE</code>, returns a <code>data.frame</code> with the following columns:
+</p>
+
+<ul>
+<li> <p><code>target_id</code>: gene ID specified by <code>obj$gene_column</code>, e.g. &quot;ENSG#####&quot; (dependent on the transcriptome
+used in kallisto).
+</p>
+</li>
+<li> <p><code>...</code>: all of the additional annotation columns (not <code>'target_id'</code> or <code>obj$gene_column</code>) are
+added from <code>obj$target_mapping</code> before the other columns.
+</p>
+</li>
+<li> <p><code>num_aggregated_transcripts</code>: the number of transcripts aggregated for a given gene. These only include
+filtered transcripts.
+</p>
+</li>
+<li> <p><code>sum_mean_obs_counts</code>: this is the sum of the mean observations across all filtered transcripts
+within a gene. Note that the weighting function is applied before summing.
+</p>
+</li>
+<li> <p><code>pval</code>: the aggregated p-value calculated by the lancaster method. See the aggregation package for details.
+</p>
+</li>
+<li> <p><code>qval</code>: adjusted p-values using the Benchamini-Hochberg method.
+</p>
+</li></ul>
+
 
 
 <h3>See Also</h3>
 
-<p><code>sleuth_test</code> to compute tests, <code>models</code> to
+<p><code>sleuth_wt</code> and <code>sleuth_lrt</code> to compute tests, <code>models</code> to
 view which models, <code>tests</code> to view which tests were performed (and can be extracted)
 </p>
+
+
+<h3>Examples</h3>
+
+<pre>
+models(sleuth_obj) # for this example, assume the formula is ~condition,
+                     and a coefficient is IP
+results_table &lt;- sleuth_results(sleuth_obj, 'conditionIP')
+</pre>
 
 
 </body></html>

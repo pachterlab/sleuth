@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: deploy a sleuth object</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for sleuth_deploy"><tr><td>sleuth_deploy</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>deploy a sleuth object</h2>
+
+<h3>Description</h3>
+
+<p>prepare a sleuth object to be deployed in a shiny application.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+sleuth_deploy(obj, base_dir, overwrite = FALSE)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a <code>sleuth</code> object</p>
+</td></tr>
+<tr valign="top"><td><code>base_dir</code></td>
+<td>
+<p>the base directory in which to save a shiny application</p>
+</td></tr>
+<tr valign="top"><td><code>overwrite</code></td>
+<td>
+<p>if <code>TRUE</code>, overwrite everything at <code>bayes_dir</code></p>
+</td></tr>
+</table>
+
+
+<h3>Details</h3>
+
+<p>creates a directory <code>path</code> and creates a valid shiny application.
+</p>
+
+<ul>
+<li><p> saves a sleuth object using <code>sleuth_save</code>
+</p>
+</li>
+<li><p> creates a file <code>app.R</code> loading the sleuth object and calling <code>sleuth_live</code>
+</p>
+</li></ul>
+
+
+
+<h3>See Also</h3>
+
+<p><code>sleuth_save</code>, <code>sleuth_load</code>, <code>sleuth_live</code>
+</p>
+
+
+</body></html>
