@@ -749,7 +749,7 @@ sleuth_prep <- function(
 }
 
 check_norm_status <- function(obj) {
-  if (is.na(obj$norm_fun_counts) || is.na(obj$norm_fun_tpm)) {
+  if (!is(obj$norm_fun_counts, 'function') || !is(obj$norm_fun_tpm, 'function')) {
     stop("This sleuth object was prepared without normalization. If you wish to do this step,",
          " repeat 'sleuth_prep' with 'normalize' set to TRUE (the default).")
   } else {
