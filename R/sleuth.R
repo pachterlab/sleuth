@@ -88,7 +88,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' \code{NULL}, \code{target_mapping} is joined with many outputs where it
 #' might be useful. For example, you might have columns 'target_id',
 #' 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
-#' mappings.
+#' mappings. Note that sleuth_prep will treat all columns as having the 'character' data type.
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
 #' (typically to summarize the data on the gene level). The aggregation is done using a p-value aggregation
 #' method when generating the results table. See \code{\link{sleuth_results}} for more information.
@@ -784,12 +784,17 @@ check_kal_pack <- function(kal_list) {
 # sleuth prep is in gene mode, since duplicate entries creates problems when
 # doing the aggregation
 #
+# finally, this method forces all of the columns in the target_mapping to be
+# character columns, to prevent any issues with factors or other data types
+# interfering with downstream uses of the target_mapping table
+#
 # @return the target_mapping if an intersection is found. a target_mapping that
 # matches \code{t_id} if no matching is found
 check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   t_id <- data.table::as.data.table(t_id)
+  t_id$target_id <- as.character(t_id$target_id)
+  target_mapping <- apply(target_mapping, 2, as.character)
   target_mapping <- data.table::as.data.table(target_mapping)
-  target_mapping$target_id <- as.character(target_mapping$target_id)
 
   tmp_join <- dplyr::inner_join(t_id, target_mapping, by = 'target_id')
 
@@ -839,7 +844,7 @@ check_target_mapping <- function(t_id, target_mapping, gene_mode) {
               formatted_ids)
     }
   }
-  target_mapping
+  adf(target_mapping)
 }
 
 #' Normalization factors

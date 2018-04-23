@@ -25,7 +25,7 @@ of the experiment OR a design matrix. It must be consistent with the data.frame 
 \code{NULL}, \code{target_mapping} is joined with many outputs where it
 might be useful. For example, you might have columns 'target_id',
 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
-mappings.}
+mappings. Note that sleuth_prep will treat all columns as having the 'character' data type.}
 
 \item{aggregation_column}{a string of the column name in \code{\link{target_mapping}} to aggregate targets
 (typically to summarize the data on the gene level). The aggregation is done using a p-value aggregation
