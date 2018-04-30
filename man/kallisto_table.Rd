@@ -23,4 +23,3 @@ a \code{data.frame} with at least columns
 \description{
 Get back the kallisto abundance table from a sleuth object.
 }
-

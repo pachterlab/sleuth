@@ -28,4 +28,3 @@ a vector of strings containing the names of the transcripts that map to a gene
 \description{
 Get the names of the transcripts associated to a gene, assuming genes are added to the input \code{sleuth} object.
 }
-

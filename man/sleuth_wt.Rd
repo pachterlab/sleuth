@@ -39,4 +39,3 @@ so <- sleuth_wt(so, 'drugDMSO')
 coefficients can be tested, \code{\link{sleuth_results}} to get back
 a \code{data.frame} of the results
 }
-

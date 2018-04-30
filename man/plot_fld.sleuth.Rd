@@ -17,4 +17,3 @@ a \code{ggplot2} object
 \description{
 Plot the fragment link the distribution of a specific kallisto run.
 }
-

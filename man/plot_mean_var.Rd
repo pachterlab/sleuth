@@ -36,4 +36,3 @@ The x-axis represents the mean expression of transcripts pooled across all sampl
 y-axis represents the 'biological' variance after the technical variance has
 been removed.
 }
-

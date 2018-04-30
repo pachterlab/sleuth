@@ -35,8 +35,16 @@ sleuth_to_matrix <- function(obj, which_df, which_units) {
   if ( !(which_df %in% c("obs_norm", "obs_raw")) ) {
     stop("Invalid object")
   }
-  if ( !(which_units %in% c("tpm", "est_counts")) ) {
+  if ( !(which_units %in% c("tpm", "est_counts", "scaled_reads_per_base")) ) {
     stop("Invalid units")
+  }
+
+  which_units <- check_quant_mode(obj, which_units)
+
+  if (obj$gene_mode && which_df == "obs_raw") {
+    warning("This object is in gene mode, and the raw values are ",
+            "transcripts. Using 'obs_norm' instead.")
+    which_df <- "obs_norm"
   }
 
   data <- as.data.frame(obj[[which_df]])
