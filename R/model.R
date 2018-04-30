@@ -398,8 +398,10 @@ sleuth_results <- function(obj, test, test_type = 'wt',
                    sum_mean_obs_counts = sum(mean_obs, na.rm = TRUE),
                    pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
                by = eval(obj$gene_column)]
-    res <- res[!is.na(eval(obj$gene_column)), ]
+    names(res)[names(res) == obj$gene_column] <- "target_id"
+    res <- res[!is.na(res$target_id),]
     res <- res[, qval := p.adjust(pval, 'BH')]
+
   }
 
   if (show_all) {
@@ -417,7 +419,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       res,
       by = by_col
       )
-    names(res)[1] <- "target_id"
+    names(res)[names(res) == obj$gene_column] <- "target_id"
   }
 
   if (obj$gene_mode | pval_aggregate) {
@@ -427,11 +429,6 @@ sleuth_results <- function(obj, test, test_type = 'wt',
     target_mapping <- unique(dplyr::select(
                                obj$target_mapping,
                                -target_id))
-    if (any(duplicated(dplyr::select(target_mapping, eval(obj$gene_column))))) {
-      warning("Warning: the target mapping for the gene-level has multiple entries for at least one gene. ",
-              "Is it possible that you used a target_mapping with transcript metadata rather than gene metadata? ",
-              "All entries for all genes will be included in the final table, which will results in some duplicate entries.")
-    }
     # this line uses dplyr's "left_join" syntax for "by"
     # to match "target_id" from the "res" table,
     # and the gene_column from the target_mapping table.
@@ -440,7 +437,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
     res <- dplyr::right_join(data.table::as.data.table(target_mapping),
                              res,
                              by = by_col)
-    names(res)[1] <- "target_id"
+    names(res)[names(res) == obj$gene_column] <- "target_id"
   } else if ( !is.null(obj$target_mapping) && !obj$gene_mode) {
     res <- dplyr::right_join(
       data.table::as.data.table(obj$target_mapping),
