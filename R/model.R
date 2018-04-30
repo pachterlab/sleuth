@@ -398,6 +398,7 @@ sleuth_results <- function(obj, test, test_type = 'wt',
                    sum_mean_obs_counts = sum(mean_obs, na.rm = TRUE),
                    pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
                by = eval(obj$gene_column)]
+    res <- res[!is.na(res$target_id), ]
     res <- res[, qval := p.adjust(pval, 'BH')]
     names(res)[1] <- "target_id"
   }
