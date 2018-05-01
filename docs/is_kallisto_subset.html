@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Is Kallisto Object Subsetted?</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for is_kallisto_subset"><tr><td>is_kallisto_subset</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Is Kallisto Object Subsetted?</h2>
+
+<h3>Description</h3>
+
+<p>This function returns a boolean for whether the kallisto object has been
+subsetted or if it contains the original set of target_ids analyzed by kallisto.
+If a sleuth object is given, then a vector of booleans for each kallisto object
+is returned.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+is_kallisto_subset(obj)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>obj</code></td>
+<td>
+<p>a sleuth or kallisto object</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>a boolean vector with <code>TRUE</code> if the kallisto object has been subsetted
+(i.e. not all originally analyzed target_ids are represented), or <code>FALSE</code> if
+the kallisto object contains the full original set of target_ids. For a sleuth object,
+a boolean vector for all of the contained kallisto objects is returned.
+</p>
+
+
+</body></html>

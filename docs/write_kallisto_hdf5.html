@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Write a kallisto object to HDF5</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for write_kallisto_hdf5"><tr><td>write_kallisto_hdf5</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Write a kallisto object to HDF5</h2>
+
+<h3>Description</h3>
+
+<p>Write a kallisto object to HDF5.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+write_kallisto_hdf5(kal, fname, overwrite = TRUE, write_bootstrap = TRUE,
+  compression = 6L)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>kal</code></td>
+<td>
+<p>the kallisto object to write out</p>
+</td></tr>
+<tr valign="top"><td><code>fname</code></td>
+<td>
+<p>the file name to write out to</p>
+</td></tr>
+<tr valign="top"><td><code>overwrite</code></td>
+<td>
+<p>whether the file should be overwritten if it exists</p>
+</td></tr>
+<tr valign="top"><td><code>write_bootstrap</code></td>
+<td>
+<p>whether the bootstraps should be written to file</p>
+</td></tr>
+<tr valign="top"><td><code>compression</code></td>
+<td>
+<p>an integer between 0 and 7 that indicates the level of compression
+to use, with 0 being no compression and 7 being the highest supported by this method.
+The default of 6 is a good choice for most applications.</p>
+</td></tr>
+</table>
+
+
+<h3>Value</h3>
+
+<p>the kallisto object <code>kal</code> invisibly.
+</p>
+
+
+</body></html>

@@ -35,11 +35,16 @@ plot_loadings(obj, use_filtered = TRUE, sample = NULL, pc_input = NULL,
 </td></tr>
 <tr valign="top"><td><code>sample</code></td>
 <td>
-<p>user input on which sample and which PC's contribute the most</p>
+<p>a character string representing the sample to find the loadings of.
+If NULL, then loadings will be computed across all samples (and 'pc_input' must be specified).</p>
+</td></tr>
+<tr valign="top"><td><code>pc_input</code></td>
+<td>
+<p>the principal components to compute loadings for.</p>
 </td></tr>
 <tr valign="top"><td><code>units</code></td>
 <td>
-<p>either 'est_counts' or 'tpm'</p>
+<p>either 'est_counts' ('scaled_reads_per_base' for gene_mode) or 'tpm'</p>
 </td></tr>
 <tr valign="top"><td><code>pc_count</code></td>
 <td>
@@ -52,10 +57,6 @@ plot_loadings(obj, use_filtered = TRUE, sample = NULL, pc_input = NULL,
 <tr valign="top"><td><code>pca_loading_abs</code></td>
 <td>
 <p>default true, to see all PC's magnitude (recommended)</p>
-</td></tr>
-<tr valign="top"><td><code>PC</code></td>
-<td>
-<p>principal component to view sample's contribution to that PC</p>
 </td></tr>
 </table>
 

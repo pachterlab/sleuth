@@ -17,7 +17,9 @@
 
 <pre>
 plot_sample_heatmap(obj, use_filtered = TRUE, color_high = "white",
-  color_low = "dodgerblue", x_axis_angle = 50)
+  color_low = "dodgerblue", x_axis_angle = 50,
+  annotation_cols = setdiff(colnames(obj$sample_to_covariates), "sample"),
+  cluster_bool = TRUE, ...)
 </pre>
 
 
@@ -34,15 +36,30 @@ plot_sample_heatmap(obj, use_filtered = TRUE, color_high = "white",
 </td></tr>
 <tr valign="top"><td><code>color_high</code></td>
 <td>
-<p>the 'high' color</p>
+<p>the 'high' color (to label samples that are close)</p>
 </td></tr>
 <tr valign="top"><td><code>color_low</code></td>
 <td>
-<p>the 'low' color</p>
+<p>the 'low' color (to label samples that are far apart)</p>
 </td></tr>
 <tr valign="top"><td><code>x_axis_angle</code></td>
 <td>
 <p>the angle at which to put the x-axis labels</p>
+</td></tr>
+<tr valign="top"><td><code>annotation_cols</code></td>
+<td>
+<p>a character vector of covariates from
+<code>sample_to_covariates</code> that should be annotated on the heatmap</p>
+</td></tr>
+<tr valign="top"><td><code>cluster_bool</code></td>
+<td>
+<p>whether the rows and columns should be hierarchically
+clustered. default is <code>TRUE</code></p>
+</td></tr>
+<tr valign="top"><td><code>...</code></td>
+<td>
+<p>additional arguments to customize the heatmap. passed to
+<code>pheatmap</code>. See ?pheatmap for documentation on additional options.</p>
 </td></tr>
 </table>
 

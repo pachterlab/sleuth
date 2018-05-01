@@ -1,0 +1,37 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: Change sleuth transform TPM function</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for transform_fun_tpm&amp;lt;-"><tr><td>transform_fun_tpm&lt;-</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Change sleuth transform TPM function</h2>
+
+<h3>Description</h3>
+
+<p>Replace the transformation function of a sleuth object for TPM values
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+transform_fun_tpm(obj, fxn) &lt;- value
+</pre>
+
+
+<h3>Details</h3>
+
+<p>NOTE: if you change the transformation function after having done a fit,
+the fit(s) will have to be redone using the new transformation.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre>
+transform_fun_tpm(x) &lt;- function(x) identity(x)
+</pre>
+
+
+</body></html>

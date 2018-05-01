@@ -31,17 +31,18 @@ sleuth_fit(obj, formula = NULL, fit_name = NULL, ...)
 </td></tr>
 <tr valign="top"><td><code>formula</code></td>
 <td>
-<p>a formula specifying the design to fit OR a design matrix</p>
+<p>an R formula specifying the design to fit OR a design matrix.
+If you are interested in only fitting the model that was specified in <code>sleuth_prep</code>
+you do not need to specify it again (will be fit as the 'full' model).</p>
 </td></tr>
 <tr valign="top"><td><code>fit_name</code></td>
 <td>
-<p>the name to store the fit in the sleuth
-object</p>
+<p>the name to store the fit in the sleuth object (at so$fits$fit_name).
+If <code>NULL</code>, the model will be named 'full'.</p>
 </td></tr>
 <tr valign="top"><td><code>...</code></td>
 <td>
-<p>additional arguments passed to <code>sliding_window_grouping</code> and
-<code>shrink_df</code></p>
+<p>advanced options for <code>sleuth_fit</code>. See details.</p>
 </td></tr>
 </table>
 
@@ -55,11 +56,45 @@ it in the sleuth object under 'full'.
 <p>To see which models have been fit, users will likely find the function
 <code>models</code> helpful.
 </p>
+<p>There are some advanced options for users how wish to customize the fitting procedure.
+Note that these options have not been thoroughly tested, so their effect on the accuracy
+of the results are unknown. Here are those advanced options:
+</p>
+<p>Advanced options for modeling choice:
+</p>
+  
+<ul>
+<li> <p><code>which_var</code>: which kind of data (counts or TPMs) should be fit? Sleuth by
+default models the estimated counts, but can model the TPMs. This argument only accepts
+<code>'obs_counts'</code> (default) or <code>'obs_tpm'</code>. Note that if <code>gene_mode</code> is <code>TRUE</code>,
+and transcript counts were aggregated to the gene-level, <code>'obs_counts'</code> will model
+the <code>'scaled_reads_per_base'</code> summary statistic.
+</p>
+</li></ul>
+
+<p>Advanced options for the sliding window shrinkage procedure (these options are passed to
+<code>sliding_window_grouping</code>):
+</p>
+
+<ul>
+<li> <p><code>n_bins</code>: the number of bins that the data should be split for the sliding window shrinkage
+using the mean-variance curve. The default is 100.
+</p>
+</li>
+<li> <p><code>lwr</code>: the lower range of variances within each bin that should be included for the shrinkage
+procedure. The default is 0.25 (meaning the 25th percentile).
+</p>
+</li>
+<li> <p><code>upr</code>: the upper range of variances within each bin that should be included for the shrinkage
+procedure. The default is 0.75 (meaning the 75th percentile).
+</p>
+</li></ul>
+
 
 
 <h3>Value</h3>
 
-<p>a sleuth object with updated attributes
+<p>a sleuth object with updated attributes.
 </p>
 
 
@@ -67,8 +102,19 @@ it in the sleuth object under 'full'.
 
 <p><code>models</code> for seeing which models have been fit,
 <code>sleuth_prep</code> for creating a sleuth object,
-<code>sleuth_test</code> to test whether a coefficient is zero
+<code>sleuth_wt</code> to test whether a coefficient is zero,
+<code>sleuth_lrt</code> to test nested models.
 </p>
+
+
+<h3>Examples</h3>
+
+<pre>
+# If you specified the formula in sleuth_prep, you can simply run to run the full model
+so &lt;- sleuth_fit(so)
+# The intercept only model can be fit like this
+so &lt;- sleuth_fit(so, ~1, 'reduced')
+</pre>
 
 
 </body></html>

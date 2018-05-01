@@ -9,7 +9,7 @@
 
 <h3>Description</h3>
 
-<p>View which models have been fit
+<p>View which models have been fit. sleuth fits data using R formulas
 </p>
 
 
@@ -25,8 +25,28 @@ models(obj, ...)
 <table summary="R argblock">
 <tr valign="top"><td><code>obj</code></td>
 <td>
+<p>a sleuth object, containing kallisto results, usually made by sleuth_prep</p>
 </td></tr>
 </table>
+
+
+<h3>Value</h3>
+
+<p>an R formula showing what has been fit
+</p>
+
+
+<h3>Examples</h3>
+
+<pre>
+# imagine you have a set of samples from input and IP, and input has been set to intercept
+models(so)
+# [full]
+# formula: ~condition
+# coefficients:
+#      (Intercept)
+#      conditionIP
+</pre>
 
 
 </body></html>

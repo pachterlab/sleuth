@@ -30,8 +30,9 @@ sleuth_wt(obj, which_beta, which_model = "full")
 </td></tr>
 <tr valign="top"><td><code>which_beta</code></td>
 <td>
-<p>a character string of length one denoting which beta to
-test</p>
+<p>a character string of denoting which grouping to test.
+For example, if you have a model fit to 'treatment,' with values of neg_ctl, pos_ctl,
+and drug, you would need to run <code>sleuth_wt</code> once each for pos_ctl and drug</p>
 </td></tr>
 <tr valign="top"><td><code>which_model</code></td>
 <td>
@@ -51,8 +52,23 @@ use</p>
 
 <p><code>models</code> to view which models have been fit and which
 coefficients can be tested, <code>sleuth_results</code> to get back
-a data.frame of the results
+a <code>data.frame</code> of the results
 </p>
+
+
+<h3>Examples</h3>
+
+<pre>
+# Assume we have a sleuth object with a model fit to both genotype and drug,
+models(so)
+# formula:  ~genotype + drug
+# coefficients:
+#   (Intercept)
+#   genotypeKO
+#   drugDMSO
+so &lt;- sleuth_wt(so, 'genotypeKO')
+so &lt;- sleuth_wt(so, 'drugDMSO')
+</pre>
 
 
 </body></html>
