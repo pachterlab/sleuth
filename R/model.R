@@ -281,29 +281,89 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' @param which_model a character string denoting the model. If extracting a wald test, use the model name.
 #'   Not used if extracting a likelihood ratio test.
 #' @param rename_cols if \code{TRUE} will rename some columns to be shorter and
-#'   consistent with vignette
+#'   consistent with the vignette
 #' @param show_all if \code{TRUE} will show all transcripts (not only the ones
 #' passing filters). The transcripts that do not pass filters will have
 #' \code{NA} values in most columns.
 #' @param pval_aggregate if \code{TRUE} and both \code{target_mapping} and \code{aggregation_column} were provided,
 #' to \code{sleuth_prep}, use lancaster's method to aggregate p-values by the \code{aggregation_column}.
-#' @return a \code{data.frame} with the following columns:
-#' @return target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
-#' @return ...: if there is a target mapping data frame, all of the annotations columns are added from \code{obj$target_mapping} before the other columns.
-#' @return pval: p-value of the chosen model
-#' @return qval: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
-#' @return test_stat (LRT only): Chi-squared test statistic (likelihood ratio test). Only seen with Likelihood Ratio test results.
-#' @return rss (LRT only): the residual sum of squares under the "null model". Only seen with Likelihood Ratio test results.
-#' @return degrees_free (LRT only): the degrees of freedom (equal to difference between the two models). Only seen with Likelihood Ratio test results.
-#' @return b (Wald only): 'beta' value (effect size). Technically a biased estimator of the fold change. Only seen with Wald test results.
-#' @return se_b (Wald only): standard error of the beta. Only seen with Wald test results.
-#' @return mean_obs: mean of natural log counts of observations
-#' @return var_obs: variance of observation
-#' @return tech_var: technical variance of observation from the bootstraps (named 'sigma_q_sq' if rename_cols is \code{FALSE})
-#' @return sigma_sq: raw estimator of the variance once the technical variance has been removed
-#' @return smooth_sigma_sq: smooth regression fit for the shrinkage estimation
-#' @return final_simga_sq: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
+#' @param ... advanced options for sleuth_results. See details.
+#'
+#' @details The columns returned by this function will depend on a few factors: whether the test is a Wald test or
+#'   Likelihood Ratio test, and whether \code{pval_aggregate} is \code{TRUE}.
+#'
+#'   The sleuth model is a measurement error in the response model. It attempts to segregate the variation due to
+#'   the inference procedure by kallisto from the variation due to the covariates -- the biological and technical
+#'   factors of the experiment (represented by the columns in \code{obj$sample_to_covariates}). For the Wald test,
+#'   the 'b' column represents the estimate of the selected coefficient. In the default setting, it is analogous to,
+#'   but not equivalent to, the fold-change. The transformed values are on the natural-log scale, and so the
+#'   the estimated coefficient is also on the natural-log scale. This value is taking into account the estimated
+#'   'inferential variance' estimated from the kallisto bootstraps.
+#'
+#'   If the user wishes to get gene-level results from this function, there are two ways of doing so:
+#'
+#'   \itemize{
+#'     \item p-value aggregation mode: if \code{pval_aggregate} argument is TRUE, this function will
+#'     aggregate the transcript-level p-values to the gene-level using the lancaster method. See below for advanced
+#'     options related to this mode. This is the recommended way to do gene-level aggregation. See the paper
+#'     
+#'     \item count aggregation mode: This is the gene-level aggregation method introduced in sleuth version 0.28.1.
+#'     This mode is activated if \code{obj$gene_mode} is \code{TRUE}. In this mode, the modeling and testing was done
+#'     using aggregated counts (or TPMs), and so the results are same as for the transcript-level results, except the 
+#'     target IDs are now gene IDs instead of transcript IDs.
+#'   }
+#' 
+#'   An important note if \code{pval_aggregate} or the old \code{gene_mode} is \code{TRUE}: when combining the
+#'   gene annotations from \code{obj$target_mapping}, all of the columns except for the transcript ID,
+#'   \code{obj$target_mapping$target_id}, will be included. If there are transcript-level entries for any of the other
+#'   columns, this will result in duplicate rows in the results table (usually an undesirable result).
+#'
+#' Here are advanced options for customizing the p-value aggregation procedure:
+#'
+#' \itemize{
+#'   \item \code{weight_func}: if \code{pval_aggregate} is \code{TRUE}, then this is used to weight the p-values for
+#'   lancaster's method. This function must take the observed means of the transcripts as the only defined argument.
+#'   The default is \code{identity}.
+#' }
+#' 
+#' @return If \code{pval_aggregate} is \code{FALSE}, returns a \code{data.frame} with the following columns:
+#'
+#' \itemize{
+#' \item \code{target_id}: transcript name, e.g. "ENST#####" (dependent on the transcriptome used in kallisto).
+#' If \code{gene_mode} is TRUE, this will instead be the IDs specified by the \code{obj$gene_column} from \code{obj$target_mapping}.
+#' \item \code{...}: if there is a target mapping data frame, all of the annotations columns are added from
+#' \code{obj$target_mapping} before the other columns.
+#' \item \code{pval}: p-value of the chosen model
+#' \item \code{qval}: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
+#' \item \code{test_stat} (LRT only): Chi-squared test statistic (likelihood ratio test). Only seen with Likelihood Ratio test results.
+#' \item \code{rss} (LRT only): the residual sum of squares under the "null model". Only seen with Likelihood Ratio test results.
+#' \item \code{degrees_free} (LRT only): the degrees of freedom (equal to difference between the two models). Only seen with Likelihood Ratio test results.
+#' \item \code{b} (Wald only): 'beta' value (effect size). Technically a biased estimator of the fold change. Only seen with Wald test results.
+#' \item \code{se_b} (Wald only): standard error of the beta. Only seen with Wald test results.
+#' \item \code{mean_obs}: mean of natural log counts of observations
+#' \item \code{var_obs}: variance of observation
+#' \item \code{tech_var}: technical variance of observation from the bootstraps (named 'sigma_q_sq' if rename_cols is \code{FALSE})
+#' \item \code{sigma_sq}: raw estimator of the variance once the technical variance has been removed
+#' \item \code{smooth_sigma_sq}: smooth regression fit for the shrinkage estimation
+#' \item \code{final_simga_sq}: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
 #'   (named 'smooth_sigma_sq_pmax' if rename_cols is \code{FALSE})
+#' }
+#'
+#' If \code{pval_aggregate} is \code{TRUE}, returns a \code{data.frame} with the following columns:
+#' 
+#' \itemize{
+#' \item \code{target_id}: gene ID specified by \code{obj$gene_column}, e.g. "ENSG#####" (dependent on the transcriptome
+#'  used in kallisto).
+#' \item \code{...}: all of the additional annotation columns (not \code{'target_id'} or \code{obj$gene_column}) are
+#' added from \code{obj$target_mapping} before the other columns.
+#' \item \code{num_aggregated_transcripts}: the number of transcripts aggregated for a given gene. These only include
+#' filtered transcripts.
+#' \item \code{sum_mean_obs_counts}: this is the sum of the mean observations across all filtered transcripts
+#' within a gene. Note that the weighting function is applied before summing.
+#' \item \code{pval}: the aggregated p-value calculated by the lancaster method. See the aggregation package for details.
+#' \item \code{qval}: adjusted p-values using the Benchamini-Hochberg method.
+#' }
+#'
 #' @seealso \code{\link{sleuth_wt}} and \code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 #' view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 #' @examples
@@ -313,9 +373,17 @@ tests.sleuth <- function(obj, lrt = TRUE, wt = TRUE) {
 #' @export
 sleuth_results <- function(obj, test, test_type = 'wt',
   which_model = 'full', rename_cols = TRUE, show_all = TRUE,
-  pval_aggregate = obj$pval_aggregate) {
+  pval_aggregate = obj$pval_aggregate,
+  ...) {
   stopifnot( is(obj, 'sleuth') )
 
+  extra_opts <- list(...)
+  if ('weight_func' %in% names(extra_opts)) {
+    weight_func <- extra_opts$weight_func
+  } else {
+    weight_func <- identity
+  }
+ 
   if (test_type == 'wt' && !model_exists(obj, which_model)) {
     stop("'", which_model, "' does not exist in ", substitute(obj),
       ". Please check  models(", substitute(obj), ") for fitted models.")
@@ -390,13 +458,17 @@ sleuth_results <- function(obj, test, test_type = 'wt',
       stop('Must provide transcript to gene mapping table in order to aggregate p-values. ',
            'Please rerun "sleuth_prep" using the "target_mapping" argument.')
     }
+    if (length(which(weight_func(res$mean_obs) < 0)) > 0) {
+      stop('The provided weighting function for the mean observations results in ',
+           'negative values, which are not allowed for the lancaster method.')
+    }
     t2g <- dplyr::select(obj$target_mapping, target_id, eval(obj$gene_column))
     res <- dplyr::right_join(data.table::as.data.table(t2g),
                              res, by = "target_id")
     res <- data.table::as.data.table(res)
     res <- res[, .(num_aggregated_transcripts = length(!is.na(pval)),
-                   sum_mean_obs_counts = sum(mean_obs, na.rm = TRUE),
-                   pval = as.numeric(aggregation::lancaster(pval, mean_obs))),
+                   sum_mean_obs_counts = sum(weight_func(mean_obs), na.rm = TRUE),
+                   pval = as.numeric(aggregation::lancaster(pval, weight_func(mean_obs)))),
                by = eval(obj$gene_column)]
     names(res)[names(res) == obj$gene_column] <- "target_id"
     res <- res[!is.na(res$target_id),]

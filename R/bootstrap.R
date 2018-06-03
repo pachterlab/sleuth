@@ -101,10 +101,12 @@ get_bootstraps.kallisto <- function(kal, transcript, max_bs = 30) {
 # @param kal a kallisto object
 # @param column the column to pull out of the kallisto results (default = "tpm")
 # @return a molten data.frame with columns "target_id", "sample" and the selected variable
+# @importFrom dplyr %>%
 # @export
 melt_bootstrap <- function(kal, column = "tpm", transform = identity) {
     stopifnot(is(kal, "kallisto"))
   stopifnot(length(kal$bootstrap) > 0)
+    `%>%` <- dplyr::`%>%`
 
     all_boot <- kal$bootstrap
     boot <- data.frame(lapply(all_boot, select_, .dots = list(column)))
@@ -129,11 +131,13 @@ melt_bootstrap <- function(kal, column = "tpm", transform = identity) {
 # @param aggregate_fun a function to aggregate
 # @return a data.frame nrow(mapping) rows that has been aggregated
 # groupwise using \code{aggregate_fun}
+# @importFrom dplyr %>%
 # @export
 aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
   column = "tpm", aggregate_fun = sum) {
 
   stopifnot( is(kal, "kallisto") )
+  `%>%` <- dplyr::`%>%`
 
   if ( !(column %in% c("tpm", "est_counts")) ) {
     stop("Unit must be 'tpm' or 'est_counts'")
@@ -177,9 +181,12 @@ aggregate_bootstrap <- function(kal, mapping, split_by = "gene_id",
 # @param kal a kallisto object with a non-null bootstrap list
 # @param column the column to select (rho, tpm, est_counts
 # @return a summarized data.frame
+# @importFrom dplyr %>%
 # @export
 summarize_bootstrap <- function(kal, column = "tpm", transform = identity) {
     stopifnot(is(kal, "kallisto"))
+    `%>%` <- dplyr::`%>%`
+
     bs <- melt_bootstrap(kal, column, transform)
 
     mean_col <- paste0("bs_mean_", column)
@@ -377,7 +384,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
                               read_bootstrap_tpm, gene_mode,
                               extra_bootstrap_summary,
                               target_id, mappings, which_ids,
-                              aggregation_column, transform_fun,
+                              aggregation_column, transform_fun_counts,
                               transform_fun_tpm, max_bootstrap)
 {
   dot(i)
@@ -486,7 +493,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
     rm(tidy_bs, scaled_bs)
   }
 
-  bs_mat <- transform_fun(bs_mat[, which_ids])
+  bs_mat <- transform_fun_counts(bs_mat[, which_ids])
   if (extra_bootstrap_summary) {
     bs_quant_est_counts <- aperm(apply(bs_mat, 2,
                                        quantile))

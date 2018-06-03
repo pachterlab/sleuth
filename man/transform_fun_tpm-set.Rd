@@ -14,5 +14,5 @@ NOTE: if you change the transformation function after having done a fit,
 the fit(s) will have to be redone using the new transformation.
 }
 \examples{
-transform_fun(x) <- function(x) identity(x)
+transform_fun_tpm(x) <- function(x) identity(x)
 }
