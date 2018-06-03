@@ -16,6 +16,13 @@ The following walkthroughs were created by the __sleuth__ team and demonstrate s
   - Linking transcript IDs to genes
   - __sleuth__ live
   - Basic QC
+- [Differential analysis using p-value aggregation, on multiple conditions and covariates](https://pachterlab.github.io/sleuth_walkthroughs/pval_agg/analysis.html)
+  - Testing frameworks for experimental designs with multiple conditions and covariates
+  - Performing gene-level and transcript-level differential analyses that are consistent with each other by using p-value aggregation
+
+
+### Older walkthroughs
+- These tutorials do not follow the new user interface for sleuth v.0.30.0 but we keep them here because we believe them to be instructive. We will likely update these tutorials at a later time to reflect the new user interface.
 - [Accounting for batch effects](https://pachterlab.github.io/sleuth_walkthroughs/bottomly/analysis.html)
   - Accounting for known batch effects
   - Extracting effect sizes (fold changes)
