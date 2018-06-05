@@ -154,7 +154,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #'   Advanced Options for Gene Aggregation:
 #'   \itemize{
 #'     \item \code{gene_mode}: Set this to \code{TRUE} to get the old counts-aggregation method
-#'     for doing gene-level analysis. This requires \code{aggregation_column} to be set. If 
+#'     for doing gene-level analysis. This requires \code{aggregation_column} to be set. If
 #'     \code{TRUE}, this will override the p-value aggregation mode, but will allow for gene-centric
 #'     modeling, plotting, and results.
 #'   }
@@ -273,7 +273,7 @@ sleuth_prep <- function(
   }
 
   if (any(is.na(sample_to_covariates))) {
-    warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
+    warning("Your 'sample_to_covariates' data.frame contains NA values. This will likely cause issues later.")
   }
 
   if (is(full_model, "matrix") &&
@@ -946,8 +946,8 @@ spread_abundance_by <- function(abund, var, which_order) {
 melt_bootstrap_sleuth <- function(obj) {
   # TODO: make this into a S3 function
   lapply(seq_along(obj$kal), function(i) {
-      cur_samp <- obj$sample_to_condition$sample[i]
-      cur_cond <- obj$sample_to_condition$condition[i]
+      cur_samp <- obj$sample_to_covariates$sample[i]
+      cur_cond <- obj$sample_to_covariates$condition[i]
 
       melt_bootstrap(obj$kal[[i]]) %>%
         rename(bs_sample = sample) %>%
@@ -1037,7 +1037,7 @@ get_col <- function(obj, ...) {
   #which_cols <- as.character(...)
   lapply(seq_along(obj$kal),
     function(i) {
-      which_sample <- obj$sample_to_condition$sample[i]
+      which_sample <- obj$sample_to_covariates$sample[i]
       dplyr::select_(obj$kal[[i]]$abundance, "target_id",
         .dots = lazyeval::lazy_dots(...)) %>%
           mutate(sample = which_sample)

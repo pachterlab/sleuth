@@ -320,7 +320,7 @@ sample_bootstrap <- function(obj, n_samples = 100L) {
       mat <- matrix(NA_real_, nrow = nrow(obj$kal[[1]]$abundance),
         ncol = nrow(which_samp))
       rownames(mat) <- obj$kal[[1]]$abundance$target_id
-      colnames(mat) <- obj$sample_to_condition$sample
+      colnames(mat) <- obj$sample_to_covariates$sample
       mat
     })
 
