@@ -1,6 +1,6 @@
 # version 0.30.0
 
-This version integrates [p-value aggregation](https://github.com/pachterlab/sleuth/pull/148) as described in [Yi et al.](https://www.biorxiv.org/content/early/2017/09/18/190199).
+This version integrates [p-value aggregation](https://github.com/pachterlab/sleuth/pull/148) as described in [Yi et al.](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-018-1419-z).
 The behavior of gene-level differential expression testing now follows this procedure:
 
 1. Isoform-level testing.
@@ -8,6 +8,27 @@ The behavior of gene-level differential expression testing now follows this proc
 
 Thank you to [Lynn Yi](https://github.com/lynnyi) for implementing p-value aggregation.
 Please see [pull request #148](https://github.com/pachterlab/sleuth/pull/148) for details.
+
+The API has also slightly changed. Particularly, for `sleuth_prep`, several options have been moved to optional arguments via `...`. See [pull request #168](https://github.com/pachterlab/sleuth/pull/168) for more information or `?sleuth_prep` in R.
+
+A fair amount of speed up and bug fixes have also been implemented.
+
+- [Patch: bugs in sleuth_results & other miscellaneous fixes](https://github.com/pachterlab/sleuth/pull/163)
+- [Fix behavior of sleuth_results when gene_mode is TRUE (and error reporting)](https://github.com/pachterlab/sleuth/pull/160)
+- [Shiny and Plot Fixes / Enhancements](https://github.com/pachterlab/sleuth/pull/159)
+- [Quick Patch: UseMethod typo](https://github.com/pachterlab/sleuth/pull/157)
+- [Update `write_kallisto_hdf5` function and add ability ot subset kallisto object (address #131)](https://github.com/pachterlab/sleuth/pull/150)
+- [extend sleuth to model TPMs](https://github.com/pachterlab/sleuth/pull/145)
+- [Fixes to various miscellaneous issues (#73, #84, #97, #122, #135, #142)](https://github.com/pachterlab/sleuth/pull/144)
+- [Improvements to shiny and plot functions (solving several open issues)](https://github.com/pachterlab/sleuth/pull/143)
+- [Possible solution to NAs in sleuth_lrt, addressing #68](https://github.com/pachterlab/sleuth/pull/118)
+- [bug fix patches](https://github.com/pachterlab/sleuth/pull/117)
+- [address #113 - patch bug where TPM bootstrap summary target_ids are moved](https://github.com/pachterlab/sleuth/pull/116)
+- [New tests for ".N" target mappings](https://github.com/pachterlab/sleuth/pull/115)
+- [Misc bug fixes + Allow sleuth_prep to process just one sample](https://github.com/pachterlab/sleuth/pull/114)
+
+A major things to [Warren McGee](https://github.com/warrenmcg) for doing the majority of the heavy lifting on all of the bug fixes.
+
 
 # version 0.29.0
 
