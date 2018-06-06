@@ -26,4 +26,3 @@ a ggplot object
 \description{
 Plot PC variances retained by percentage with option to compare specified PC
 }
-

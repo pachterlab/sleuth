@@ -75,7 +75,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' variance.
 #'
 #' @param sample_to_covariates a \code{data.frame} which contains a mapping
-#' from \code{sample} (a column) to some set of experimental conditions or
+#' from \code{sample} (a required column) to some set of experimental conditions or
 #' covariates. The column \code{path} is also required, which is a character
 #' vector where each element points to the corresponding kallisto output directory. The column
 #' \code{sample} should be in the same order as the corresponding entry in
@@ -83,29 +83,82 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #' @param full_model an R \code{formula} which explains the full model (design)
 #' of the experiment OR a design matrix. It must be consistent with the data.frame supplied in
 #' \code{sample_to_covariates}. You can fit multiple covariates by joining them with '+' (see example)
-#' @param filter_fun the function to use when filtering.
 #' @param target_mapping a \code{data.frame} that has at least one column
 #' 'target_id' and others that denote the mapping for each target. if it is not
 #' \code{NULL}, \code{target_mapping} is joined with many outputs where it
 #' might be useful. For example, you might have columns 'target_id',
 #' 'ensembl_gene' and 'entrez_gene' to denote different transcript to gene
-#' mappings.
-#' @param max_bootstrap maximum number of bootstrap values to read for each
-#' transcript.
-#' @param ... additional arguments passed to the filter function
-#' @param norm_fun_counts a function to perform between sample normalization on the estimated counts.
-#' @param norm_fun_tpm a function to perform between sample normalization on the TPM
+#' mappings. Note that sleuth_prep will treat all columns as having the 'character' data type.
 #' @param aggregation_column a string of the column name in \code{\link{target_mapping}} to aggregate targets
-#' @param read_bootstrap_tpm read and compute summary statistics on bootstraps on the TPM.
-#' NOTE: Unnecessary for typical analyses
-#' @param extra_bootstrap_summary if \code{TRUE}, compute extra summary
-#' statistics needed for some plots (e.g. \code{\link{plot_bootstrap}}).
-#' NOTE: Unnecessary for typical analyses
-#' @param transformation_function the transformation that should be applied
-#' to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset)
-#' NOTE: be sure you know what you're doing before you change this.
+#' (typically to summarize the data on the gene level). The aggregation is done using a p-value aggregation
+#' method when generating the results table. See \code{\link{sleuth_results}} for more information.
 #' @param num_cores an integer of the number of computer cores mclapply should use
 #' to speed up sleuth preparation
+#' @param ... any of several other arguments that can be used as advanced options for
+#' sleuth preparation. See details.
+#'
+#' @details This method takes a list of samples with kallisto results and returns a sleuth
+#'   object with the defined normalization of the data across samples (default is the DESeq method;
+#'   See \code{\link{basic_filter}}), and then the defined transformation of the data (default is log(x + 0.5)).
+#'   This also collects all of the bootstraps for the modeling done using \code{\link{sleuth_fit}}. This
+#'   function also takes several advanced options that can be used to customize your analysis.
+#'   Here are the advanced options for \code{sleuth_prep}:
+#'
+#'   Extra arguments related to Bootstrap Summarizing:
+#'   \itemize{
+#'     \item \code{extra_bootstrap_summary}: if \code{TRUE}, compute extra summary
+#'     statistics for estimated counts. This is not necessary for typical analyses; it is only needed
+#'     for certain plots (e.g. \code{\link{plot_bootstrap}}). Default is \code{FALSE}.
+#'     \item \code{read_bootstrap_tpm}: read and compute summary statistics on bootstraps on the TPM.
+#'     This is not necessary for typical analyses; it is only needed for some plots (e.g. \code{\link{plot_bootstrap}})
+#'     and if TPM values are used for \code{\link{sleuth_fit}}. Default is \code{FALSE}.
+#'     \item \code{max_bootstrap}: the maximum number of bootstrap values to read for each
+#'     transcript. Setting this lower than the total bootstraps available will save some time, but
+#'     will likely decrease the accuracy of the estimation of the inferential noise.
+#'   }
+#'
+#'   Advanced Options for Filtering:
+#'   \itemize{
+#'     \item \code{filter_fun}: the function to use when filtering. This function will be applied to the raw counts
+#'     on a row-wise basis, meaning that each feature will be considered individually. The default is to filter out
+#'     any features that do not have at least 5 estimated counts in at least 47% of the samples (see \code{\link{basic_filter}}
+#'     for more information). If the preferred filtering method requires a matrix-wide transformation or otherwise
+#'     needs to consider multiple features simultaneously instead of independently, please consider using
+#'     \code{filter_target_id} below.
+#'     \item \code{filter_target_id}: character vector of target_ids to filter using methods that
+#'     can't be implemented using \code{filter_fun}. If non-NULL, this will override \code{filter_fun}.
+#'   }
+#'
+#'   Advanced Options for the Normalization Step:
+#'   (NOTE: Be sure you know what you're doing before you use these options)
+#'   \itemize{
+#'     \item \code{normalize}: boolean for whether normalization and other steps should be performed.
+#'     If this is set to false, bootstraps will not be read and transformation of the data will not be done.
+#'     This should only be set to \code{FALSE} if one desires to do a quick check of the raw data.
+#'     The default is \code{TRUE}.
+#'     \item \code{norm_fun_counts}: a function to perform between sample normalization on the estimated counts.
+#'     The default is the DESeq method. See \code{\link{norm_factors}} for details.
+#'     \item \code{norm_fun_tpm}: a function to perform between sample normalization on the TPM.
+#'     The default is the DESeq method. See \code{\link{norm_factors}} for details.
+#'   }
+#'
+#'   Advanced Options for the Transformation Step:
+#'   (NOTE: Be sure you know what you're doing before you use these options)
+#'   \itemize{
+#'     \item \code{transform_fun_counts}: the transformation that should be applied
+#'     to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset).
+#'     \item \code{transform_fun_tpm}: the transformation that should be applied
+#'     to the TPM values. Default is \code{'x'} (i.e. the identity function / no transformation)
+#'   }
+#'
+#'   Advanced Options for Gene Aggregation:
+#'   \itemize{
+#'     \item \code{gene_mode}: Set this to \code{TRUE} to get the old counts-aggregation method
+#'     for doing gene-level analysis. This requires \code{aggregation_column} to be set. If
+#'     \code{TRUE}, this will override the p-value aggregation mode, but will allow for gene-centric
+#'     modeling, plotting, and results.
+#'   }
+#'
 #' @return a \code{sleuth} object containing all kallisto samples, metadata,
 #' and summary statistics
 #' @examples # Assume we have run kallisto on a set of samples, and have two treatments,
@@ -119,19 +172,70 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 sleuth_prep <- function(
   sample_to_covariates,
   full_model = NULL,
-  filter_fun = basic_filter,
   target_mapping = NULL,
-  max_bootstrap = NULL,
-  norm_fun_counts = norm_factors,
-  norm_fun_tpm = norm_factors,
   aggregation_column = NULL,
-  read_bootstrap_tpm = FALSE,
-  extra_bootstrap_summary = FALSE,
-  transformation_function = log_transform,
   num_cores = max(1L, parallel::detectCores() - 1L),
   ...) {
 
   ##############################
+  # check extra options
+  extra_opts <- list(...)
+  if ("extra_bootstrap_summary" %in% names(extra_opts)) {
+    extra_bootstrap_summary <- extra_opts$extra_bootstrap_summary
+  } else {
+    extra_bootstrap_summary <- FALSE
+  }
+  if ("read_bootstrap_tpm" %in% names(extra_opts)) {
+    read_bootstrap_tpm <- extra_opts$read_bootstrap_tpm
+  } else {
+    read_bootstrap_tpm <- FALSE
+  }
+  if ("max_bootstrap" %in% names(extra_opts)) {
+    max_bootstrap <- extra_opts$max_bootstrap
+  } else {
+    max_bootstrap <- NULL
+  }
+  if ("filter_fun" %in% names(extra_opts)) {
+    filter_fun <- extra_opts$filter_fun
+  } else {
+    filter_fun <- basic_filter
+  }
+  if ("filter_target_id" %in% names(extra_opts)) {
+    filter_target_id <- extra_opts$filter_target_id
+  } else {
+    filter_target_id <- NULL
+  }
+  if ("normalize" %in% names(extra_opts)) {
+    normalize <- extra_opts$normalize
+  } else {
+    normalize <- TRUE
+  }
+  if ("norm_fun_counts" %in% names(extra_opts)) {
+    norm_fun_counts <- extra_opts$norm_fun_counts
+  } else {
+    norm_fun_counts <- norm_factors
+  }
+  if ("norm_fun_tpm" %in% names(extra_opts)) {
+    norm_fun_tpm <- extra_opts$norm_fun_tpm
+  } else {
+    norm_fun_tpm <- norm_factors
+  }
+  if ("transform_fun_counts" %in% names(extra_opts)) {
+    transform_fun_counts <- extra_opts$transform_fun_counts
+  } else {
+    transform_fun_counts <- log_transform
+  }
+  if ("transform_fun_tpm" %in% names(extra_opts)) {
+    transform_fun_tpm <- extra_opts$transform_fun_tpm
+  } else {
+    transform_fun_tpm <- identity
+  }
+  if ("gene_mode" %in% names(extra_opts)) {
+    gene_mode <- extra_opts$gene_mode
+  } else {
+    gene_mode <- FALSE
+  }
+
   # check inputs
 
   # data types
@@ -169,12 +273,20 @@ sleuth_prep <- function(
   }
 
   if (any(is.na(sample_to_covariates))) {
-    warning("Your 'sample_to_covariance' data.frame contains NA values. This will likely cause issues later.")
+    warning("Your 'sample_to_covariates' data.frame contains NA values. This will likely cause issues later.")
   }
 
   if (is(full_model, "matrix") &&
       nrow(full_model) != nrow(sample_to_covariates)) {
     stop("The design matrix number of rows are not equal to the number of rows in the sample_to_covariates argument.")
+  }
+
+  if (!is(filter_fun, 'function')) {
+    stop("filter_fun must be a function")
+  }
+
+  if (!is.null(filter_target_id) & !is.character(filter_target_id)) {
+    stop("if filter_target_id is used, it must be a character vector")
   }
 
   if (!is(norm_fun_counts, 'function')) {
@@ -185,11 +297,29 @@ sleuth_prep <- function(
     stop("norm_fun_tpm must be a function")
   }
 
-  if (!is.null(aggregation_column) && is.null(target_mapping)) {
-    stop(paste("You provided a 'aggregation_column' to aggregate by,",
-               "but not a 'target_mapping'. Please provided a 'target_mapping'."))
+  if (!is(transform_fun_counts, 'function')) {
+    stop("transform_fun_counts must be a function")
   }
 
+  if (!is(transform_fun_tpm, 'function')) {
+    stop("transform_fun_tpm must be a function")
+  }
+
+  if (is.null(aggregation_column) && gene_mode) {
+    stop("You set 'gene_mode' to TRUE, but did not provide an 'aggregation_column' ",
+         "to aggregate by. Please provide an 'aggregation_column'.")
+  } else if (gene_mode) {
+    message("'gene_mode' is TRUE. Sleuth will do counts aggregation at the gene level ",
+            "for downstream normalization, transformation, and modeling steps, as well as ",
+            "for plotting and results.")
+  }
+
+  if (!is.null(aggregation_column) && is.null(target_mapping)) {
+    stop(paste("You provided an 'aggregation_column' to aggregate by,",
+               "but not a 'target_mapping'. Please provide a 'target_mapping'."))
+  }
+
+  pval_aggregate <- !is.null(aggregation_column) && !gene_mode
   num_cores <- check_num_cores(num_cores)
 
   # TODO: ensure transcripts are in same order -- if not, report warning that
@@ -199,6 +329,7 @@ sleuth_prep <- function(
   ##############################
 
   msg('reading in kallisto results')
+  sample_to_covariates <- as.data.frame(sample_to_covariates)
   sample_to_covariates$sample <- as.character(sample_to_covariates$sample)
 
   if(nrow(sample_to_covariates) == 1 && !is.null(full_model)) {
@@ -237,6 +368,16 @@ sleuth_prep <- function(
 
   obs_raw <- dplyr::bind_rows(lapply(kal_list, function(k) k$abundance))
 
+  counts_test <- data.table::as.data.table(obs_raw)
+  counts_test <- counts_test[, .(total = sum(est_counts)), by = "sample"]
+  if (any(counts_test$total == 0)) {
+    zero_names <- counts_test$sample[which(counts_test$total == 0)]
+    formatted_names <- paste(zero_names, collapse = ", ")
+    warning("At least one sample have no reads aligned. ",
+            "Here are the samples with zero counts:\n",
+            formatted_names)
+  }
+
   design_matrix <- NULL
   if (is(full_model, 'formula')) {
     design_matrix <- model.matrix(full_model, sample_to_covariates)
@@ -249,6 +390,18 @@ sleuth_prep <- function(
 
   if (!is.null(full_model)) {
     rownames(design_matrix) <- sample_to_covariates$sample
+    # check if the resulting design_matrix is singular (i.e. non-invertible)
+    # followed the suggested method found here: https://stackoverflow.com/a/24962470
+    M <- t(design_matrix) %*% design_matrix
+    det_mod <- determinant(M)$modulus
+    if(!is.finite(det_mod)) {
+      stop("The full model you provided seems to result in a singular design matrix. ",
+           "This frequently happens when one of the covariates is a linear ",
+           "combination of one or more other covariates (e.g. one covariate ",
+           "yields identical groupings as another covariate). Check your ",
+           "sample_to_covariates table and your full model.")
+    }
+    rm(M, det_mod)
   }
 
   obs_raw <- dplyr::arrange(obs_raw, target_id, sample)
@@ -259,7 +412,8 @@ sleuth_prep <- function(
   if (!is.null(target_mapping)) {
     tmp_names <- data.frame(target_id = kal_list[[1]]$abundance$target_id,
       stringsAsFactors = FALSE)
-    target_mapping <- check_target_mapping(tmp_names, target_mapping)
+    target_mapping <- check_target_mapping(tmp_names, target_mapping,
+                                           !is.null(aggregation_column))
     rm(tmp_names)
   }
 
@@ -272,20 +426,33 @@ sleuth_prep <- function(
       full_formula = full_model,
       design_matrix = design_matrix,
       target_mapping = target_mapping,
-      gene_mode = !is.null(aggregation_column),
+      gene_mode = gene_mode,
       gene_column = aggregation_column,
-      transform_fun = transformation_function
+      norm_fun_counts = norm_fun_counts,
+      norm_fun_tpm = norm_fun_tpm,
+      transform_fun_counts = transform_fun_counts,
+      transform_fun_tpm = transform_fun_tpm,
+      pval_aggregate = pval_aggregate
     )
 
-  # TODO: eventually factor this out
-  normalize <- TRUE
   if (normalize ) {
 
     msg("normalizing est_counts")
     est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
       sample_to_covariates$sample)
-    filter_bool <- apply(est_counts_spread, 1, filter_fun, ...)
+    if(!is.null(filter_target_id)) {
+       msg("A list of target IDs for filtering was found. Using this for filtering")
+       target_ids <- rownames(est_counts_spread)
+       filter_bool <- target_ids %in% filter_target_id
+       names(filter_bool) <- target_ids
+    } else {
+      filter_bool <- apply(est_counts_spread, 1, filter_fun)
+    }
     filter_true <- filter_bool[filter_bool]
+
+    if (sum(filter_bool) == 0) {
+      stop("Zero targets passed the filter you used. Please double check the filter used.")
+    }
 
     msg(paste0(sum(filter_bool), ' targets passed the filter'))
     est_counts_sf <- norm_fun_counts(est_counts_spread[filter_bool, , drop = FALSE])
@@ -451,13 +618,21 @@ sleuth_prep <- function(
                         read_bootstrap_tpm, ret$gene_mode,
                         extra_bootstrap_summary,
                         target_id, mappings, which_ids, ret$gene_column,
-                        ret$transform_fun)
+                        ret$transform_fun_counts, ret$transform_fun_tpm,
+                        max_bootstrap)
     })
 
     # if mclapply results in an error (a warning is shown), then print error and stop
     error_status <- sapply(bs_results, function(x) is(x, "try-error"))
     if (any(error_status)) {
-      print(attributes(bs_results[error_status])$condition)
+      error_msgs <- sapply(which(error_status), function(i) {
+        bad_run <- bs_results[[i]]
+        samp_name <- sample_to_covariates$sample[i]
+        trace <- .traceback(bad_run)
+        paste0("Sample '", samp_name, "' had this error message: ", trace[1])
+      })
+      formatted_error <- paste(error_msgs, collapse = "")
+      message(formatted_error)
       stop("At least one core from mclapply had an error. See the above error message(s) for more details.")
     }
 
@@ -465,7 +640,15 @@ sleuth_prep <- function(
     indices <- sapply(bs_results, function(result) result$index)
     stopifnot(identical(indices, order(indices)))
 
-    if(read_bootstrap_tpm | extra_bootstrap_summary) {
+    sigma_q_sq_tpm <- NULL
+    if(read_bootstrap_tpm) {
+      all_sample_tpm <- sapply(bs_results, function(result) result$bootstrap_tpm_result)
+      rownames(all_sample_tpm) <- which_ids
+      sigma_q_sq_tpm <- rowMeans(all_sample_tpm)
+      sigma_q_sq_tpm <- sigma_q_sq_tpm[order(names(sigma_q_sq_tpm))]
+      ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
+      names(ret$bs_quants) <- sample_to_covariates$sample
+    } else if(extra_bootstrap_summary) {
       ret$bs_quants <- lapply(bs_results, function(result) result$bs_quants)
       names(ret$bs_quants) <- sample_to_covariates$sample
     }
@@ -477,26 +660,101 @@ sleuth_prep <- function(
     msg('')
 
     sigma_q_sq <- rowMeans(all_sample_bootstrap)
+    names(sigma_q_sq) <- which_ids
 
     # This is the rest of the gene_summary code
     if (ret$gene_mode) {
-      names(sigma_q_sq) <- which_agg_id
       obs_counts <- obs_to_matrix(ret, "scaled_reads_per_base")[which_agg_id, , drop = FALSE]
+      obs_tpm <- obs_to_matrix(ret, "tpm")[which_agg_id, , drop = FALSE]
     } else {
-      names(sigma_q_sq) <- which_target_id
       obs_counts <- obs_to_matrix(ret, "est_counts")[which_target_id, , drop = FALSE]
+      obs_tpm <- obs_to_matrix(ret, "tpm")[which_target_id, , drop = FALSE]
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
-    obs_counts <- ret$transform_fun(obs_counts)
+    obs_counts <- ret$transform_fun_counts(obs_counts)
     obs_counts <- obs_counts[order(rownames(obs_counts)),]
+    obs_tpm <- ret$transform_fun_tpm(obs_tpm)
+    obs_tpm <- obs_tpm[order(rownames(obs_tpm)),]
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
+    ret$bs_summary <- list(obs_counts = obs_counts, obs_tpm = obs_tpm,
+                           sigma_q_sq = sigma_q_sq,
+                           sigma_q_sq_tpm = sigma_q_sq_tpm)
+  } else {
+    # The filter_bool and filter_df can be done with the raw counts
+    # Everything else was skipped because they depend on the normalization step
+    # Those items are set to empty vectors, data frames, and lists.
+    # Setting the normalization and transformation functions to 'NA' to indicate
+    # that these steps were skipped
+    ret$norm_fun_counts <- ret$norm_fun_tpm <- NA
+    ret$transform_fun_counts <- ret$transform_fun_tpm <- NA
+    ret$obs_norm <- data.frame()
+    ret$est_counts_sf <- vector()
+
+    est_counts_spread <- spread_abundance_by(obs_raw, "est_counts",
+      sample_to_covariates$sample)
+    if(!is.null(filter_target_id)) {
+       msg("A list of target IDs for filtering was found. Using this for filtering")
+       target_ids <- rownames(est_counts_spread)
+       filter_bool <- target_ids %in% filter_target_id
+       names(filter_bool) <- target_ids
+    } else {
+      filter_bool <- apply(est_counts_spread, 1, filter_fun)
+    }
+    filter_true <- filter_bool[filter_bool]
+
+    if (sum(filter_bool) == 0) {
+      stop("Zero targets passed the filter you used. Please double check the filter used.")
+    }
+
+    msg(paste0(sum(filter_bool), ' targets passed the filter'))
+    filter_df <- adf(target_id = names(filter_true))
+
+    if (ret$gene_mode) {
+      msg(paste0("aggregating by column: ", aggregation_column))
+      which_target_id <- ret$filter_df$target_id
+      # Get list of IDs to aggregate on (usually genes)
+      # Also get the filtered list and update the "filter_df" and "filter_bool"
+      # variables for the sleuth object
+      target_mapping <- data.table::data.table(target_mapping)
+      target_mapping[target_mapping[[aggregation_column]] == "",
+                     aggregation_column] <- NA
+      agg_id <- unique(target_mapping[, aggregation_column, with = FALSE])
+      agg_id <- agg_id[[1]]
+      agg_id <- agg_id[!is.na(agg_id)]
+      mappings <- dplyr::select_(target_mapping, "target_id", aggregation_column)
+      mappings <- data.table::as.data.table(mappings)
+      which_tms <- which(mappings$target_id %in% which_target_id)
+      which_agg_id <- unique(mappings[which_tms, aggregation_column, with = FALSE])
+      which_agg_id <- which_agg_id[[1]]
+      which_agg_id <- which_agg_id[!is.na(which_agg_id)]
+      filter_df <- adf(target_id = which_agg_id)
+      filter_bool <- agg_id %in% which_agg_id
+
+      msg(paste0(length(which_agg_id), " genes passed the filter"))
+    }
+
+    ret$filter_bool <- filter_bool
+    ret$filter_df <- filter_df
+    ret$obs_norm_filt <- data.frame()
+    ret$tpm_sf <- vector()
+    ret$bs_quants <- list()
+    ret$bs_summary <- list()
   }
 
   class(ret) <- 'sleuth'
 
   ret
+}
+
+check_norm_status <- function(obj) {
+  if (!is(obj$norm_fun_counts, 'function') || !is(obj$norm_fun_tpm, 'function')) {
+    stop("This sleuth object was prepared without normalization. If you wish to do this step,",
+         " repeat 'sleuth_prep' with 'normalize' set to TRUE (the default).")
+  } else {
+    return(TRUE)
+  }
 }
 
 # check versions of kallistos and num bootstraps, etc
@@ -519,12 +777,23 @@ check_kal_pack <- function(kal_list) {
 }
 
 # this function is mostly to deal with annoying ENSEMBL transcript names that
-# have a training .N to keep track of version number
+# have a trailing .N to keep track of version number
+#
+# this also checks to see if there are duplicate entries for any target IDs
+# and issues a warning if sleuth prep is in transcript mode, but stops if
+# sleuth prep is in gene mode, since duplicate entries creates problems when
+# doing the aggregation
+#
+# finally, this method forces all of the columns in the target_mapping to be
+# character columns, to prevent any issues with factors or other data types
+# interfering with downstream uses of the target_mapping table
 #
 # @return the target_mapping if an intersection is found. a target_mapping that
 # matches \code{t_id} if no matching is found
-check_target_mapping <- function(t_id, target_mapping) {
+check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   t_id <- data.table::as.data.table(t_id)
+  t_id$target_id <- as.character(t_id$target_id)
+  target_mapping <- apply(target_mapping, 2, as.character)
   target_mapping <- data.table::as.data.table(target_mapping)
 
   tmp_join <- dplyr::inner_join(t_id, target_mapping, by = 'target_id')
@@ -557,7 +826,25 @@ check_target_mapping <- function(t_id, target_mapping) {
       ' please check obj$target_mapping to ensure this new mapping is correct.'))
   }
 
-  target_mapping
+  if(any(duplicated(target_mapping$target_id))) {
+    indices <- which(duplicated(target_mapping$target_id))
+    duplicated_ids <- target_mapping$target_id[indices]
+    formatted_ids <- paste(dupliated_ids, collapse = ", ")
+    if(gene_mode) {
+      stop("There is at least one duplicated target ID in the target mapping. ",
+           "Since sleuth prep is in gene aggregation mode, any duplicated ",
+           "entries will cause errors during gene aggregation. Here is a list ",
+           "of all the duplicated target IDs:\n", formatted_ids)
+    } else {
+      warning("There is at least one duplicated target ID in the target ",
+              "mapping. Since sleuth prep is not in gene aggregation mode, ",
+              "duplicated entries will not cause errors during preparation, ",
+              "but may cause unexpected behavior when making any plots or ",
+              "tables. Here is a list of all the duplicated target IDs:\n",
+              formatted_ids)
+    }
+  }
+  adf(target_mapping)
 }
 
 #' Normalization factors
@@ -613,9 +900,8 @@ sleuth_summarize_bootstrap <- function(obj, force = FALSE, verbose = FALSE) {
     data.table::data.table(data.table(counts_bs)),
     #by = c("target_id", "sample", "condition")
     by = c("target_id", "sample")
-    ) %>%
-    as.data.frame(stringsAsFactors = FALSE)
-
+    )
+  s_bs <- adf(s_bs)
   obj$bootstrap_summary <- s_bs
 
   obj
@@ -641,25 +927,27 @@ sleuth_summarize_bootstrap_col <- function(obj, col, transform = identity) {
 # @export
 spread_abundance_by <- function(abund, var, which_order) {
   # var <- lazyeval::lazy(var)
-  var_spread <- abund %>%
-    select_("target_id", "sample", var) %>%
-    tidyr::spread_("sample", var) %>%
-    as.data.frame(stringsAsFactors = FALSE)
-
+  abund <- data.table::as.data.table(abund)
+  var_spread <- data.table::dcast(abund, target_id ~ sample, value.var = var)
+  # there is a discrepancy between data table's sorting of character vectors
+  # and how tidyr previously (or the order function) sorts character vectors
+  # so next step is needed to make sure the order is correct
+  var_spread <- var_spread[order(var_spread$target_id), ]
+  var_spread <- as.data.frame(var_spread, stringsAsFactors = FALSE)
   rownames(var_spread) <- var_spread$target_id
   var_spread["target_id"] <- NULL
-
   result <- as.matrix(var_spread)
 
   result[, which_order, drop = FALSE]
 }
 
+#' @importFrom dplyr %>%
 #' @export
 melt_bootstrap_sleuth <- function(obj) {
   # TODO: make this into a S3 function
   lapply(seq_along(obj$kal), function(i) {
-      cur_samp <- obj$sample_to_condition$sample[i]
-      cur_cond <- obj$sample_to_condition$condition[i]
+      cur_samp <- obj$sample_to_covariates$sample[i]
+      cur_cond <- obj$sample_to_covariates$condition[i]
 
       melt_bootstrap(obj$kal[[i]]) %>%
         rename(bs_sample = sample) %>%
@@ -740,6 +1028,7 @@ obs_to_matrix <- function(obj, value_name) {
 #'
 #' @param obj a sleuth object
 #' @param col_name a column to extract
+#' @importFrom dplyr %>%
 #' @return a data.frame with columns \code{sample} and column \code{col_name}
 get_col <- function(obj, ...) {
   n_samples <- nrow(obj$design_matrix)
@@ -748,7 +1037,7 @@ get_col <- function(obj, ...) {
   #which_cols <- as.character(...)
   lapply(seq_along(obj$kal),
     function(i) {
-      which_sample <- obj$sample_to_condition$sample[i]
+      which_sample <- obj$sample_to_covariates$sample[i]
       dplyr::select_(obj$kal[[i]]$abundance, "target_id",
         .dots = lazyeval::lazy_dots(...)) %>%
           mutate(sample = which_sample)
@@ -760,14 +1049,16 @@ get_col <- function(obj, ...) {
 #' @export
 summary.sleuth <- function(obj, covariates = TRUE) {
   mapped_reads <- sapply(obj$kal, function(k) attr(k, 'num_mapped'))
-  n_bs <- sapply(obj$kal, function(k) length(k$bootstrap))
+  n_bs <- sapply(obj$kal, function(k) attr(k, 'num_bootstrap_found'))
+  n_bs_read <- sapply(obj$kal, function(k) attr(k, 'num_bootstrap_used'))
   n_processed <- sapply(obj$kal, function(k) attr(k, 'num_processed'))
 
   res <- adf(sample = obj$sample_to_covariates[['sample']],
     reads_mapped = mapped_reads,
     reads_proc = n_processed,
     frac_mapped = round(mapped_reads / n_processed, 4),
-    bootstraps = n_bs
+    bootstraps_present = n_bs,
+    bootstraps_used = n_bs_read
     )
   if (covariates) {
     res <- dplyr::left_join(res, obj$sample_to_covariates, by = 'sample')
@@ -825,7 +1116,7 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
   filter_empty <- !filter_empty
   popped_gene_table <- popped_gene_table[filter_empty, ]
 
-  popped_gene_table
+  adf(popped_gene_table)
 }
 
 
@@ -846,10 +1137,11 @@ sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full'
 transcripts_from_gene <- function(obj, test, test_type,
   which_model, gene_colname, gene_name) {
 
-  # FIXME: this is a work around
-  obj$gene_mode <- FALSE
+  if (obj$gene_mode) {
+    stop("this sleuth object is in gene mode. Please use 'gene_from_gene' instead.")
+  }
 
-  table <- sleuth_results(obj, test, test_type, which_model)
+  table <- sleuth_results(obj, test, test_type, which_model, pval_aggregate = FALSE)
   table <- dplyr::select_(table, ~target_id, gene_colname, ~qval)
   table <- dplyr::arrange_(table, gene_colname, ~qval)
   if (!(gene_name %in% table[, 2])) {
@@ -858,49 +1150,111 @@ transcripts_from_gene <- function(obj, test, test_type,
   table$target_id[table[, 2] == gene_name]
 }
 
-#' Change sleuth transform function
+
+#' Change sleuth transform counts function
 #'
-#' Replace the transformation function of a sleuth object
-#'
+#' Replace the transformation function of a sleuth object for estimated counts
 #' NOTE: if you change the transformation function after having done a fit,
 #' the fit(s) will have to be redone using the new transformation.
-#' @examples transform_fun(x) <- function(x) log2(x+0.5)
+#' @examples transform_fun_counts(x) <- function(x) identity(x)
 #' @export
-`transform_fun<-` <- function(obj, fxn) {
+`transform_fun_counts<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))
-  obj$transform_fun <- fxn
   if(!is.null(obj$fits)) {
+    obj$transform_fun_counts <- fxn
     warning(paste("Your sleuth object has fits based on the old transform function.",
                   "Please rerun sleuth_prep and sleuth_fit."))
     obj$fits <- lapply(obj$fits, function(x) {
                          x$transform_synced <- FALSE
                          x
                        })
+  } else {
+    stop("Your sleuth object was prepared using the old transform function. Please rerun",
+         " sleuth_prep using the new transform function.")
   }
   obj
 }
 
+#' Change sleuth transform TPM function
+#'
+#' Replace the transformation function of a sleuth object for TPM values
+#'
+#' NOTE: if you change the transformation function after having done a fit,
+#' the fit(s) will have to be redone using the new transformation.
+#' @examples transform_fun_tpm(x) <- function(x) identity(x)
+#' @export
+`transform_fun_tpm<-` <- function(obj, fxn) {
+  stopifnot(is.function(fxn))
+  if(!is.null(obj$fits)) {
+    obj$transform_fun_tpm <- fxn
+    warning(paste("Your sleuth object has fits based on the old transform function.",
+                  "Please rerun sleuth_prep and sleuth_fit."))
+    obj$fits <- lapply(obj$fits, function(x) {
+                         x$transform_synced <- FALSE
+                         x
+                       })
+  } else {
+    stop("Your sleuth object was prepared using the old transform function. Please rerun",
+         " sleuth_prep using the new transform function.")
+  }
+  obj
+}
 
 #' Extend internal '$<-' for sleuth object
 #'
-#' This extension is mainly to address case where
-#' transform_fun is changed by user.
-#' This function informs user that the fits need to be redone
-#' and updates those fits.
+#' @details: This extension is mainly to address two cases:
+#' \itemize{
+#'   \item case 1: when \code{transform_fun_counts} or
+#'   \code{transform_fun_tpm}is changed by user. This informs
+#'   the user that \code{sleuth_prep} and \code{sleuth_fit} need
+#'   to be rerun.
+#'   \item case 2: when gene_mode or pval_aggregate are modified.
+#'   This warns the user if there is a conflict between these two
+#'   mutually exclusive modes, and overrides the one that was left unmodified
+#'   by the user. This also warns the user if unexpected behavior is likely to occur.
+#' }
 #' Otherwise it acts normally.
-#' @examples obj$transform_fun <- function(x) log2(x+0.5)
+#' @examples obj$transform_fun_counts <- function(x) log2(x+0.5)
 #' @export
 `$<-.sleuth` <- function(obj, name, value) {
-  obj[[name]] <- value
-  if(name=="transform_fun") {
+  if(name == "norm_fun_counts" || name == "norm_fun_tpm") {
+    stop("This sleuth object was prepared using the old normalization function. Please rerun",
+         " 'sleuth_prep' using the new normalization function.")
+  }
+  if(name == "transform_fun_counts" || name == "transform_fun_tpm") {
     if(!is.null(obj$fits)) {
+      obj[[name]] <- value
       warning(paste("Your sleuth object has fits based on the old transform function.",
                     "Please rerun sleuth_prep and sleuth_fit."))
       obj$fits <- lapply(obj$fits, function(x) {
                            x$transform_synced <- FALSE
                            x
                          })
+    } else {
+      stop("This sleuth object was prepared using the old transform function. Please rerun",
+         " 'sleuth_prep' using the new transform function.")
     }
+  }
+  if (name == "gene_mode" && value && !obj[[name]] && !is.null(obj$gene_column)) {
+    warning("You set 'gene_mode' to TRUE. If you have not already used 'sleuth_prep' with ",
+            "'gene_mode' set to TRUE, this will cause unexpected behavior and may break downstream steps.")
+    if (obj$pval_aggregate) {
+      warning("'pval_aggregate' is TRUE. Setting to FALSE as p-value aggregation mode is mutually exclusive.")
+      obj[[name]] <- value
+      obj$pval_aggregate <- FALSE
+    } else {
+      obj[[name]] <- value
+    }
+  } else if (name == "pval_aggregate" && value && !is.null(obj$gene_column)) {
+    stop("You set 'pval_aggregate' to TRUE, but no 'gene_column' is set. Please set a 'gene_column' first.")
+  } else if (name == "pval_aggregate" && value && obj$gene_mode) {
+    warning("You set 'pval_aggregate' to TRUE, but 'gene_mode' is also TRUE. Setting 'gene_mode' to FALSE.",
+            "If 'sleuth_prep' was run using 'gene_mode' set to TRUE, this will lead to unexpected behavior ",
+            "and may break downstream steps.")
+    obj[[name]] <- value
+    obj$gene_mode <- FALSE
+  } else {
+    obj[[name]] <- value
   }
   obj
 }

@@ -16,8 +16,7 @@ you do not need to specify it again (will be fit as the 'full' model).}
 \item{fit_name}{the name to store the fit in the sleuth object (at so$fits$fit_name).
 If \code{NULL}, the model will be named 'full'.}
 
-\item{...}{additional arguments passed to \code{sliding_window_grouping} and
-\code{shrink_df}}
+\item{...}{advanced options for \code{sleuth_fit}. See details.}
 }
 \value{
 a sleuth object with updated attributes.
@@ -34,6 +33,32 @@ it in the sleuth object under 'full'.
 
 To see which models have been fit, users will likely find the function
 \code{\link{models}} helpful.
+
+There are some advanced options for users how wish to customize the fitting procedure.
+Note that these options have not been thoroughly tested, so their effect on the accuracy
+of the results are unknown. Here are those advanced options:
+
+Advanced options for modeling choice:
+
+\itemize{  
+  \item \code{which_var}: which kind of data (counts or TPMs) should be fit? Sleuth by
+  default models the estimated counts, but can model the TPMs. This argument only accepts
+  \code{'obs_counts'} (default) or \code{'obs_tpm'}. Note that if \code{gene_mode} is \code{TRUE},
+  and transcript counts were aggregated to the gene-level, \code{'obs_counts'} will model
+  the \code{'scaled_reads_per_base'} summary statistic.
+}
+
+Advanced options for the sliding window shrinkage procedure (these options are passed to
+\code{\link{sliding_window_grouping}}):
+
+\itemize{
+  \item \code{n_bins}: the number of bins that the data should be split for the sliding window shrinkage
+  using the mean-variance curve. The default is 100.
+  \item \code{lwr}: the lower range of variances within each bin that should be included for the shrinkage
+  procedure. The default is 0.25 (meaning the 25th percentile).
+  \item \code{upr}: the upper range of variances within each bin that should be included for the shrinkage
+  procedure. The default is 0.75 (meaning the 75th percentile).
+}
 }
 \examples{
 # If you specified the formula in sleuth_prep, you can simply run to run the full model
@@ -47,4 +72,3 @@ so <- sleuth_fit(so, ~1, 'reduced')
 \code{\link{sleuth_wt}} to test whether a coefficient is zero,
 \code{\link{sleuth_lrt}} to test nested models.
 }
-

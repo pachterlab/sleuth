@@ -36,8 +36,17 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       install.packages('shiny')")
   }
 
-  if (obj$gene_mode) counts_unit <- "scaled_reads_per_base" else
+  group_by_choices <- setdiff(names(obj$target_mapping), "target_id")
+  if (obj$gene_mode) {
+    counts_unit <- "scaled_reads_per_base"
+    index <- which(group_by_choices == obj$gene_column)
+    group_by_choices <- c(group_by_choices[index], group_by_choices[-index])
+    gene_mode_choice <- "true"
+  } else {
     counts_unit <- "est_counts"
+    gene_mode_choice <- "false"
+
+  }
 
   # set up for the different types of tests
   poss_covars <- dplyr::setdiff(
@@ -77,6 +86,11 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
           p(strong('sleuth live features:')),
              tags$ul(
+               tags$li(strong('v0.29.0'),
+                       ':',
+                       'Integration of gene mode, and enhancements to heat maps',
+                       'by Warren McGee.'
+               ),
                     tags$li(strong('v0.28.0'),
                       ':',
                       'Download buttons for plots and tables by Alex Tseng.',
@@ -105,61 +119,209 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     navbarMenu('analyses',
 
       tabPanel('gene view',
-        fluidRow(
+        conditionalPanel(
+          condition = 'input.settings_gene_mode == "true"',
+          fluidRow(
             column(12,
-                p(h3('gene view'),
-                'Boxplots of abundances of transcript mapping to a given gene,',
-                'and their technical variation.',
-                'This step can take a while, especially with many plots.')
-                ),
+                   p(
+                     h3('gene view'),
+                     'Boxplots of gene abundances showing technical variation in each sample.')
+            ),
             offset = 1),
-        fluidRow(column(3,
-            textInput('gv_var_input', label = 'gene: ', value = '')
+          fluidRow(
+            column(3,
+                   textInput('bsg_var_input',
+                      label = HTML('gene: ',
+                                   '<button onclick="bsg_var_input()">?</button>',
+                                   '<script> function bsg_var_input() {',
+                                   'alert("Enter the target_id of a gene here to view a boxplot of its technical variation.',
+                                   'You can find target_ids in the test table under Analyses.',
+                                   'If you select a different column from "genes from",',
+                                   'enter a gene identifier that matches that column.',
+                                   'The most significant gene by q-value for the first test within the currently selected test type is already entered.");',
+                                   '} </script>'),
+                      value = textOutput("default_top_hit"))
             ),
             column(3,
-                selectInput('gv_var_color_by',
-                  label = 'color by: ',
-                  choices = c(NULL, poss_covars),
-                  selected = NULL)),
+                   selectInput('bsg_var_color_by',
+                      label = HTML('color by: ',
+                                   '<button onclick="bsg_var_color_by()">?</button>',
+                                   '<script> function bsg_var_color_by() {',
+                                   'alert("Color the box plots by different column names from your design file.',
+                                   'Doing so can help explain which traits of a given gene best explain the',
+                                   'difference across samples.");',
+                                   '} </script>'),
+                      choices = c(NULL, poss_covars), selected = NULL)
+            ),
             column(3,
-                selectInput('gv_var_units',
-                  label = 'units: ',
-                  choices = c(counts_unit, 'tpm'),
-                  selected = counts_unit)),
+                   selectInput('bsg_var_units',
+                               label = HTML('units: ',
+                                            '<button onclick="bsg_var_units()">?</button>',
+                                            '<script> function bsg_var_units() {',
+                                            'alert("tpm: Transcripts Per Million\\n',
+                                            'scaled_reads_per_base: The average number of reads mapping to each base across the whole gene\\n',
+                                            '\\nFor a better understanding of the units, see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+                                            '} </script>'),
+                               choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
+                                           else { names(obj$bs_quants[[1]]) } ),
+                               selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
+                                           else { names(obj$bs_quants[[1]])[1] })
+                   )),
             column(3,
-                uiOutput('gv_gene_column')
+                   selectInput('bsg_gene_colname',
+                               label = HTML('genes from: ',
+                                            '<button onclick="bsg_gene_colname()">?</button>',
+                                            '<script> function bsg_gene_colname() {',
+                                            'alert("Choose a column name from your target mapping data frame.',
+                                            'This allows you to use alternative gene identifiers (e.g. HGNC symbol)',
+                                            'to select a gene instead of the target ID.',
+                                            'The column you used to aggregate at the gene level is the default");',
+                                            '} </script>'),
+                               choices = group_by_choices)
             )
+          ),
+          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bsg_go', 'view')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+            HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least ',
+                 'one of extra_bootstrap_summary or ',
+                 'read_bootstrap_tpm to use this feature.<br>') }
+            else { plotOutput('bsg_var_plt') }
+          )),
+          fluidRow(
+            div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                downloadButton("download_bsg_var_plt", "Download Plot"))
+          )
         ),
-        fluidRow(
-          column(3, actionButton('gv_go', 'view')),
-          column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
-                  min = 1, max = 15, step = 1))
-        ),
-        fluidRow(uiOutput('no_genes_message')),
-        fluidRow(uiOutput('gv_var_plts'))
-    ),
+        conditionalPanel(
+          condition = 'input.settings_gene_mode == "false"',
+          fluidRow(
+            column(12,
+                   p(h3('gene view'),
+                     'Boxplots of abundances of transcripts mapping to a given gene,',
+                     'and their technical variation.',
+                     'This step can take a while, especially with many plots.')
+            ),
+            offset = 1),
+          fluidRow(column(3,
+                          textInput('gv_var_input',
+                                    label = HTML('gene: ',
+                                                 '<button onclick="gv_var_input()">?</button>',
+                                                 '<script> function gv_var_input() {',
+                                                 'alert("Enter the gene identifier (determined by what is selected for \'genes from\')',
+                                                 'here to view a boxplot of the technical variation of its top transcripts ranked by q-value.',
+                                                 'The number is determined by \'# of plots\'.',
+                                                 'You can find gene identifiers in the test table under Analyses.");',
+                                                 '} </script>'), value = '')
+          ),
+          column(3,
+                 selectInput('gv_var_color_by',
+                             label = HTML('color by: ',
+                                          '<button onclick="gv_var_color_by()">?</button>',
+                                          '<script> function gv_var_color_by() {',
+                                          'alert("Color the box plots by different column names from your design file.',
+                                          'Doing so can help explain which traits of a given transcript best explain the',
+                                          'difference in counts/TPMs of that transcript across samples.");',
+                                          '} </script>'),
+                             choices = c(NULL, poss_covars),
+                             selected = NULL)),
+          column(3,
+                 selectInput('gv_var_units',
+                             label = HTML('units: ',
+                                          '<button onclick="gv_var_units()">?</button>',
+                                          '<script> function gv_var_units() {',
+                                          'alert("tpm: Transcripts Per Million\\nest_counts (transcript mode only): Counts/Number of aligned reads\\n',
+                                          '\\nFor a better understanding of the units, see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+                                          '} </script>'),
+                             choices = c(counts_unit, 'tpm'),
+                             selected = counts_unit)),
+          column(3,
+                 uiOutput('gv_gene_column')
+          )
+          ),
+          fluidRow(
+            column(3, actionButton('gv_go', 'view')),
+            column(3, numericInput('gv_maxplots', label = '# of plots (max 15): ', value = 3,
+                                   min = 1, max = 15, step = 1))
+          ),
+          fluidRow(uiOutput('no_genes_message')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+            HTML(paste('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at ',
+                       'least one of extra_bootstrap_summary or',
+                       'read_bootstrap_tpm to use this feature.<br>'))
+          } else { uiOutput('gv_var_plts') }
+          ))
+        )
+      ),
 
       ####
       tabPanel('heat map',
         fluidRow(
           column(12,
-              p(h3('heat map'), 'Plot of select abundances in a clustered heat map.',
-                'Enter space-separated values.')
+              p(h3('heat map'),
+              HTML('Plot of select abundances in a clustered heat map using the',
+              'R <a target="_blank" href="https://stat.ethz.ch/R-manual/R-devel/library/stats/html/hclust.html">',
+              'hclust function</a>. The heat map iteratively groups together transcripts with',
+              'similar expression patterns, highlighting similarities among the transcripts themselves.',
+              'For a more in-depth discussion of hierarchical clustering, see',
+              '<a target="_blank" href="http://link.springer.com/article/10.1007/BF02289588">10.1007/BF02289588</a>.',
+              '</br>Enter space-separated values (The ten transcripts with the lowest q-values',
+              'are already entered. Click view to see them!).'))
               ),
           offset = 1
         ),
         fluidRow(
-          column(3,
-            textInput('hm_transcripts', label = 'enter target ids: ', value = '')
+          column(4,
+            textInput('hm_transcripts', label = HTML('enter target ids: ',
+            '<button onclick="hm_transcripts()">?</button>',
+            '<script> function hm_transcripts() {',
+            'alert("Enter a space-separated list of transcript names here to view a hierarchical clustering of those transcripts.",
+                   "The ten most significant transcripts for the first test of the currently selected test type have been listed for you by default.");',
+            '} </script>'),
+            value = textOutput("default_top_ten"))
               ),
+          column(8, style = "margin-top:15px;",
+            checkboxGroupInput('hm_covars',
+                               label = HTML('covariates:',
+                                            '<button onclick="hm_covars()">?</button>',
+                                            '<script> function hm_covars() {',
+                                            'alert("Add annotation information from different column names from your design file.',
+                                            'Doing so can help explain which traits of a given sample best explain the',
+                                            'clustering across samples.");',
+                                            '} </script>'),
+                               choices = as.list(poss_covars), inline = TRUE)
+                 )),
+        fluidRow(
           column(3,
-            selectInput('hm_units', label = 'units:', choices = c(counts_unit, 'tpm'), selected = 'tpm')
-              ),
-          column(3,
-            textInput('hm_trans', label = 'tranform: ', value = 'log')
+            selectInput('hm_units', label = HTML('units: ',
+            '<button onclick="hm_units()">?</button>',
+            '<script> function hm_units() {',
+            'alert("tpm: Transcripts Per Million\\nest_counts (transcript mode only): Counts/Number of aligned reads\\n',
+            'scaled_reads_per_base (gene mode only): The average number of reads mapping to each base across the whole gene\\n',
+            '\\nFor a better understanding of the units, see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+            '} </script>'),
+            choices = c(counts_unit, 'tpm'), selected = 'tpm')
               ),
           column(2,
-            numericInput('hm_offset', label = 'offset: ', value = 1)),
+            textInput('hm_trans', label = HTML('transform: ',
+            '<button onclick="hm_trans()">?</button>',
+            '<script> function hm_trans() {',
+            'alert("A transformation to be applied to the raw data before clustering.");',
+            '} </script>'), value = 'log')
+              ),
+          column(2,
+            numericInput('hm_offset', label = HTML('offset: ',
+            '<button onclick="hm_offset()">?</button>',
+            '<script> function hm_offset() {',
+            'alert("A constant amount to be added to the raw data before the transformation and clustering.");',
+            '} </script>'), value = 1)),
+          column(2, style = "margin-top: 10px;",
+            checkboxInput('hm_cluster', label = HTML('cluster transcripts',
+            '<button onclick="hm_cluster()">?</button>',
+            '<script> function hm_trans() {',
+            'alert("Check this box to use hierarchical clustering on the selected transcripts.\\n',
+            'Note that hierarchical clustering of the samples is already turned on by default.");',
+            '} </script>'),
+            value = TRUE)),
           column(1,
             actionButton('hm_go', 'view')
           )
@@ -210,7 +372,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             ),
 
           conditionalPanel(condition = 'input.settings_test_type == "lrt"',
-            strong("Only supported for 'setting' Wald tests.")
+            strong(paste("Only supported for 'setting' Wald tests.",
+                         "Go to the settings tab to change the 'test type' setting."))
           )
         ),
 
@@ -218,14 +381,28 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
       ####
       tabPanel('test table',
-      fluidRow(
-        column(12,
-          p(h3('test table'),
-            'Table of transcript names, gene names (if supplied),',
-            'sleuth parameter estimates, tests, and summary statistics.' )
-          ),
-          offset = 1),
         conditionalPanel(condition = 'input.settings_test_type == "wt"',
+          fluidRow(column(12, p(h3('test table'),
+                     HTML('Table of transcript names, gene names (if supplied),',
+                          'sleuth parameter estimates, tests, and summary statistics.',
+                          '<button onclick="tableType()">What do the column names mean?</button>',
+                          '<script> function tableType() {',
+                          'alert("Transcript Table Columns:\\n',
+                          'target_id: Transcript name (dependent on transcriptome used in kallisto)\\n',
+                          'pval: p-value of the transcript for the selected test\\n',
+                          'qval: False discovery rate adjusted p-value, using Benjamini-Hochberg\\n',
+                          'b: the "beta" value (effect size). Technically a biased estimator of the fold change\\n',
+                          'se_b: the standard error of the beta\\n',
+                          'mean_obs: Mean of natural log counts of observations\\n',
+                          'var_obs: Variance of observation\\n',
+                          'tech_var: Technical variance of observation from the bootstraps\\n',
+                          'sigma_sq: Raw estimator of the variance once the technical variance has been removed\\n',
+                          'sigma_sq_pmax: max(sigma_sq, 0)\\n',
+                          'smooth_sigma_sq: Smooth regression fit for the shrinkage estimation\\n',
+                          'final_simga_sq: max(sigma_sq, smooth_sigma_sq) – used for covariance estimation of beta\\n',
+                          '");',
+                          '} </script>'))
+          ), offset = 1),
           fluidRow(
             column(3,
               selectInput('which_model_de', label = 'fit: ',
@@ -245,9 +422,31 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             dataTableOutput('de_dt'),
             fluidRow(
               div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-                  downloadButton("download_test_table", "Download Table")))
+                  downloadButton("download_test_table",  "Download Table")))
           ),
         conditionalPanel(condition = 'input.settings_test_type == "lrt"',
+            fluidRow(column(12, p(h3('test table'),
+                       HTML('Table of transcript names, gene names (if supplied),',
+                            'sleuth parameter estimates, tests, and summary statistics.',
+                            '<button onclick="tableType()">What do the column names mean?</button>',
+                            '<script> function tableType() {',
+                            'alert("Transcript Table Columns:\\n',
+                            'target_id: Transcript name (dependent on transcriptome used in kallisto)\\n',
+                            'pval: p-value of the transcript for the selected test\\n',
+                            'qval: False discovery rate adjusted p-value, using Benjamini-Hochberg\\n',
+                            'test_stat: Chi-squared test statistic (likelihood ratio test)\\n',
+                            'rss: residual sum of squares under the null model\\n',
+                            'degrees_free: the degrees of freedom for the test_that\\n',
+                            'mean_obs: Mean of natural log counts of observations\\n',
+                            'var_obs: Variance of observation\\n',
+                            'tech_var: Technical variance of observation from the bootstraps\\n',
+                            'sigma_sq: Raw estimator of the variance once the technical variance has been removed\\n',
+                            'sigma_sq_pmax: max(sigma_sq, 0)\\n',
+                            'smooth_sigma_sq: Smooth regression fit for the shrinkage estimation\\n',
+                            'final_simga_sq: max(sigma_sq, smooth_sigma_sq) – used for covariance estimation of beta\\n',
+                            '");',
+                            '} </script>'))
+                         ), offset = 1),
           fluidRow(
             column(3,
               uiOutput('test_control_de')
@@ -265,38 +464,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
         ####
         tabPanel('transcript view',
-          fluidRow(
-            column(12,
-              p(
-                h3('transcript view'),
-                'Boxplots of transcript abundances showing technical variation in each sample.')
-                ),
-                offset = 1),
-          fluidRow(
-            column(4,
-              textInput('bs_var_input', label = 'transcript: ', value = '')
-            ),
-            column(4,
-              selectInput('bs_var_color_by', label = 'color by: ',
-                choices = c(NULL, poss_covars), selected = NULL)
-            ),
-            column(3,
-              selectInput('bs_var_units', label = 'units: ',
-                choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
-                            else { names(obj$bs_quants[[1]]) } ),
-                selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
-                            else { names(obj$bs_quants[[1]])[1] })
-                ))
-            ),
-          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
-          fluidRow(plot <- (if (length(obj$bs_quants) == 0)
-                    { HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least one of extra_bootstrap_summary or read_bootstrap_tpm to use this feature.<br>') }
-                    else { plotOutput('bs_var_plt') }
-             )),
-          fluidRow(
-            div(align = "right", style = "margin-right:15px; margin-bottom:10px",
-              downloadButton("download_bs_var_plt", "Download Plot"))
-              )
+          uiOutput('transcript_view')
         ),
 
         ####
@@ -349,7 +517,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         column(12,
           p(
             h3('principal component analysis'),
-            'PCA projections of sample abundances onto any pair of components.')
+            'PCA projections of sample abundances onto any pair of components.',
+              ' PCA is computed on the transcript expression.',
+              ' Each sample is a vector with dimension equal to the number of transcripts.',
+              ' See',
+            a(href="https://liorpachter.wordpress.com/2014/05/26/what-is-principal-component-analysis/",
+              target="_blank", 'this blog post'),
+            'for an overview of PCA.')
           ),
           offset = 1),
         fluidRow(
@@ -361,20 +535,39 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             selectInput('pc_y', label = 'y-axis PC: ', choices = 1:5,
               selected = 2)
             ),
-          column(4,
-            selectInput('color_by', label = 'color by: ',
+          column(3,
+            selectInput('color_by',
+              label = HTML('color by: ',
+                           '<button onclick="color_by()">?</button>',
+                           '<script> function color_by() {',
+                           'alert("Color the PCA plot by different column names from your design file.',
+                           'Doing so can help explain which traits of a given sample best explain the',
+                           'clustering of samples on the PCA plot.");',
+                           '} </script>'),
               choices = c(NULL, poss_covars), selected = NULL)
             ),
           column(2,
             numericInput('pca_point_size', label = 'size: ', value = 3)),
-          column(2,
-            selectInput('pca_units', label = 'units: ',
+          column(3,
+            selectInput('pca_units',
+              label = HTML('units: ',
+                           '<button onclick="pca_units()">?</button>',
+                           '<script> function pca_units() {',
+                           'alert("tpm: Transcripts Per Million\\nest_counts (transcript mode only): Counts/Number of aligned reads\\n',
+                           'scaled_reads_per_base (gene mode only): The average number of reads mapping to each base across the whole gene\\n',
+                           '\\nFor a better understanding of the units, see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+                           '} </script>'),
               choices = c(counts_unit, 'tpm'),
               selected = counts_unit))
         ),
         fluidRow(
           column(2,
-            checkboxInput('pca_filt', label = 'filter',
+            checkboxInput('pca_filt',
+              label = HTML('filter',
+                           '<button onclick="pca_filt()">?</button>',
+                           '<script> function pca_filt() {',
+                           'alert("Check this box to use only those transripts that passed the filter for the PCA analysis.");',
+                           '} </script>'),
               value = TRUE)
               ),
           column(2,
@@ -433,10 +626,40 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('sample heatmap',
       fluidRow(
         column(12,
-          p(h3('sample heatmap'), "Jensen-Shannon divergence between pairs of samples.")
+          p(h3('sample heatmap'),
+            a(href='https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence',
+              target='_blank', 'Jensen-Shannon divergence'),
+            'between pairs of samples computed at the transcript level.',
+            ' The larger this value, the more dissimilar the samples are.')
           ),
           offset = 1),
-        fluidRow(checkboxInput('samp_heat_filt', label = 'filter', value = TRUE)),
+        fluidRow(column(1, style = "margin-top: 15px;",
+                   checkboxInput('samp_heat_filt',
+                                 label = HTML('filter',
+                                              '<button onclick="samp_heat_filt()">?</button>',
+                                              '<script> function samp_heat_filt() {',
+                                              'alert("Check this box to use only those transripts that passed the filter before clustering.");',
+                                              '} </script>'),
+                                 value = TRUE)),
+                 column(2, style = "margin-top: 15px;",
+                   checkboxInput('samp_heat_cluster',
+                                 label = HTML('cluster samples',
+                                              '<button onclick="samp_heat_cluster()">?</button>',
+                                              '<script> function samp_heat_cluster() {',
+                                              'alert("Check this box to use hierarchical clustering on the samples.");',
+                                              '} </script>'), value = TRUE)
+                   ),
+                 column(9,
+                   checkboxGroupInput('samp_heat_covars',
+                                      label = HTML('covariates:',
+                                                   '<button onclick="samp_heat_covars()">?</button>',
+                                                   '<script> function samp_heat_covars() {',
+                                                   'alert("Add annotation information from different column names from your design file.',
+                                                   'Doing so can help explain which traits of a given sample best explain the',
+                                                   'clustering across samples.");',
+                                                   '} </script>'),
+                                      choices = as.list(poss_covars), inline = TRUE)
+                   )),
         fluidRow(plotOutput('samp_heat_plt')),
         fluidRow(
           div(align = "right", style = "margin-right:15px; margin-bottom:10px",
@@ -463,17 +686,41 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               selected = poss_covars[1])
             ),
           column(2,
-            selectInput('cond_dens_units', label = 'units: ',
+            selectInput('cond_dens_units',
+              label = HTML('units: ',
+                           '<button onclick="cond_dens_units()">?</button>',
+                           '<script> function cond_dens_units() {',
+                           'alert("tpm: Transcripts Per Million\\nest_counts (transcript mode only): Counts/Number of aligned reads\\n',
+                           'scaled_reads_per_base (gene mode only): The average number of reads mapping to each base across the whole gene\\n',
+                           '\\nFor a better understanding of the units, see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+                           '} </script>'),
               choices = c('tpm', counts_unit),
               selected = 'tpm')),
           column(2,
-            checkboxInput('cond_dens_filt', label = 'filter',
+            checkboxInput('cond_dens_filt',
+              label = HTML('filter',
+                           '<button onclick="cond_dens_filt()">?</button>',
+                           '<script> function cond_dens_filt() {',
+                           'alert("Check this box to use only those transripts',
+                           'that passed the filter before plotting.");',
+                           '} </script>'),
               value = TRUE)),
           column(2,
-            textInput('cond_dens_trans', label = 'transform: ',
+            textInput('cond_dens_trans',
+              label = HTML('transform: ',
+                           '<button onclick="cond_dens_trans()">?</button>',
+                           '<script> function cond_dens_trans() {',
+                           'alert("A transformation to be applied to the raw data before plotting.");',
+                           '} </script>'),
               value = 'log')),
           column(2,
-            numericInput('cond_dens_offset', label = 'offset: ', value = 1))
+            numericInput('cond_dens_offset',
+                         label = HTML('offset: ',
+                                      '<button onclick="cond_dens_offset()">?</button>',
+                                      '<script> function cond_dens_offset() {',
+                                      'alert("A constant amount to be added to the raw data before the transformation and clustering.");',
+                                      '} </script>'),
+                         value = 1))
           ),
         fluidRow(plotOutput('condition_density')),
         fluidRow(
@@ -520,7 +767,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           column(12,
             p(
               h3('fragment length distribution plot'),
-              'Plot fragment length distribution used by kallisto in a particular sample')
+              'Plot fragment length distribution used by kallisto in a particular sample.',
+              ' In paired-end data, kallisto learns this fragment length distribution by looking at the beginning coordinate and at the end coordinate of unique pseudoalignments.',
+              ' In single-end data, the fragment length distribution is provided by the user.')
             )
         ),
         fluidRow(
@@ -562,9 +811,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('kallisto table',
 
         fluidRow(
-        column(12, p(h3('kallisto abundance table'), "All of the abundance
-            estimates pulled in from kallisto results into the sleuth
-            object."))
+        column(12, p(h3('kallisto abundance table'),
+          "All of the abundance estimates pulled in from kallisto results into the
+           sleuth object.",
+           ' The covariates button will include covariates from the `sample_to_covariates` table defined in `sleuth_prep`.',
+           ' `eff_len` and `len` are the effective length and true length of the transcript (`target_id`).',
+           ' An overview of these units can be found ',
+           a(href = 'https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/',
+            target = '_blank', 'here'), '.'
+           ))
           ),
 
         fluidRow(
@@ -592,7 +847,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       tabPanel('bias weights',
         fluidRow(
           column(12,
-            p(h3('bias weights'), "View the bias parameters modeled by kallisto.")
+            p(h3('bias weights'),
+            "View the bias parameters modeled by kallisto.")
             )
           ),
 
@@ -617,7 +873,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           p(
             h3('mean-variance plot'),
             'Plot of abundance versus square root of standard deviation which is used for shrinkage estimation.',
-            'The blue dots are in the interquartile range and the red curve is the fit used by sleuth.'
+            'The blue dots are in the interquartile range and the red curve is the fit used by sleuth.',
+            ' Any points at y = 0 have inferential variance greater than observed total raw variance.'
             )
           ),
           offset = 1),
@@ -650,18 +907,42 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               selected = samp_names[2])
             ),
           column(2,
-            textInput('trans', label = 'transform: ',
+            textInput('trans',
+              label = HTML('transform: ',
+                           '<button onclick="trans()">?</button>',
+                           '<script> function trans() {',
+                           'alert("A transformation to be applied to the raw data before plotting.");',
+                           '} </script>'),
               value = 'log')),
           column(2,
-            numericInput('scatter_offset', label = 'offset: ', value = 1))
+            numericInput('scatter_offset',
+                         label = HTML('offset: ',
+                                      '<button onclick="scatter_offset()">?</button>',
+                                      '<script> function scatter_offset() {',
+                                      'alert("A constant amount to be added to the raw data before the transformation and clustering.");',
+                                      '} </script>'),
+                         value = 1))
           ),
         fluidRow(
           column(2,
-            selectInput('scatter_units', label = 'units: ',
+            selectInput('scatter_units',
+              label = HTML('units: ',
+                           '<button onclick="scatter_units()">?</button>',
+                           '<script> function scatter_units() {',
+                           'alert("tpm: Transcripts Per Million\\nest_counts (transcript mode only): Counts/Number of aligned reads\\n',
+                           'scaled_reads_per_base (gene mode only): The average number of reads mapping to each base across the whole gene\\n',
+                           '\\nFor a better understanding of the units, see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+                           '} </script>'),
               choices = c(counts_unit, 'tpm'),
               selected = counts_unit)),
           column(2,
-            checkboxInput('scatter_filt', label = 'filter',
+            checkboxInput('scatter_filt',
+              label = HTML('filter',
+                           '<button onclick="scatter_filt()">?</button>',
+                           '<script> function scatter_filt() {',
+                           'alert("Check this box to use only those transripts',
+                           'that passed the filter before plotting.");',
+                           '} </script>'),
               value = TRUE)),
           column(2,
             numericInput('scatter_alpha', label = 'opacity:', value = 0.2,
@@ -681,6 +962,15 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
       tabPanel('Q-Q plot',
         ####
+        fluidRow(
+          column(12,
+            p(
+              h3('Q-Q plot'),
+              "Select the test and view the appropriate quantile-quantile plot.",
+              'Points that are color red are considered "significant" at the selected fdr-level.')
+            ),
+          offset = 1
+          ),
         fluidRow(
           column(2,
             numericInput('max_fdr_qq', label = 'max Fdr:', value = 0.10,
@@ -721,6 +1011,12 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               label = 'test type:',
               choices = valid_test_types,
               selected = valid_test_types[1])
+          ),
+          column(2,
+            selectInput('settings_gene_mode',
+              label = 'gene mode:',
+              choices = gene_mode_choice,
+              selected = gene_mode_choice[1])
           )
         )
       )
@@ -767,6 +1063,29 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       }
 
       current_ui
+    })
+
+    output$default_top_hit <- renderText({
+      default_test <- ifelse(length(valid_test_types) == 0, NULL,
+                             ifelse(input$settings_test_type == 'wt',
+                                    obj$tests[['wt']][[1]][[1]],
+                                    obj$tests[['lrt']][[1]])
+                            )
+      default_id <- ifelse(is.null(default_test), "No tests found. This feature won't work",
+                            default_test[order(default_test$qval), "target_id"][1])
+      default_id
+    })
+
+    output$default_top_ten <- renderText({
+      default_test <- ifelse(length(valid_test_types) == 0, NULL,
+                             ifelse(input$settings_test_type == 'wt',
+                                    obj$tests[['wt']][[1]][[1]],
+                                    obj$tests[['lrt']][[1]])
+                            )
+      default_ids <- ifelse(is.null(default_test), "No tests found. This feature won't work",
+                            default_test[order(default_test$qval), "target_id"][1:10])
+      default_ids <- paste(default_ids, collapse = " ")
+      default_ids
     })
 
     output$qqplot <- renderPlot({
@@ -1007,8 +1326,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     ###
     output$samp_heat_plt <- renderPlot({
-      samp_heat_plt <- plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt)
-      saved_plots_and_tables$samp_heat_plt <- samp_heat_plt
+      samp_heat_plt <- plot_sample_heatmap(obj, use_filtered = input$samp_heat_filt,
+                                           annotation_cols = input$samp_heat_covars,
+                                           cluster_bool = input$samp_heat_cluster)
+      saved_plots_and_tables$samp_heat_plt <- samp_heat_plt #this is a gtable object
       samp_heat_plt
     })
 
@@ -1244,9 +1565,16 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       result
     })
     output$table_type <- renderUI({
-      if (!is.null(obj$target_mapping)) {
-        selectInput('pop_genes', label = 'table type: ',
-          choices = list('target table' = 1, 'gene table' = 2),
+      if(!is.null(obj$target_mapping)) {
+        selectInput('pop_genes', label = HTML('table type: ',
+        '<button onclick="tableType()">?</button>',
+        '<script> function tableType() {',
+        'alert("The transcript table shows in-depth summary statistics and test results for each individual',
+        'transcript. The gene table, on the other hand, shows significance statistics for genes, each of which',
+        'which may contain many transcripts.',
+        '");',
+        '} </script>'),
+          choices = list('transcript table' = 1, 'gene table' = 2),
           selected = 1)
       }
     })
@@ -1254,8 +1582,13 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$group_by <- renderUI({
       if (!is.null(input$pop_genes) && input$pop_genes == 2) {
         selectInput('mappingGroup',
-          label = 'group by: ',
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          label = HTML('group by: ',
+          '<button onclick="mappingGroup()">?</button>',
+          '<script> function mappingGroup() {',
+          'alert("View genes by their Ensemble gene ID (ens_gene), or by their external gene name (ext_gene).',
+          'These gene names are from the gene annotation you used to add genes to your sleuth object.");',
+          '} </script>'),
+          choices = group_by_choices)
       }
     })
 
@@ -1269,12 +1602,22 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
       if (!is.null(input$mappingGroup) && (input$pop_genes == 2)) {
           mg <- input$mappingGroup
-          test_table <- sleuth_gene_table(obj, wb, input$settings_test_type,
-            input$which_model_de, mg)
-            saved_plots_and_tables$test_table <- test_table
-            test_table
+          test_table <- NULL
+          if (obj$pval_aggregate) {
+            # kind of hate myself for making the swap -HP
+            swap <- obj$gene_column
+            obj$gene_column <- mg
+            test_table <- sleuth_results(obj, wb, input$which_model_de)
+            obj$gene_column <- swap
+          } else {
+            test_table <- sleuth_gene_table(obj, wb, input$settings_test_type,
+              input$which_model_de, mg)
+          }
+          saved_plots_and_tables$test_table <- test_table
+          test_table
       } else {
-          test_table <- sleuth_results(obj, wb, input$which_model_de)
+          test_table <- sleuth_results(obj, wb, input$which_model_de,
+            pval_aggregate = FALSE)
           saved_plots_and_tables$test_table <- test_table
           test_table
       }
@@ -1310,8 +1653,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     })
 
     output$table_type_lrt <- renderUI({
-      if (!is.null(obj$target_mapping)) {
-        selectInput('pop_genes_lrt', label = 'table type: ',
+      if(!is.null(obj$target_mapping)) {
+        selectInput('pop_genes_lrt', label = HTML('table type: ',
+        '<button onclick="tableType()">?</button>',
+        '<script> function tableType() {',
+        'alert("The transcript table shows in-depth summary statistics and test results for each individual',
+        'transcript. The gene table, on the other hand, shows significance statistics for genes, each of which',
+        'which may contain many transcripts.");',
+        '} </script>'),
           choices = list('transcript table' = 1, 'gene table' = 2),
           selected = 1)
       }
@@ -1319,51 +1668,166 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
     output$group_by_lrt <- renderUI({
       if (!is.null(input$pop_genes_lrt) && input$pop_genes_lrt == 2) {
         selectInput('mapping_group_lrt',
-          label = 'group by: ',
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          label = HTML('group by: ',
+          '<button onclick="mappingGroup()">?</button>',
+          '<script> function mappingGroup() {',
+          'alert("View genes by their Ensemble gene ID (ens_gene), or by their external gene name (ext_gene).',
+          'These gene names are from the gene annotation you used to add genes to your sleuth object.");',
+          '} </script>'),
+          choices = group_by_choices)
       }
     })
 
 
-    ### bootstrap var
+    ### Transcript viewer, transcript mode
+    output$transcript_view <- renderUI({
+      if (!obj$gene_mode) {
+        layout <- list(
+          fluidRow(
+            column(12,
+                   p(
+                     h3('transcript view'),
+                     'Boxplots of transcript abundances showing technical variation in each sample.')
+            ),
+            offset = 1),
+          fluidRow(
+            column(4,
+                   textInput('bs_var_input',
+                             label = HTML('transcript: ',
+                                          '<button onclick="bs_var_input()">?</button>',
+                                          '<script> function bs_var_input() {',
+                                          'alert("Enter the target_id of a transcript here to view a boxplot of its technical variation.',
+                                          'You can find target_ids in the test table under Analyses. The most significant transcript',
+                                          'by q-value for the first test within the currently selected test type is already entered.");',
+                                          '} </script>'),
+                             value = textOutput("default_top_hit"))
+            ),
+            column(4,
+                   selectInput('bs_var_color_by',
+                               label = HTML('color by: ',
+                                            '<button onclick="bs_var_color_by()">?</button>',
+                                            '<script> function bs_var_color_by() {',
+                                            'alert("Color the box plots by different column names from your design file.',
+                                            'Doing so can help explain which traits of a given transcript best explain the',
+                                            'difference in counts of that transcript across samples.");',
+                                            '} </script>'),
+                               choices = c(NULL, poss_covars), selected = NULL)
+            ),
+            column(3,
+                   selectInput('bs_var_units',
+                               label = HTML('units: ',
+                                            '<button onclick="bs_var_units()">?</button>',
+                                            '<script> function bs_var_units() {',
+                                            'alert("tpm: Transcripts Per Million\\nest_counts (transcript mode only): Counts/Number of aligned reads\\n',
+                                            'scaled_reads_per_base (gene mode only): The average number of reads mapping to each base across the whole gene\\n',
+                                            '\\nFor a better understanding of the units, see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/");',
+                                            '} </script>'),
+                               choices  = (if (length(obj$bs_quants) == 0) { c('N/A') }
+                                           else { names(obj$bs_quants[[1]]) } ),
+                               selected = (if (length(obj$bs_quants) == 0) { 'N/A' }
+                                           else { names(obj$bs_quants[[1]])[1] })
+                   ))
+          ),
+          fluidRow(HTML('&nbsp;&nbsp;&nbsp;'), actionButton('bs_go', 'view')),
+          fluidRow(plot <- (if (length(obj$bs_quants) == 0) {
+            HTML('&nbsp&nbsp&nbsp&nbsp You need to run sleuth with at least ',
+                 'one of extra_bootstrap_summary or ',
+                 'read_bootstrap_tpm to use this feature.<br>') }
+            else { plotOutput('bs_var_plt') }
+          )),
+          fluidRow(
+            div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                downloadButton("download_bs_var_plt", "Download Plot"))
+          )
+        )
+      } else {
+        layout <- list(
+          HTML('&nbsp&nbsp&nbsp&nbspThis view is disabled because your sleuth',
+               ' object is in gene mode.<br>&nbsp&nbsp&nbsp&nbspTo view',
+               ' transcripts, rerun sleuth without the \'aggregation_column\'',
+               ' option.<br>&nbsp&nbsp&nbsp&nbspFor more information, see the ',
+               '<a href = "https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html">',
+               'sleuth getting started guide</a>.')
+        )
+        layout
+      }
+
+    })
 
     bs_var_text <- eventReactive(input$bs_go, {
         input$bs_var_input
     })
 
     output$bs_var_plt <- renderPlot({
-        saved_plots_and_tables$bs_var_plt <- plot_bootstrap(obj, bs_var_text(),
+      saved_plots_and_tables$bs_var_plt <- plot_bootstrap(
+        obj, bs_var_text(),
         units = input$bs_var_units,
         color_by = input$bs_var_color_by)
-        saved_plots_and_tables$bs_var_plt
+      saved_plots_and_tables$bs_var_plt
     })
 
     output$download_bs_var_plt <- downloadHandler(
-        filename = function() {
-          "bootstrap_vars.pdf"
-          },
-        content = function(file) {
-            ggsave(file,
-              saved_plots_and_tables$bs_var_plt,
-              width = user_settings$save_width,
-              height = user_settings$save_height,
-              units = "cm")
+      filename = function() {
+        "transcript_bootstrap_vars.pdf"
+      },
+      content = function(file) {
+        ggsave(file,
+               saved_plots_and_tables$bs_var_plt,
+               width = user_settings$save_width,
+               height = user_settings$save_height,
+               units = "cm")
+      })
+
+    ### Gene viewer, gene mode
+
+    bsg_var_text <- eventReactive(input$bsg_go, {
+      if (obj$gene_mode) {
+        gene_from_gene(obj,
+                       input$bsg_gene_colname,
+                       input$bsg_var_input)
+      }
     })
 
+    output$bsg_var_plt <- renderPlot({
+      saved_plots_and_tables$bs_var_plt <- plot_bootstrap(
+        obj, bsg_var_text(),
+        units = input$bsg_var_units,
+        color_by = input$bsg_var_color_by)
+      saved_plots_and_tables$bs_var_plt
+    })
 
-    ### Gene Viewer
+    output$download_bsg_var_plt <- downloadHandler(
+      filename = function() {
+        "gene_bootstrap_vars.pdf"
+      },
+      content = function(file) {
+        ggsave(file,
+               saved_plots_and_tables$bs_var_plt,
+               width = user_settings$save_width,
+               height = user_settings$save_height,
+               units = "cm")
+      })
+
+    ### Gene Viewer, transcript mode
     # the name of the gene supplied
     gv_var_text <- eventReactive(input$gv_go, {
-      if (!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping) & !obj$gene_mode) {
           input$gv_var_input
       }
     })
 
     output$gv_gene_column <- renderUI({
-      if (!is.null(obj$target_mapping)) {
+      if (!is.null(obj$target_mapping) & !obj$gene_mode) {
         selectInput('gv_gene_colname',
-          label = 'genes from: ',
-          choices = names(obj$target_mapping)[2:length(names(obj$target_mapping))])
+          label = HTML('genes from: ',
+                       '<button onclick="gv_gene_colname()">?</button>',
+                       '<script> function gv_gene_colname() {',
+                       'alert("Choose a column name from your target mapping data frame.',
+                       'This allows you to use alternative gene identifiers (e.g. HGNC symbol)',
+                       'to select a gene.',
+                       'The second column in target mapping is the default");',
+                       '} </script>'),,
+          choices = group_by_choices)
       }
     })
 
@@ -1386,12 +1850,14 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         current_test <- possible_tests[1]
       }
 
-      transcripts_from_gene(obj,
-        current_test,
-        test_type,
-        input$which_model_qq,
-        input$gv_gene_colname,
-        gv_var_text())
+      if (!obj$gene_mode) {
+        transcripts_from_gene(obj,
+                              current_test,
+                              test_type,
+                              input$which_model_qq,
+                              input$gv_gene_colname,
+                              gv_var_text())
+      }
     })
 
     output$gv_var_plts <- renderUI({
@@ -1409,7 +1875,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
           my_i <- i
           gv_plotname <- paste("plot", my_i, sep = "")
             output[[gv_plotname]] <- renderPlot({
-               if (!is.null(obj$target_mapping) && !is.na(gv_var_list()[my_i])) {
+               if (!is.null(obj$target_mapping) && !obj$gene_mode &&
+                   !is.na(gv_var_list()[my_i])) {
                  plot_bootstrap(obj,
                    gv_var_list()[my_i],
                    units = input$gv_var_units,
@@ -1450,7 +1917,9 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         saved_plots_and_tables$hm_plt <- plot_transcript_heatmap(obj,
           hm_transcripts(),
           input$hm_units, hm_func(),
-          offset = input$hm_offset)
+          cluster_transcripts = input$hm_cluster,
+          offset = input$hm_offset,
+          annotation_cols = input$hm_covars)
 
         output$download_hm_plt_button <- renderUI({
           div(

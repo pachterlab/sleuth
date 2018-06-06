@@ -27,4 +27,3 @@ creates a directory \code{path} and creates a valid shiny application.
 \seealso{
 \code{\link{sleuth_save}}, \code{\link{sleuth_load}}, \code{\link{sleuth_live}}
 }
-

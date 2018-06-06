@@ -25,36 +25,36 @@
 #' ("obs_norm" or "obs_raw")
 #' @param which_units character vector of length one. Which units to use ("tpm"
 #' or "est_counts")
-#' @return a \code{list} with an attribute 'data', which contains a matrix of target_ids
-#'         and transcript expression in \code{which_units}
+#' @return a matrix which contains a matrix of target_ids and transcript expression in \code{which_units}
 #' @examples
 #' sleuth_matrix <- sleuth_to_matrix(sleuth_obj, 'obs_norm', 'tpm')
-#' head(sleuth_matrix$data) # look at first 5 transcripts, sorted by name
+#' head(sleuth_matrix) # look at first 5 transcripts, sorted by name
 #' @export
 sleuth_to_matrix <- function(obj, which_df, which_units) {
   if ( !(which_df %in% c("obs_norm", "obs_raw")) ) {
     stop("Invalid object")
   }
-  if ( !(which_units %in% c("tpm", "est_counts")) ) {
+  if ( !(which_units %in% c("tpm", "est_counts", "scaled_reads_per_base")) ) {
     stop("Invalid units")
+  }
+
+  which_units <- check_quant_mode(obj, which_units)
+
+  if (obj$gene_mode && which_df == "obs_raw") {
+    warning("This object is in gene mode, and the raw values are ",
+            "transcripts. Using 'obs_norm' instead.")
+    which_df <- "obs_norm"
   }
 
   data <- as.data.frame(obj[[which_df]])
 
   res <- list()
 
-  s_data <- data %>%
-    select_("target_id", "sample", which_units) %>%
-    tidyr::spread_("sample", which_units)
+  s_data <- dplyr::select_(data, "target_id", "sample", which_units)
+  s_data <- tidyr::spread_(s_data, "sample", which_units)
   rownames(s_data) <- s_data$target_id
   s_data$target_id <- NULL
   s_data <- as.matrix(s_data)
-  s_data <- s_data[, sample(1:ncol(s_data))]
-  res[["data"]] <- s_data
 
-  condition_order <- match(colnames(s_data),
-    as.character(obj$sample_to_condition$sample))
-  res[["condition"]] <- obj$sample_to_condition$condition[condition_order]
-
-  res
+  s_data
 }

@@ -42,4 +42,3 @@ theoretical quantile you would expect from a standard normal distribution.
 The y-axis has the observed quantiles. In the Wald case, it is a \code{ggplot2} version of
 what you would get from \code{\link{qqnorm}} and \code{\link{qqline}}.
 }
-

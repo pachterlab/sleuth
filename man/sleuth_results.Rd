@@ -2,52 +2,113 @@
 % Please edit documentation in R/model.R
 \name{sleuth_results}
 \alias{sleuth_results}
-\title{Extract Wald test results from a sleuth object}
+\title{Extract Wald or Likelihood Ratio test results from a sleuth object}
 \usage{
 sleuth_results(obj, test, test_type = "wt", which_model = "full",
-  rename_cols = TRUE, show_all = TRUE)
+  rename_cols = TRUE, show_all = TRUE,
+  pval_aggregate = obj$pval_aggregate, ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
 
 \item{test}{a character string denoting the test to extract. Possible tests can be found by using \code{models(obj)}.}
 
-\item{which_model}{a character string denoting the model. If extracting a wald test, use the model name. If extracting a likelihood ratio test, use 'lrt'.}
+\item{test_type}{'wt' for Wald test or 'lrt' for Likelihood Ratio test.}
+
+\item{which_model}{a character string denoting the model. If extracting a wald test, use the model name.
+Not used if extracting a likelihood ratio test.}
 
 \item{rename_cols}{if \code{TRUE} will rename some columns to be shorter and
-consistent with vignette}
+consistent with the vignette}
 
 \item{show_all}{if \code{TRUE} will show all transcripts (not only the ones
 passing filters). The transcripts that do not pass filters will have
 \code{NA} values in most columns.}
+
+\item{pval_aggregate}{if \code{TRUE} and both \code{target_mapping} and \code{aggregation_column} were provided,
+to \code{sleuth_prep}, use lancaster's method to aggregate p-values by the \code{aggregation_column}.}
+
+\item{...}{advanced options for sleuth_results. See details.}
 }
 \value{
-a \code{data.frame} with the following columns:
+If \code{pval_aggregate} is \code{FALSE}, returns a \code{data.frame} with the following columns:
 
-target_id: transcript name, e.g. "ENSXX#####" (dependent on the transcriptome used in kallisto)
+\itemize{
+\item \code{target_id}: transcript name, e.g. "ENST#####" (dependent on the transcriptome used in kallisto).
+If \code{gene_mode} is TRUE, this will instead be the IDs specified by the \code{obj$gene_column} from \code{obj$target_mapping}.
+\item \code{...}: if there is a target mapping data frame, all of the annotations columns are added from
+\code{obj$target_mapping} before the other columns.
+\item \code{pval}: p-value of the chosen model
+\item \code{qval}: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
+\item \code{test_stat} (LRT only): Chi-squared test statistic (likelihood ratio test). Only seen with Likelihood Ratio test results.
+\item \code{rss} (LRT only): the residual sum of squares under the "null model". Only seen with Likelihood Ratio test results.
+\item \code{degrees_free} (LRT only): the degrees of freedom (equal to difference between the two models). Only seen with Likelihood Ratio test results.
+\item \code{b} (Wald only): 'beta' value (effect size). Technically a biased estimator of the fold change. Only seen with Wald test results.
+\item \code{se_b} (Wald only): standard error of the beta. Only seen with Wald test results.
+\item \code{mean_obs}: mean of natural log counts of observations
+\item \code{var_obs}: variance of observation
+\item \code{tech_var}: technical variance of observation from the bootstraps (named 'sigma_q_sq' if rename_cols is \code{FALSE})
+\item \code{sigma_sq}: raw estimator of the variance once the technical variance has been removed
+\item \code{smooth_sigma_sq}: smooth regression fit for the shrinkage estimation
+\item \code{final_simga_sq}: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
+  (named 'smooth_sigma_sq_pmax' if rename_cols is \code{FALSE})
+}
 
-pval: p-value of the chosen model
+If \code{pval_aggregate} is \code{TRUE}, returns a \code{data.frame} with the following columns:
 
-qval: false discovery rate adjusted p-value, using Benjamini-Hochberg (see \code{\link{p.adjust}})
-
-b: 'beta' value (effect size). Technically a biased estimator of the fold change
-
-se_b: standard error of the beta
-
-mean_obs: mean of natural log counts of observations
-
-var_obs: variance of observation
-
-tech_var: technical variance of observation from the bootstraps
-
-sigma_sq: raw estimator of the variance once the technical variance has been removed
-
-smooth_sigma_sq: smooth regression fit for the shrinkage estimation
-
-final_simga_sq: max(sigma_sq, smooth_sigma_sq); used for covariance estimation of beta
+\itemize{
+\item \code{target_id}: gene ID specified by \code{obj$gene_column}, e.g. "ENSG#####" (dependent on the transcriptome
+ used in kallisto).
+\item \code{...}: all of the additional annotation columns (not \code{'target_id'} or \code{obj$gene_column}) are
+added from \code{obj$target_mapping} before the other columns.
+\item \code{num_aggregated_transcripts}: the number of transcripts aggregated for a given gene. These only include
+filtered transcripts.
+\item \code{sum_mean_obs_counts}: this is the sum of the mean observations across all filtered transcripts
+within a gene. Note that the weighting function is applied before summing.
+\item \code{pval}: the aggregated p-value calculated by the lancaster method. See the aggregation package for details.
+\item \code{qval}: adjusted p-values using the Benchamini-Hochberg method.
+}
 }
 \description{
-This function extracts Wald test results from a sleuth object.
+This function extracts Wald or Likelihood Ratio test results from a sleuth object.
+}
+\details{
+The columns returned by this function will depend on a few factors: whether the test is a Wald test or
+  Likelihood Ratio test, and whether \code{pval_aggregate} is \code{TRUE}.
+
+  The sleuth model is a measurement error in the response model. It attempts to segregate the variation due to
+  the inference procedure by kallisto from the variation due to the covariates -- the biological and technical
+  factors of the experiment (represented by the columns in \code{obj$sample_to_covariates}). For the Wald test,
+  the 'b' column represents the estimate of the selected coefficient. In the default setting, it is analogous to,
+  but not equivalent to, the fold-change. The transformed values are on the natural-log scale, and so the
+  the estimated coefficient is also on the natural-log scale. This value is taking into account the estimated
+  'inferential variance' estimated from the kallisto bootstraps.
+
+  If the user wishes to get gene-level results from this function, there are two ways of doing so:
+
+  \itemize{
+    \item p-value aggregation mode: if \code{pval_aggregate} argument is TRUE, this function will
+    aggregate the transcript-level p-values to the gene-level using the lancaster method. See below for advanced
+    options related to this mode. This is the recommended way to do gene-level aggregation. See the paper
+    
+    \item count aggregation mode: This is the gene-level aggregation method introduced in sleuth version 0.28.1.
+    This mode is activated if \code{obj$gene_mode} is \code{TRUE}. In this mode, the modeling and testing was done
+    using aggregated counts (or TPMs), and so the results are same as for the transcript-level results, except the 
+    target IDs are now gene IDs instead of transcript IDs.
+  }
+
+  An important note if \code{pval_aggregate} or the old \code{gene_mode} is \code{TRUE}: when combining the
+  gene annotations from \code{obj$target_mapping}, all of the columns except for the transcript ID,
+  \code{obj$target_mapping$target_id}, will be included. If there are transcript-level entries for any of the other
+  columns, this will result in duplicate rows in the results table (usually an undesirable result).
+
+Here are advanced options for customizing the p-value aggregation procedure:
+
+\itemize{
+  \item \code{weight_func}: if \code{pval_aggregate} is \code{TRUE}, then this is used to weight the p-values for
+  lancaster's method. This function must take the observed means of the transcripts as the only defined argument.
+  The default is \code{identity}.
+}
 }
 \examples{
 models(sleuth_obj) # for this example, assume the formula is ~condition,
@@ -58,4 +119,3 @@ results_table <- sleuth_results(sleuth_obj, 'conditionIP')
 \code{\link{sleuth_wt}} and \code{\link{sleuth_lrt}} to compute tests, \code{\link{models}} to
 view which models, \code{\link{tests}} to view which tests were performed (and can be extracted)
 }
-

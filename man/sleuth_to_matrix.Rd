@@ -26,4 +26,3 @@ Convert a sleuth object to a matrix with the condition names.
 sleuth_matrix <- sleuth_to_matrix(sleuth_obj, 'obs_norm', 'tpm')
 head(sleuth_matrix$data) # look at first 5 transcripts, sorted by name
 }
-

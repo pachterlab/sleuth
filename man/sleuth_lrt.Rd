@@ -25,4 +25,3 @@ model be nested in the alternate model
 coefficients can be tested, \code{\link{sleuth_results}} to get back
 a data.frame of the results
 }
-

@@ -44,4 +44,3 @@ sleuth_genes <- sleuth_gene_table(so, 'conditionIP', test_type ='wt',
 head(sleuth_genes) # show info for first 5 genes
 sleuth_genes[1:5, 6] # show transcripts for first 5 genes
 }
-

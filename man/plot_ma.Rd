@@ -27,4 +27,3 @@ a \code{ggplot2} object
 Make an 'MA plot' for a given test. MA plots display, for each transcript, the mean of abundances across samples on the
 x-axis and fold change on the y-axis.
 }
-

@@ -19,4 +19,3 @@ a \code{data.frame} with the summary statistics across all samples for that part
 \description{
 Extract the bootstrap summary from a sleuth object that has been initialized in sleuth_prep.
 }
-

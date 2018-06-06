@@ -17,4 +17,3 @@ This method prints out the sync status for all fits of \code{sleuth} object
 If the sleuth object's transform function was changed after sleuth_fit was used,
 the user will need to redo sleuth_fit for any fits already done.
 }
-

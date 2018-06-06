@@ -21,4 +21,3 @@ a \code{kallisto} object
 This is a general driver function to read kallisto output. It can read either
 H5 or tsv.
 }
-

@@ -7,13 +7,22 @@
 \method{$}{sleuth}(obj, name) <- value
 }
 \description{
-This extension is mainly to address case where
-transform_fun is changed by user.
-This function informs user that the fits need to be redone
-and updates those fits.
+Extend internal '$<-' for sleuth object
+}
+\details{
+: This extension is mainly to address two cases:
+\itemize{
+  \item case 1: when \code{transform_fun_counts} or
+  \code{transform_fun_tpm}is changed by user. This informs
+  the user that \code{sleuth_prep} and \code{sleuth_fit} need
+  to be rerun.
+  \item case 2: when gene_mode or pval_aggregate are modified.
+  This warns the user if there is a conflict between these two
+  mutually exclusive modes, and overrides the one that was left unmodified
+  by the user. This also warns the user if unexpected behavior is likely to occur.
+}
 Otherwise it acts normally.
 }
 \examples{
-obj$transform_fun <- function(x) log2(x+0.5)
+obj$transform_fun_counts <- function(x) log2(x+0.5)
 }
-
