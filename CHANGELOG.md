@@ -27,7 +27,7 @@ A fair amount of speed up and bug fixes have also been implemented.
 - [New tests for ".N" target mappings](https://github.com/pachterlab/sleuth/pull/115)
 - [Misc bug fixes + Allow sleuth_prep to process just one sample](https://github.com/pachterlab/sleuth/pull/114)
 
-A major things to [Warren McGee](https://github.com/warrenmcg) for doing the majority of the heavy lifting on all of the bug fixes.
+A major thanks to [Warren McGee](https://github.com/warrenmcg) for doing the majority of the heavy lifting on all of the bug fixes.
 
 
 # version 0.29.0
