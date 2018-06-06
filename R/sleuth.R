@@ -1050,7 +1050,7 @@ get_col <- function(obj, ...) {
 summary.sleuth <- function(obj, covariates = TRUE) {
   mapped_reads <- sapply(obj$kal, function(k) attr(k, 'num_mapped'))
   n_bs <- sapply(obj$kal, function(k) attr(k, 'num_bootstrap_found'))
-  n_bs_read <- sapply(obj$kal, function(k) attr(k, 'num_bootstrap_read'))
+  n_bs_read <- sapply(obj$kal, function(k) attr(k, 'num_bootstrap_used'))
   n_processed <- sapply(obj$kal, function(k) attr(k, 'num_processed'))
 
   res <- adf(sample = obj$sample_to_covariates[['sample']],
