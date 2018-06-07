@@ -319,6 +319,11 @@ sleuth_prep <- function(
                "but not a 'target_mapping'. Please provide a 'target_mapping'."))
   }
 
+  if (!is.null(aggregation_column) && !(aggregation_column %in% colnames(target_mapping))) {
+    stop("You provided an 'aggregation_column' that does not exist ",
+         "as a column in the provided 'target_mapping'.")
+  }
+
   pval_aggregate <- !is.null(aggregation_column) && !gene_mode
   num_cores <- check_num_cores(num_cores)
 
@@ -1221,6 +1226,7 @@ transcripts_from_gene <- function(obj, test, test_type,
     stop("This sleuth object was prepared using the old normalization function. Please rerun",
          " 'sleuth_prep' using the new normalization function.")
   }
+
   if(name == "transform_fun_counts" || name == "transform_fun_tpm") {
     if(!is.null(obj$fits)) {
       obj[[name]] <- value
@@ -1235,7 +1241,14 @@ transcripts_from_gene <- function(obj, test, test_type,
          " 'sleuth_prep' using the new transform function.")
     }
   }
-  if (name == "gene_mode" && value && !obj[[name]] && !is.null(obj$gene_column)) {
+
+  if (name == "gene_column" && !is.null(value) && is.null(obj$target_mapping)) {
+    stop("You set 'gene_column' without a target_mapping table. Please set a 'target_mapping' table.")
+  } else if (name == "gene_column" && !is.null(value) && !(value %in% colnames(obj$target_mapping))) {
+    stop("You set 'gene_column' to '", value, "', which does not exist as a column in 'target_mapping'.")
+  } else if (name %in% c("gene_mode", "pval_aggregate") && (!is.logical(value) || is.na(value))) {
+    stop("The value for '", name, "' must be TRUE or FALSE")
+  } else if (name == "gene_mode" && value && !obj[[name]] && !is.null(obj$gene_column)) {
     warning("You set 'gene_mode' to TRUE. If you have not already used 'sleuth_prep' with ",
             "'gene_mode' set to TRUE, this will cause unexpected behavior and may break downstream steps.")
     if (obj$pval_aggregate) {
