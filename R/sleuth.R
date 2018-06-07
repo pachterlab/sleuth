@@ -1245,10 +1245,14 @@ transcripts_from_gene <- function(obj, test, test_type,
     } else {
       obj[[name]] <- value
     }
-  } else if (name == "pval_aggregate" && value && !is.null(obj$gene_column)) {
-    stop("You set 'pval_aggregate' to TRUE, but no 'gene_column' is set. Please set a 'gene_column' first.")
+  } else if (name == "gene_mode" && value && !obj[[name]] && is.null(obj$gene_column)) {
+    stop("You set 'gene_mode' to TRUE, but no 'gene_column' is set. ",
+         "Please run sleuth_prep with 'aggregation_column' set and 'gene_mode = TRUE'")
+  } else if (name == "pval_aggregate" && value && is.null(obj$gene_column)) {
+    stop("You set 'pval_aggregate' to TRUE, but no 'gene_column' is set. ",
+         "Please set a 'obj$gene_column' first.")
   } else if (name == "pval_aggregate" && value && obj$gene_mode) {
-    warning("You set 'pval_aggregate' to TRUE, but 'gene_mode' is also TRUE. Setting 'gene_mode' to FALSE.",
+    warning("You set 'pval_aggregate' to TRUE, but 'gene_mode' is also TRUE. Setting 'gene_mode' to FALSE. ",
             "If 'sleuth_prep' was run using 'gene_mode' set to TRUE, this will lead to unexpected behavior ",
             "and may break downstream steps.")
     obj[[name]] <- value
