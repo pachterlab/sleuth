@@ -1165,17 +1165,22 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' @export
 `transform_fun_counts<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))
-  if(!is.null(obj$fits)) {
+  if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var == "obs_counts" && !x$transform_synced))) {
+    stop("Your sleuth has count fits which are not based on the current transform function. ",
+         "Please rerun sleuth_prep and sleuth_fit using the current or new function.")
+  } else if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var) == "obs_counts")) {
     obj$transform_fun_counts <- fxn
-    warning(paste("Your sleuth object has fits based on the old transform function.",
+    warning(paste("Your sleuth object has count fits based on the old transform function.",
                   "Please rerun sleuth_prep and sleuth_fit."))
     obj$fits <- lapply(obj$fits, function(x) {
-                         x$transform_synced <- FALSE
+                         if (x$which_var == "obs_counts") {
+                           x$transform_synced <- FALSE
+                         }
                          x
                        })
   } else {
-    stop("Your sleuth object was prepared using the old transform function. Please rerun",
-         " sleuth_prep using the new transform function.")
+    stop("Your sleuth object was prepared using the old transform counts function. Please rerun",
+         " sleuth_prep using the new transform counts function.")
   }
   obj
 }
@@ -1190,17 +1195,22 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' @export
 `transform_fun_tpm<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))
-  if(!is.null(obj$fits)) {
+  if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var == "obs_tpm" && !x$transform_synced))) {
+    stop("Your sleuth has TPM fits which are not based on the current transform function. ",
+         "Please rerun sleuth_prep and sleuth_fit using the current or new function.")
+  } else if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var) == "obs_tpm")) {
     obj$transform_fun_tpm <- fxn
-    warning(paste("Your sleuth object has fits based on the old transform function.",
+    warning(paste("Your sleuth object has TPM fits based on the old transform function. ",
                   "Please rerun sleuth_prep and sleuth_fit."))
     obj$fits <- lapply(obj$fits, function(x) {
-                         x$transform_synced <- FALSE
+                         if (x$which_var == "obs_tpm") {
+                           x$transform_synced <- FALSE
+                         }
                          x
                        })
   } else {
-    stop("Your sleuth object was prepared using the old transform function. Please rerun",
-         " sleuth_prep using the new transform function.")
+    stop("Your sleuth object was prepared using the old transform TPM function. Please rerun",
+         " sleuth_prep using the new transform TPM function.")
   }
   obj
 }
@@ -1228,12 +1238,19 @@ transcripts_from_gene <- function(obj, test, test_type,
   }
 
   if(name == "transform_fun_counts" || name == "transform_fun_tpm") {
-    if(!is.null(obj$fits)) {
+    stopifnot(is.function(value))
+    which_var <- ifelse(name == "transform_fun_tpm", "obs_tpm", "obs_counts")
+    if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var == which_var && !x$transform_synced))) {
+      stop("Your sleuth has fits which are not based on the current transform function. ",
+           "Please rerun sleuth_prep and sleuth_fit using the current or new function.")
+    } else if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var) == which_var)) {
       obj[[name]] <- value
       warning(paste("Your sleuth object has fits based on the old transform function.",
                     "Please rerun sleuth_prep and sleuth_fit."))
       obj$fits <- lapply(obj$fits, function(x) {
-                           x$transform_synced <- FALSE
+                           if (x$which_var == which_var) {
+                             x$transform_synced <- FALSE
+                           }
                            x
                          })
     } else {

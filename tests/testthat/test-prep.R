@@ -45,7 +45,7 @@ test_that("gene level", {
                                      aggregation_column = "gene_name"))
   result <- sleuth_prep(study_mapping, study_formula,
                         target_mapping = target_mapping,
-                        aggregation_column = "gene_name")
+                        aggregation_column = "gene_name", gene_mode = TRUE)
 
   expect_equal(result$bs_summary, gene_test_data$bs_summary)
   expect_equal(result$obs_norm, gene_test_data$obs_norm)
@@ -53,7 +53,7 @@ test_that("gene level", {
 
   expect_warning(result_incomplete <- sleuth_prep(study_mapping, study_formula,
                         target_mapping = incomplete_mapping,
-                        aggregation_column = "gene_name"))
+                        aggregation_column = "gene_name", gene_mode = TRUE))
 })
 
 test_that(".N target mappings", {
@@ -61,5 +61,15 @@ test_that(".N target mappings", {
                           target_mapping = small_target_mapping))
   expect_warning(result.N <- sleuth_prep(small_study_map,
                           target_mapping = small_target_mapping,
-                          aggregation_column = "gene_name"))
+                          aggregation_column = "gene_name", gene_mode = TRUE))
+})
+
+test_that("duplicated IDS", {
+  test_mapping <- small_target_mapping
+  test_mapping$target_id[2] <- test_mapping$target_id[1]
+  expect_warning(result_dup <- sleuth_prep(small_study_map,
+                            target_mapping = test_mapping))
+  expect_error(result_dup <- sleuth_prep(small_study_map,
+                          target_mapping = test_mapping,
+                          aggregation_column = "gene_name", gene_mode = TRUE))
 })
