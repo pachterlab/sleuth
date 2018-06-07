@@ -73,3 +73,27 @@ test_that("duplicated IDS", {
                           target_mapping = test_mapping,
                           aggregation_column = "gene_name", gene_mode = TRUE))
 })
+
+test_that("directly changing sleuth object", {
+  test_data <- sleuth_prep(study_mapping, study_formula, read_bootstrap_tpm = TRUE)
+  expect_error(transform_fun_counts(test_data) <- function(x) 1)
+  expect_error(transform_fun_tpm(test_data) <- function(x) 1)
+
+  test_data <- sleuth_fit(test_data)
+  test_data <- sleuth_fit(test_data, fit_name = "tpm", which_var = "obs_tpm")
+  expect_error(transform_fun_counts(test_data) <- 2)
+  expect_error(transform_fun_tpm(test_data) <- 2)
+  expect_warning(transform_fun_counts(test_data) <- function(x) 3)
+  expect_error(transform_fun_counts(test_data) <- function(x) 4)
+  expect_warning(transform_fun_tpm(test_data) <- function(x) 3)
+  expect_error(transform_fun_tpm(test_data) <- function(x) 4)
+
+  expect_error(p <- plot_mean_var(test_data))
+  expect_error(p <- plot_vars(test_data))
+  expect_error(test_data <- sleuth_wt(test_data))
+  expect_error(test_data <- sleuth_lrt(test, "tpm", "full"))
+  expect_error(test_data <- sleuth_fit(test_data, ~condition+0, fit_name = "new"))
+
+  expect_error(test_data$norm_fun_counts <- function(x) 1)
+  expect_error(test_data$norm_fun_tpm <- function(x) 1)
+})

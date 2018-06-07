@@ -14,9 +14,20 @@ test_that("transcript level analysis", {
 
   expect_equal(test_table, comparison)
 
+  expect_error(transcript_result$gene_mode <- "a")
+  expect_error(transcript_result$gene_mode <- TRUE)
+  expect_error(transcript_result$pval_aggregate <- "a")
+  expect_error(transcript_result$pval_aggregate <- TRUE)
+  expect_error(transcript_result$gene_column <- "gene_name")
+
   transcript_result$target_mapping <- target_mapping
+  expect_error(transcript_result$gene_column <- "hello")
   transcript_result$gene_column <- 'gene_name'
-  pval_agg_table <- sleuth_results(transcript_result, 'conditionwildtype', pval_aggregate = TRUE)
+  transcript_result$pval_aggregate <- TRUE
+  expect_warning(transcript_result$gene_mode <- TRUE)
+  expect_warning(transcript_result$pval_aggregate <- TRUE)
+
+  pval_agg_table <- sleuth_results(transcript_result, 'conditionwildtype')
   agg_comparison <- sleuth_results(agg_test_data, 'conditionwildtype')
 
   expect_equal(pval_agg_table, agg_comparison)
