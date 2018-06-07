@@ -829,7 +829,7 @@ check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   if(any(duplicated(target_mapping$target_id))) {
     indices <- which(duplicated(target_mapping$target_id))
     duplicated_ids <- target_mapping$target_id[indices]
-    formatted_ids <- paste(dupliated_ids, collapse = ", ")
+    formatted_ids <- paste(duplicated_ids, collapse = ", ")
     if(gene_mode) {
       stop("There is at least one duplicated target ID in the target mapping. ",
            "Since sleuth prep is in gene aggregation mode, any duplicated ",
