@@ -319,6 +319,11 @@ sleuth_prep <- function(
                "but not a 'target_mapping'. Please provide a 'target_mapping'."))
   }
 
+  if (!is.null(aggregation_column) && !(aggregation_column %in% colnames(target_mapping))) {
+    stop("You provided an 'aggregation_column' that does not exist ",
+         "as a column in the provided 'target_mapping'.")
+  }
+
   pval_aggregate <- !is.null(aggregation_column) && !gene_mode
   num_cores <- check_num_cores(num_cores)
 
@@ -829,7 +834,7 @@ check_target_mapping <- function(t_id, target_mapping, gene_mode) {
   if(any(duplicated(target_mapping$target_id))) {
     indices <- which(duplicated(target_mapping$target_id))
     duplicated_ids <- target_mapping$target_id[indices]
-    formatted_ids <- paste(dupliated_ids, collapse = ", ")
+    formatted_ids <- paste(duplicated_ids, collapse = ", ")
     if(gene_mode) {
       stop("There is at least one duplicated target ID in the target mapping. ",
            "Since sleuth prep is in gene aggregation mode, any duplicated ",
@@ -1160,17 +1165,22 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' @export
 `transform_fun_counts<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))
-  if(!is.null(obj$fits)) {
+  if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var == "obs_counts" && !x$transform_synced))) {
+    stop("Your sleuth has count fits which are not based on the current transform function. ",
+         "Please rerun sleuth_prep and sleuth_fit using the current or new function.")
+  } else if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var) == "obs_counts")) {
     obj$transform_fun_counts <- fxn
-    warning(paste("Your sleuth object has fits based on the old transform function.",
+    warning(paste("Your sleuth object has count fits based on the old transform function.",
                   "Please rerun sleuth_prep and sleuth_fit."))
     obj$fits <- lapply(obj$fits, function(x) {
-                         x$transform_synced <- FALSE
+                         if (x$which_var == "obs_counts") {
+                           x$transform_synced <- FALSE
+                         }
                          x
                        })
   } else {
-    stop("Your sleuth object was prepared using the old transform function. Please rerun",
-         " sleuth_prep using the new transform function.")
+    stop("Your sleuth object was prepared using the old transform counts function. Please rerun",
+         " sleuth_prep using the new transform counts function.")
   }
   obj
 }
@@ -1185,17 +1195,22 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' @export
 `transform_fun_tpm<-` <- function(obj, fxn) {
   stopifnot(is.function(fxn))
-  if(!is.null(obj$fits)) {
+  if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var == "obs_tpm" && !x$transform_synced))) {
+    stop("Your sleuth has TPM fits which are not based on the current transform function. ",
+         "Please rerun sleuth_prep and sleuth_fit using the current or new function.")
+  } else if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var) == "obs_tpm")) {
     obj$transform_fun_tpm <- fxn
-    warning(paste("Your sleuth object has fits based on the old transform function.",
+    warning(paste("Your sleuth object has TPM fits based on the old transform function. ",
                   "Please rerun sleuth_prep and sleuth_fit."))
     obj$fits <- lapply(obj$fits, function(x) {
-                         x$transform_synced <- FALSE
+                         if (x$which_var == "obs_tpm") {
+                           x$transform_synced <- FALSE
+                         }
                          x
                        })
   } else {
-    stop("Your sleuth object was prepared using the old transform function. Please rerun",
-         " sleuth_prep using the new transform function.")
+    stop("Your sleuth object was prepared using the old transform TPM function. Please rerun",
+         " sleuth_prep using the new transform TPM function.")
   }
   obj
 }
@@ -1221,13 +1236,21 @@ transcripts_from_gene <- function(obj, test, test_type,
     stop("This sleuth object was prepared using the old normalization function. Please rerun",
          " 'sleuth_prep' using the new normalization function.")
   }
+
   if(name == "transform_fun_counts" || name == "transform_fun_tpm") {
-    if(!is.null(obj$fits)) {
+    stopifnot(is.function(value))
+    which_var <- ifelse(name == "transform_fun_tpm", "obs_tpm", "obs_counts")
+    if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var == which_var && !x$transform_synced))) {
+      stop("Your sleuth has fits which are not based on the current transform function. ",
+           "Please rerun sleuth_prep and sleuth_fit using the current or new function.")
+    } else if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) x$which_var) == which_var)) {
       obj[[name]] <- value
       warning(paste("Your sleuth object has fits based on the old transform function.",
                     "Please rerun sleuth_prep and sleuth_fit."))
       obj$fits <- lapply(obj$fits, function(x) {
-                           x$transform_synced <- FALSE
+                           if (x$which_var == which_var) {
+                             x$transform_synced <- FALSE
+                           }
                            x
                          })
     } else {
@@ -1235,7 +1258,14 @@ transcripts_from_gene <- function(obj, test, test_type,
          " 'sleuth_prep' using the new transform function.")
     }
   }
-  if (name == "gene_mode" && value && !obj[[name]] && !is.null(obj$gene_column)) {
+
+  if (name == "gene_column" && !is.null(value) && is.null(obj$target_mapping)) {
+    stop("You set 'gene_column' without a target_mapping table. Please set a 'target_mapping' table.")
+  } else if (name == "gene_column" && !is.null(value) && !(value %in% colnames(obj$target_mapping))) {
+    stop("You set 'gene_column' to '", value, "', which does not exist as a column in 'target_mapping'.")
+  } else if (name %in% c("gene_mode", "pval_aggregate") && (!is.logical(value) || is.na(value))) {
+    stop("The value for '", name, "' must be TRUE or FALSE")
+  } else if (name == "gene_mode" && value && !obj[[name]] && !is.null(obj$gene_column)) {
     warning("You set 'gene_mode' to TRUE. If you have not already used 'sleuth_prep' with ",
             "'gene_mode' set to TRUE, this will cause unexpected behavior and may break downstream steps.")
     if (obj$pval_aggregate) {
@@ -1245,10 +1275,14 @@ transcripts_from_gene <- function(obj, test, test_type,
     } else {
       obj[[name]] <- value
     }
-  } else if (name == "pval_aggregate" && value && !is.null(obj$gene_column)) {
-    stop("You set 'pval_aggregate' to TRUE, but no 'gene_column' is set. Please set a 'gene_column' first.")
+  } else if (name == "gene_mode" && value && !obj[[name]] && is.null(obj$gene_column)) {
+    stop("You set 'gene_mode' to TRUE, but no 'gene_column' is set. ",
+         "Please run sleuth_prep with 'aggregation_column' set and 'gene_mode = TRUE'")
+  } else if (name == "pval_aggregate" && value && is.null(obj$gene_column)) {
+    stop("You set 'pval_aggregate' to TRUE, but no 'gene_column' is set. ",
+         "Please set a 'obj$gene_column' first.")
   } else if (name == "pval_aggregate" && value && obj$gene_mode) {
-    warning("You set 'pval_aggregate' to TRUE, but 'gene_mode' is also TRUE. Setting 'gene_mode' to FALSE.",
+    warning("You set 'pval_aggregate' to TRUE, but 'gene_mode' is also TRUE. Setting 'gene_mode' to FALSE. ",
             "If 'sleuth_prep' was run using 'gene_mode' set to TRUE, this will lead to unexpected behavior ",
             "and may break downstream steps.")
     obj[[name]] <- value

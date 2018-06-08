@@ -101,6 +101,11 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
 
+  if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) !x$transform_synced))) {
+    stop("Your sleuth has fits which are not based on the current transform function. ",
+         "Please rerun sleuth_prep using the current or new function before running sleuth_fit.")
+  }
+
   if (is.null(obj$bs_summary[[which_var]])) {
     if (which_var == "obs_tpm") {
       stop(which_var, " does not exist. Make sure sleuth_prep was used with 'read_bootstrap_tpm'",

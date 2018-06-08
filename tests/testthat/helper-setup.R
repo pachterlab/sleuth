@@ -27,5 +27,9 @@ study_mapping <- dplyr::mutate(study_mapping, path = result_paths)
 
 study_formula <- ~condition
 
-trans_test_data <- sleuth_load(file.path(data_path, 'ellahi_transcript.rda'))
-gene_test_data <- sleuth_load(file.path(data_path, 'ellahi_gene.rda'))
+trans_test_data <- sleuth_load(file.path(data_path, 'ellahi_transcript.rds'))
+gene_test_data <- sleuth_load(file.path(data_path, 'ellahi_gene.rds'))
+agg_test_data <- trans_test_data
+agg_test_data$target_mapping <- target_mapping
+agg_test_data$gene_column <- 'gene_name'
+agg_test_data$pval_aggregate <- TRUE
