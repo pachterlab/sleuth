@@ -263,11 +263,17 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
         paste(colnames(d_matrix[beta_i]), collapse = ' ')))
   }
 
-  b <- sapply(obj$fits[[ which_model ]]$models,
-    function(x) {
+  fit <- obj$fits[[which_model]]$models
+  if (names(fit)[1] == "coefficients") {
+    b <- fit$coefficients[beta_i, ]
+    names(b) <- colnames(fit$coefficients)
+  } else {
+    # This is retained for backward compatibility with older versions of sleuth
+    b <- sapply(fit, function(x) {
       x$ols_fit$coefficients[ beta_i ]
     })
-  names(b) <- names(obj$fits[[ which_model ]]$models)
+    names(b) <- names(obj$fits[[ which_model ]]$models)
+  }
 
   res <- obj$fits[[ which_model ]]$summary
   res$target_id <- as.character(res$target_id)

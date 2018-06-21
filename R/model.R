@@ -537,14 +537,26 @@ extract_model <- function(obj, which_model) {
       ". Please check  models(", substitute(obj), ") for fitted models.")
   }
 
-  res <- lapply(seq_along(obj$fits[[which_model]]$models),
+  fit <- obj$fits[[which_model]]
+  if (names(fit$models)[1] == "coefficients") {
+    coefficients <- fit$models$coefficients
+    target_ids <- rep(colnames(coefficients), each = nrow(coefficients))
+    terms <- rownames(coefficients)
+    sq_std_err <- as.numeric(sapply(fit$beta_covars, function(x) diag(x)))
+    res <- data.frame(target_id = as.character(target_ids), term = as.character(terms),
+                      estimate = as.numeric(coefficients), std_error = sqrt(sq_std_err))
+    res
+  } else {
+    # This is retained for backward compatibility with older versions of sleuth
+    res <- lapply(seq_along(fit$models),
     function(i) {
-      x <- obj$fits[[which_model]]$models[[i]]
+      x <- fit$models[[i]]
       coefficients <- coef(x$ols_fit)
       list(
-        target_id = rep_len(names(obj$fits[[which_model]]$models)[i], length(coefficients)),
+        target_id = rep_len(names(fit$models)[i], length(coefficients)),
         term = names(coefficients), estimate = coefficients,
-        std_error = sqrt(diag(obj$fits[[which_model]]$beta_covars[[i]])))
+        std_error = sqrt(diag(fit$beta_covars[[i]])))
     })
-  dplyr::bind_rows(res)
+    as.data.frame(dplyr::bind_rows(res))
+  }
 }

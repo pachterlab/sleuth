@@ -4,29 +4,39 @@ compute_likelihood <- function(obj, which_model) {
   stopifnot(is(obj, "sleuth"))
   model_exists(obj, which_model)
 
-  # we basically do lapply on all of the models
-  #
   # the fitted values are here:
-  #   obj$fits[[which_model]]$models$ols_fit$fitted.values
+  #   obj$fits[[which_model]]$models$fitted.values
   #
   # the observations can be recovered by:
-  #   obj$fits$full$models[[1]]$ols_fit$residuals + fitted values
+  #   obj$fits[[which_model]]$models$residuals + fitted values
 
-  all_likelihood <- sapply(seq_along(obj$fits[[which_model]]$models),
-    function( i ) {
-      cur_model <- obj$fits[[which_model]]$models[[ i ]]
-      cur_mu <- cur_model$ols_fit$fitted.values
-      obs <- cur_model$ols_fit$residuals + cur_mu
+  models <- obj$fits[[which_model]]$models
+  if (names(models)[1] == "coefficients") {
+    cur_model <- models
+    cur_mu <- cur_model$fitted.values
+    obs <- cur_model$residuals + cur_mu
+    cur_summary <- obj$fits[[which_model]]$summary
+    cur_var <- cur_summary$smooth_sigma_sq_pmax + cur_summary$sigma_q_sq
+    cur_var <- matrix(rep(cur_var, nrow(obs)), nrow = nrow(obs), byrow = TRUE)
 
-      cur_summary <- obj$fits[[which_model]]$summary
+    all_likelihood <- colSums(dnorm(obs, mean = cur_mu, sd = sqrt(cur_var), log = TRUE))
+  } else {
+    # This is retained for backward compatibility with older versions of sleuth
+    all_likelihood <- sapply(seq_along(models),
+      function(i) {
+        cur_model <- models[[i]]
+        cur_mu <- cur_model$ols_fit$fitted.values
+        obs <- cur_model$ols_fit$residuals + cur_mu
 
-      cur_var <- cur_summary[i, "smooth_sigma_sq_pmax"] +
-        cur_summary[i, "sigma_q_sq"]
+        cur_summary <- obj$fits[[which_model]]$summary
 
-      sum(dnorm(obs, mean = cur_mu, sd = sqrt(cur_var), log = TRUE))
+        cur_var <- cur_summary[i, "smooth_sigma_sq_pmax"] +
+          cur_summary[i, "sigma_q_sq"]
+
+        sum(dnorm(obs, mean = cur_mu, sd = sqrt(cur_var), log = TRUE))
     })
-
-  names(all_likelihood) <- names(obj$fits[[which_model]]$models)
+    names(all_likelihood) <- names(models)
+  }
 
   obj$fits[[which_model]]$likelihood <- all_likelihood
 
