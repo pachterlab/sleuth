@@ -12,11 +12,6 @@ compute_likelihood <- function(obj, which_model) {
   # the observations can be recovered by:
   #   obj$fits$full$models[[1]]$ols_fit$residuals + fitted values
 
-  # TODO: move this elsewhere
-  obj$fits[[which_model]]$summary <- obj$fits[[which_model]]$summary[
-    match(names(obj$fits[[which_model]]$models),
-      obj$fits[[which_model]]$summary$target_id), ]
-
   all_likelihood <- sapply(seq_along(obj$fits[[which_model]]$models),
     function( i ) {
       cur_model <- obj$fits[[which_model]]$models[[ i ]]
