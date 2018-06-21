@@ -151,19 +151,8 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   A <- solve(t(X) %*% X)
 
   msg("fitting measurement error models")
-  mes <- me_model_by_row(obj, X, obj$bs_summary, which_var)
-  tid <- names(mes)
-
-  mes_df <- dplyr::bind_rows(lapply(mes,
-    function(x) {
-      data.frame(rss = x$rss, sigma_sq = x$sigma_sq, sigma_q_sq = x$sigma_q_sq,
-        mean_obs = x$mean_obs, var_obs = x$var_obs)
-    }))
-
-  mes_df$target_id <- tid
-  rm(tid)
-
-  mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
+  mes <- me_model(obj, X, obj$bs_summary, which_var)
+  mes_df <- mes$mes_df
 
   # FIXME: sometimes when sigma is negative the shrinkage estimation becomes NA
   # this is for the few set of transcripts, but should be able to just do some
@@ -194,7 +183,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   }
 
   obj$fits[[fit_name]] <- list(
-    models = mes,
+    models = mes$models,
     summary = l_smooth,
     beta_covars = beta_covars,
     formula = formula,
@@ -323,33 +312,6 @@ covar_beta <- function(sigma, X, A) {
 
   # sammich!
   A %*% (t(X) %*% diag(sigma) %*% X) %*% A
-}
-
-# Measurement error model
-#
-# Fit the measurement error model across all samples
-#
-# @param obj a \code{sleuth} object
-# @param design a design matrix
-# @param bs_summary a list from \code{bs_sigma_summary}
-# @return a list with a bunch of objects that are useful for shrinking
-me_model_by_row <- function(obj, design, bs_summary, which_var = 'obs_counts') {
-  which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
-  if (which_var == "obs_counts")
-    sigma_var <- "sigma_q_sq"
-  else
-    sigma_var <- "sigma_q_sq_tpm"
-
-  stopifnot( all.equal(names(bs_summary[[sigma_var]]), rownames(bs_summary[[which_var]])) )
-  stopifnot( length(bs_summary[[sigma_var]]) == nrow(bs_summary[[which_var]]))
-
-  models <- lapply(1:nrow(bs_summary[[which_var]]),
-    function(i) {
-      me_model(design, bs_summary[[which_var]][i, ], bs_summary[[sigma_var]][i])
-    })
-  names(models) <- rownames(bs_summary[[which_var]])
-
-  models
 }
 
 # non-equal var
@@ -565,24 +527,59 @@ gene_summary <- function(obj, which_column, transform = identity,
   list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
 }
 
-me_model <- function(X, y, sigma_q_sq) {
+#' Measurement error model
+#'
+#' Fit the measurement error model across all samples. This is an internal function
+#' called by \code{sleuth_fit}, and is not intended to be used directly by users.
+#'
+#' @param obj a \code{sleuth} object
+#' @param design a design matrix
+#' @param bs_summary a list from \code{bs_sigma_summary}
+#' @param which_var "obs_counts" (default) to model estimated counts;
+#'  "obs_tpm" to model TPMs
+#' @return a list with two items:
+#'    \itemize{
+#'       \item models the list of values returned by lm.fit. At the end of \code{sleuth_fit},
+#'         this object is found here: obj$fits$[[<model_name>]]$models
+#'       \item mes_df this data frame contains all of the important variables that are used for
+#'         variance shrinkage estimation and for testing. The final result of this table
+#'         is found here: obj$fits[[<model_name>]]$summary. This data.frame contains the
+#'         the following columns:
+#'         \itemize{
+#'           \item \code{target_id}: the feature ID (transcript or gene, depending on
+#'           \code{obj$gene_mode})
+#'           \item \code{rss}: the residual sum of squares from the linear model
+#'           \item \code{sigma_sq}: the estimated biological variance from the linear model
+#'           \item \code{mean_obs}: the mean of the transformed observations
+#'           \item \code{var_obs}: the raw variance of the transformed observations
+#'           \item \code{sigma_sq_pmax}: the greater of sigma_sq or 0. This prevents
+#'           negative estimates for the biological variance
+#'         }
+#'    }
+me_model <- function (obj, design, bs_summary, which_var = "obs_counts") {
+  which_var <- match.arg(which_var, c("obs_counts", "obs_tpm"))
+  if (which_var == "obs_counts")
+    sigma_var <- "sigma_q_sq"
+  else sigma_var <- "sigma_q_sq_tpm"
+
+  stopifnot(all.equal(names(bs_summary[[sigma_var]]), rownames(bs_summary[[which_var]])))
+  stopifnot(length(bs_summary[[sigma_var]]) == nrow(bs_summary[[which_var]]))
+
+  sigma_q_sq <- bs_summary[[sigma_var]]
+  y <- t(bs_summary[[which_var]])
+  X <- design
   n <- nrow(X)
   degrees_free <- n - ncol(X)
-
   ols_fit <- lm.fit(X, y)
-  rss <- sum(ols_fit$residuals ^ 2)
-  sigma_sq <- rss / (degrees_free) - sigma_q_sq
-
-  mean_obs <- mean(y)
-  var_obs <- var(y)
-
-  list(
-    ols_fit = ols_fit,
-    b1 = ols_fit$coefficients[2],
-    rss = rss,
-    sigma_sq = sigma_sq,
-    sigma_q_sq = sigma_q_sq,
-    mean_obs = mean_obs,
-    var_obs = var_obs
-    )
+  rss <- colSums(ols_fit$residuals^2)
+  sigma_sq <- rss/(degrees_free) - sigma_q_sq
+  mean_obs <- colMeans(y)
+  var_obs <- matrixStats::colVars(y)
+  mes_df <- data.frame(rss = rss, sigma_sq = sigma_sq, sigma_q_sq = sigma_q_sq,
+                       mean_obs = mean_obs, var_obs = var_obs)
+  mes_df <- data.frame(target_id = rownames(mes_df), mes_df)
+  mes_df$target_id <- as.character(mes_df$target_id)
+  rownames(mes_df) <- NULL
+  mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
+  list(models = ols_fit, mes_df = mes_df)
 }
