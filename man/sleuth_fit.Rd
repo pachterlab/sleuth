@@ -48,8 +48,19 @@ Advanced options for modeling choice:
   the \code{'scaled_reads_per_base'} summary statistic.
 }
 
-Advanced options for the sliding window shrinkage procedure (these options are passed to
-\code{\link{sliding_window_grouping}}):
+Advanced options for the shrinkage procedure:
+
+\itemize{
+  \item \code{shrink_fun}: this function does the shrinkage procedure. It must take the list produced
+  by \code{\link{me_model}}, with the full model and the data.frame with means (the \code{'mean_obs'}
+  column) and variances (the \code{'sigma_sq_pmax'} column), as input, and must output a modified
+  data.frame from list$mes_df, with the required column \code{'smooth_sigma_sq'} containing the
+  smoothed variances. Additional columns are allowed, but will not be directly processed by
+  \code{\link{sleuth_results}}. The default option for this option is \code{\link{basic_shrink_fun}},
+  which is the procedure described in the original sleuth paper.
+}
+
+Advanced options for the default sleuth shrinkage procedure (see \code{\link{basic_shrink_fun}}):
 
 \itemize{
   \item \code{n_bins}: the number of bins that the data should be split for the sliding window shrinkage
@@ -69,6 +80,7 @@ so <- sleuth_fit(so, ~1, 'reduced')
 \seealso{
 \code{\link{models}} for seeing which models have been fit,
 \code{\link{sleuth_prep}} for creating a sleuth object,
+\code{\link{basic_shrink_fun}} for the sleuth variance shrinkage procedure,
 \code{\link{sleuth_wt}} to test whether a coefficient is zero,
 \code{\link{sleuth_lrt}} to test nested models.
 }

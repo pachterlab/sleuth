@@ -51,8 +51,19 @@
 #'   the \code{'scaled_reads_per_base'} summary statistic.
 #' }
 #'
-#' Advanced options for the sliding window shrinkage procedure (these options are passed to
-#' \code{\link{sliding_window_grouping}}):
+#' Advanced options for the shrinkage procedure:
+#'
+#' \itemize{
+#'   \item \code{shrink_fun}: this function does the shrinkage procedure. It must take the list produced
+#'   by \code{\link{me_model}}, with the full model and the data.frame with means (the \code{'mean_obs'}
+#'   column) and variances (the \code{'sigma_sq_pmax'} column), as input, and must output a modified
+#'   data.frame from list$mes_df, with the required column \code{'smooth_sigma_sq'} containing the
+#'   smoothed variances. Additional columns are allowed, but will not be directly processed by
+#'   \code{\link{sleuth_results}}. The default option for this option is \code{\link{basic_shrink_fun}},
+#'   which is the procedure described in the original sleuth paper.
+#' }
+#'
+#' Advanced options for the default sleuth shrinkage procedure (see \code{\link{basic_shrink_fun}}):
 #'
 #' \itemize{
 #'   \item \code{n_bins}: the number of bins that the data should be split for the sliding window shrinkage
@@ -70,6 +81,7 @@
 #' so <- sleuth_fit(so, ~1, 'reduced')
 #' @seealso \code{\link{models}} for seeing which models have been fit,
 #' \code{\link{sleuth_prep}} for creating a sleuth object,
+#' \code{\link{basic_shrink_fun}} for the sleuth variance shrinkage procedure,
 #' \code{\link{sleuth_wt}} to test whether a coefficient is zero,
 #' \code{\link{sleuth_lrt}} to test nested models.
 #' @export
@@ -80,26 +92,10 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   extra_opts <- list(...)
   if ('which_var' %in% names(extra_opts)) {
     which_var <- extra_opts$which_var
+    which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
   } else {
     which_var <- 'obs_counts'
   }
-  if ('n_bins' %in% names(extra_opts)) {
-    n_bins <- extra_opts$n_bins
-  } else {
-    n_bins <- 100
-  }
-  if ('lwr' %in% names(extra_opts)) {
-    lwr <- extra_opts$lwr
-  } else {
-    lwr <- 0.25
-  }
-  if ('upr' %in% names(extra_opts)) {
-    upr <- extra_opts$lwr
-  } else {
-    upr <- 0.75
-  }
-
-  which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
 
   if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) !x$transform_synced))) {
     stop("Your sleuth has fits which are not based on the current transform function. ",
@@ -152,19 +148,9 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
 
   msg("fitting measurement error models")
   mes <- me_model(obj, X, obj$bs_summary, which_var)
-  mes_df <- mes$mes_df
 
-  # FIXME: sometimes when sigma is negative the shrinkage estimation becomes NA
-  # this is for the few set of transcripts, but should be able to just do some
-  # simple fix
   msg('shrinkage estimation')
-  swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
-    n_bins = n_bins, lwr = lwr, upr = upr, ignore_zeroes = TRUE)
-  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr')
-  l_smooth <- dplyr::select(
-    dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
-    -shrink)
-
+  l_smooth <- shrink_fun(mes, ...)
   l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
@@ -203,6 +189,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     formula = formula,
     design_matrix = X,
     transform_synced = TRUE,
+    shrink_fun = shrink_fun,
     which_var = which_var)
 
   class(obj$fits[[fit_name]]) <- 'sleuth_model'
@@ -585,7 +572,6 @@ me_model <- function (obj, design, bs_summary, which_var = "obs_counts") {
 
   stopifnot(all.equal(names(bs_summary[[sigma_var]]), rownames(bs_summary[[which_var]])))
   stopifnot(length(bs_summary[[sigma_var]]) == nrow(bs_summary[[which_var]]))
-
   sigma_q_sq <- bs_summary[[sigma_var]]
   y <- t(bs_summary[[which_var]])
   X <- design
@@ -603,4 +589,80 @@ me_model <- function (obj, design, bs_summary, which_var = "obs_counts") {
   rownames(mes_df) <- NULL
   mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
   list(models = ols_fit, mes_df = mes_df)
+}
+
+#' Default Sleuth Variance Shrinkage Estimation
+#'
+#' This function performs the default procedure to shrink variance estimation.
+#'
+#' @param me_list the list produced by \code{\link{me_model}}.
+#' @param ... advanced options to tweak the shrinkage procedure. See "details"
+#' for more information.
+#'
+#' @return a modified data.frame with the following additional columns:
+#'
+#' \itemize{
+#'   \item \code{'iqr'}: boolean for whether this feature was within the interquartile
+#'   range and used for shrinkage estimation
+#'   \item \code{'failed_ise'}: boolean for whether this feature failed the initial
+#'   round of shrinkage estimation using interpolation from the LOESS curve. This feature's
+#'   shrunken variance was estimated using the 'exact' option for LOESS.
+#'   \item \code{'smooth_sigma_sq'}: the estimated biological variance after the shrinkage
+#'   procedure
+#' }
+#'
+#' @details The default procedure does the following steps: it first bins the
+#' features by the mean of each feature's observations. It then takes the
+#' interquartile (25th-75th percentile) of variances within each bin.
+#' Those means and variances are then input into a LOESS to calculate
+#' a curve using the function mean ~ (variance)^1/4. The LOESS is then used
+#' to interpolate the shrunken variance for all features. The larger of the
+#' variance estimated from the bootstraps or the variance from the shrinkage procedure is used.
+#'
+#' Advanced options for the shrinkage procedure (these options are passed to
+#' \code{\link{sliding_window_grouping}}):
+#'
+#' \itemize{
+#'   \item \code{n_bins}: the number of bins that the data should be split for the sliding window shrinkage
+#'   using the mean-variance curve. The default is 100.
+#'   \item \code{lwr}: the lower range of variances within each bin that should be included for the shrinkage
+#'   procedure. The default is 0.25 (meaning the 25th percentile).
+#'   \item \code{upr}: the upper range of variances within each bin that should be included for the shrinkage
+#'   procedure. The default is 0.75 (meaning the 75th percentile).
+#' }
+#' @export
+basic_shrink_fun <- function(me_list, ...) {
+  extra_opts <- list(...)
+  mes_df <- me_list$mes_df
+  good_opts <- c('n_bins', 'lwr', 'upr')
+  if (any(!(names(extra_opts) %in% good_opts))) {
+    bad_opts <- names(extra_opts)[which(!(names(extra_opts) %in% good_opts))]
+    warning("Some unrecognized options were passed to 'basic_shrink_fun': ", paste(bad_opts, sep = ", "),
+            ". These are being ignored.")
+  }
+
+  if ('n_bins' %in% names(extra_opts)) {
+    n_bins <- extra_opts$n_bins
+  } else {
+    n_bins <- 100
+  }
+  if ('lwr' %in% names(extra_opts)) {
+    lwr <- extra_opts$lwr
+  } else {
+    lwr <- 0.25
+  }
+  if ('upr' %in% names(extra_opts)) {
+    upr <- extra_opts$lwr
+  } else {
+    upr <- 0.75
+  }
+
+  swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
+    n_bins = n_bins, lwr = lwr, upr = upr, ignore_zeroes = TRUE)
+  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr')
+  l_smooth <- dplyr::select(
+    dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
+    -shrink)
+
+  l_smooth
 }
