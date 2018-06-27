@@ -1150,6 +1150,52 @@ transcripts_from_gene <- function(obj, test, test_type,
   table$target_id[table[, 2] == gene_name]
 }
 
+#' Get the gene ID using other gene identifiers
+#'
+#' Get the \code{target_id} of a gene using other gene identifiers.
+#' The identifiers found under the \code{obj$gene_column} are often
+#' difficult to remember (e.g. ensembl gene ID, ENSG00000111640).
+#' This function allows a user to find that difficult-to-remember
+#' identifier using more-easily-remembered identifiers, such as
+#' gene symbol (e.g. "GAPDH").
+#'
+#' @param obj a \code{sleuth} object
+#' @param gene_colname the name of the column containing 'gene_name'.
+#'   This parameter refers to the name of the column that the gene you are searching for appears in.
+#'   Check the column names using \code{colnames(obj$target_mapping)}.
+#' @param gene_name a string containing the name of the gene you are interested in.
+#' @return a character vector containing the \code{target_id} of the gene, found under
+#'   \code{obj$gene_column} within \code{obj$target_mapping}.
+#'   If the column name provided is the same as \code{obj$gene_column}, and the
+#'   gene_name used is found, that gene_name will be returned.
+#' @examples
+#'   \dontrun{gene_from_gene(obj, "gene_symbol", "GAPDH")}
+#' @export
+gene_from_gene <- function(obj, gene_colname, gene_name) {
+
+  if (!obj$gene_mode) {
+    stop("this sleuth object is in transcript mode. Please use 'transcripts_from_gene' instead.")
+  }
+
+  table <- as.data.frame(obj$target_mapping)
+  if (gene_colname == obj$gene_column) {
+    if (!(gene_name %in% table[, eval(parse(text = obj$gene_column))])) {
+      stop("Couldn't find gene ", gene_name)
+    } else {
+      return(gene_name)
+    }
+  }
+
+  table <- unique(dplyr::select_(table, obj$gene_column, gene_colname))
+  if (!(gene_name %in% table[, 2])) {
+    stop("Couldn't find gene ", gene_name)
+  }
+  hits <- unique(table[table[,2] == gene_name, 1])
+  if (length(hits) > 1) {
+    warning("there was more than one gene ID that matched this identifier; taking the first one")
+  }
+  hits[1]
+ }
 
 #' Change sleuth transform counts function
 #'
