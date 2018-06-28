@@ -680,3 +680,66 @@ basic_shrink_fun <- function(me_list, ...) {
 
   l_smooth
 }
+
+#' Limma-style variance shrinkage estimation
+#'
+#' This function uses limma's procedure for variance shrinkage estimation
+#' See ?limma::squeezeVar for more details for how it works and advanced options
+#' available.
+#'
+#' @param me_list the list produced by \code{link{me_model}}
+#' @param ... advanced options that will be passed to the squeezeVar function from limma.
+#'   the two advanced options available are:
+#'   \itemize{
+#'     \item \code{robust}: boolean for whether the estimation should be made robust to
+#'     outlier variances. The default is \code{FALSE}.
+#'     \item \code{winsor.tail.p}: if robust is \code{TRUE}, this is a numeric vector of
+#'     length 1 or 2 to give the left and right tail proportions of 'x' to Winsorize.
+#'   }
+#'   please see ?limma::squeezeVar for more information.
+#'
+#' @return a data.frame taken from me_list$mes_df and modified to have the additional
+#' columns:
+#'   \itemize{
+#'     \item \code{'limma_s2_prior'}: contains the location of the distribution; this
+#'     corresponds to the 's2.prior' output by 'limma::eBayes'.
+#'     \item \code{'limma_df_prior'}: contains the degrees of freedom for the
+#'     prior distribution. This will be the same if robust is \code{FALSE} and
+#'     different for each feature if robust is \code{TRUE}.
+#'     \item \code{'smooth_sigma_sq'}: contains limma's estimated shrunken variances.
+#'     This corresponds to the 's2.post' output by 'limma::eBayes'.
+#'   }
+#' @seealso \code{\link{me_model}} for the measurement error model function
+#' @export
+limma_shrink_fun <- function(me_list, ...) {
+  extra_opts <- list(...)
+  good_opts <- c('robust', 'winsor.tail.p')
+  if (any(!(names(extra_opts) %in% good_opts))) {
+    bad_opts <- names(extra_opts)[which(!(names(extra_opts) %in% good_opts))]
+    warning("Some unrecognized options were passed to 'limma_shrink_fun': ", paste(bad_opts, sep = ", "),
+            ". These are being ignored.")
+  }
+
+  if ('robust' %in% names(extra_opts)) {
+    robust <- extra_opts$robust
+  } else {
+    robust <- FALSE
+  }
+  if ('winsor.tail.p' %in% names(extra_opts)) {
+    winsor.tail.p <- extra_opts$winsor.tail.p
+  } else {
+    winsor.tail.p <- c(0.05, 0.1)
+  }
+
+  limma_sv <- suppressWarnings(limma::squeezeVar(
+    var = me_list$mes_df$sigma_sq_pmax,
+    df = me_list$models$df.residual,
+    covariate = me_list$mes_df$mean_obs,
+    robust = robust,
+    winsor.tail.p = winsor.tail.p))
+  l_smooth <- dplyr::mutate(me_list$mes_df,
+                            limma_s2_prior = limma_sv$var.prior,
+                            limma_df_prior = limma_sv$df.prior,
+                            smooth_sigma_sq = limma_sv$var.post)
+  l_smooth
+}
