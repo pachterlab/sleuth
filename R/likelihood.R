@@ -110,7 +110,6 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
     test_stat = test_statistic, pval = p_value)
   result <- dplyr::mutate(result, qval = p.adjust(pval, method = "BH"))
   model_info <- data.table::data.table(obj$fits[[null_model]]$summary)
-  model_info <- dplyr::select(model_info, -c(iqr))
   result <- dplyr::left_join(
     data.table::data.table(result),
     model_info,
