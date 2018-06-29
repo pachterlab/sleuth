@@ -26,7 +26,8 @@ Imports:
     matrixStats,
     pheatmap,
     shiny,
-    aggregation
+    aggregation,
+    limma
 Suggests:
     MASS,
     lintr,

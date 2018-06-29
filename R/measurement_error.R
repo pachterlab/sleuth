@@ -710,6 +710,7 @@ basic_shrink_fun <- function(me_list, ...) {
 #'     This corresponds to the 's2.post' output by 'limma::eBayes'.
 #'   }
 #' @seealso \code{\link{me_model}} for the measurement error model function
+#' @importFrom limma squeezeVar
 #' @export
 limma_shrink_fun <- function(me_list, ...) {
   extra_opts <- list(...)
