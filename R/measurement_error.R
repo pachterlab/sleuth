@@ -97,6 +97,16 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     which_var <- 'obs_counts'
   }
 
+  if ('shrink_fun' %in% names(extra_opts)) {
+    shrink_fun <- extra_opts$shrink_fun
+  } else {
+    shrink_fun <- basic_shrink_fun
+  }
+
+  if (!is(shrink_fun, 'function')) {
+    stop("The advanced 'shrink_fun' argument must be a function.")
+  }
+
   if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) !x$transform_synced))) {
     stop("Your sleuth has fits which are not based on the current transform function. ",
          "Please rerun sleuth_prep using the current or new function before running sleuth_fit.")
