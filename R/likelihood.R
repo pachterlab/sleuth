@@ -96,8 +96,13 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
 
   test_statistic <- 2 * (a_ll - n_ll)
 
-  degrees_free <- obj$fits[[null_model]]$models[[1]]$ols_fit$df.residual -
-    obj$fits[[alt_model]]$models[[1]]$ols_fit$df.residual
+  if (names(obj$fits[[alt_model]]$models)[1] == "coefficients") {
+    degrees_free <- obj$fits[[null_model]]$models$df.residual -
+      obj$fits[[alt_model]]$models$df.residual
+  } else {
+    degrees_free <- obj$fits[[null_model]]$models[[1]]$ols_fit$df.residual -
+      obj$fits[[alt_model]]$models[[1]]$ols_fit$df.residual
+  }
 
   # P(chisq > test_statistic)
   p_value <- pchisq(test_statistic, degrees_free, lower.tail = FALSE)
