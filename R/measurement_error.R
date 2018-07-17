@@ -93,12 +93,14 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   if ('which_var' %in% names(extra_opts)) {
     which_var <- extra_opts$which_var
     which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
+    extra_opts$which_var <- NULL
   } else {
     which_var <- 'obs_counts'
   }
 
   if ('shrink_fun' %in% names(extra_opts)) {
     shrink_fun <- extra_opts$shrink_fun
+    extra_opts$shrink_fun <- NULL
   } else {
     shrink_fun <- basic_shrink_fun
   }
@@ -160,7 +162,9 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   mes <- me_model(obj, X, obj$bs_summary, which_var)
 
   msg('shrinkage estimation')
-  l_smooth <- shrink_fun(mes, ...)
+  shrink_opts <- list(mes)
+  shrink_opts <- append(shrink_opts, extra_opts)
+  l_smooth <- do.call(shrink_fun, shrink_opts)
   l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
