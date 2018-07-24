@@ -542,7 +542,7 @@ extract_model <- function(obj, which_model) {
     coefficients <- fit$models$coefficients
     target_ids <- rep(colnames(coefficients), each = nrow(coefficients))
     terms <- rownames(coefficients)
-    sq_std_err <- as.numeric(sapply(fit$beta_covars, function(x) diag(x)))
+    sq_std_err <- as.numeric(t(fit$beta_covars[, terms]))
     res <- data.frame(target_id = as.character(target_ids), term = as.character(terms),
                       estimate = as.numeric(coefficients), std_error = sqrt(sq_std_err))
     res

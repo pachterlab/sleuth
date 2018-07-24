@@ -169,14 +169,28 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
   msg('computing variance of betas')
-  beta_covars <- lapply(1:nrow(l_smooth),
+  sigma <- rowSums(l_smooth[, c("smooth_sigma_sq_pmax", "sigma_q_sq")])
+  beta_covars <- sigma %*% t(diag(A))
+  # the full beta covariance matrix is symmetric
+  # so we just need one set of off-diagonals
+  off_diag_covars <- sigma %*% t(A[lower.tri(A)])
+  # we set the column names of the off-diagonal covariances
+  # as (beta #1):(beta #2)
+  # for example, if the formula is ~condition and
+  # the experiment has two conditions -- "A" and "B" --
+  # there would be one off-diagonal column with the label
+  # "(Intercept):conditionB"
+  colnames(off_diag_covars) <- unlist(lapply(1:(nrow(A)-1),
     function(i) {
-      row <- l_smooth[i, ]
-      with(row,
-          covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
-        )
+      c_names <- colnames(A)[i:ncol(A)]
+      r_name <- rownames(A)[i]
+      if (r_name == "(Intercept)") r_name <- "Intercept"
+      paste0("(", r_name, "):(", c_names, ")")
     })
-  names(beta_covars) <- l_smooth$target_id
+  )
+
+  beta_covars <- cbind(beta_covars, off_diag_covars)
+  rownames(beta_covars) <- l_smooth$target_id
 
   if ( is.null(obj$fits) ) {
     obj$fits <- list()
@@ -267,28 +281,29 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
   if (names(fit)[1] == "coefficients") {
     b <- fit$coefficients[beta_i, ]
     names(b) <- colnames(fit$coefficients)
+    se <- obj$fits[[which_model]]$beta_covars[, beta_i]
   } else {
     # This is retained for backward compatibility with older versions of sleuth
     b <- sapply(fit, function(x) {
       x$ols_fit$coefficients[ beta_i ]
     })
     names(b) <- names(obj$fits[[ which_model ]]$models)
+    se <- sapply(obj$fits[[ which_model ]]$beta_covars,
+      function(x) {
+        x[beta_i, beta_i]
+      })
   }
+
+  se <- sqrt( se )
+  se <- se[ names(b) ]
+
+  stopifnot( all.equal(names(b), names(se)) )
 
   res <- obj$fits[[ which_model ]]$summary
   res$target_id <- as.character(res$target_id)
   res <- res[match(names(b), res$target_id), ]
 
   stopifnot( all.equal(res$target_id, names(b)) )
-
-  se <- sapply(obj$fits[[ which_model ]]$beta_covars,
-    function(x) {
-      x[beta_i, beta_i]
-    })
-  se <- sqrt( se )
-  se <- se[ names(b) ]
-
-  stopifnot( all.equal(names(b), names(se)) )
 
   res <- dplyr::mutate(res,
     b = b,
