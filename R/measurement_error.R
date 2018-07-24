@@ -148,6 +148,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   # TODO: check if model matrix is full rank
   X <- NULL
   if ( is(formula, 'formula') ) {
+    environment(formula) <- new.env()
     X <- model.matrix(formula, obj$sample_to_covariates)
   } else {
     if ( is.null(colnames(formula)) ) {

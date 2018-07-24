@@ -385,6 +385,7 @@ sleuth_prep <- function(
 
   design_matrix <- NULL
   if (is(full_model, 'formula')) {
+    environment(full_model) <- new.env()
     design_matrix <- model.matrix(full_model, sample_to_covariates)
   } else if (is(full_model, 'matrix')) {
     if (is.null(colnames(full_model))) {
