@@ -174,23 +174,24 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   beta_covars <- sigma %*% t(diag(A))
   # the full beta covariance matrix is symmetric
   # so we just need one set of off-diagonals
-  off_diag_covars <- sigma %*% t(A[lower.tri(A)])
-  # we set the column names of the off-diagonal covariances
-  # as (beta #1):(beta #2)
-  # for example, if the formula is ~condition and
-  # the experiment has two conditions -- "A" and "B" --
-  # there would be one off-diagonal column with the label
-  # "(Intercept):conditionB"
-  colnames(off_diag_covars) <- unlist(lapply(1:(nrow(A)-1),
-    function(i) {
-      c_names <- colnames(A)[i:ncol(A)]
-      r_name <- rownames(A)[i]
-      if (r_name == "(Intercept)") r_name <- "Intercept"
-      paste0("(", r_name, "):(", c_names, ")")
-    })
-  )
-
-  beta_covars <- cbind(beta_covars, off_diag_covars)
+  if (nrow(A) > 1) {
+    off_diag_covars <- sigma %*% t(A[lower.tri(A)])
+    # we set the column names of the off-diagonal covariances
+    # as (beta #1):(beta #2)
+    # for example, if the formula is ~condition and
+    # the experiment has two conditions -- "A" and "B" --
+    # there would be one off-diagonal column with the label
+    # "(Intercept):conditionB"
+    colnames(off_diag_covars) <- unlist(lapply(1:(nrow(A)-1),
+      function(i) {
+        c_names <- colnames(A)[(i+1):ncol(A)]
+        r_name <- rownames(A)[i]
+        if (r_name == "(Intercept)") r_name <- "Intercept"
+        paste0("(", r_name, "):(", c_names, ")")
+      })
+    )
+    beta_covars <- cbind(beta_covars, off_diag_covars)
+  }
   rownames(beta_covars) <- l_smooth$target_id
 
   if ( is.null(obj$fits) ) {
