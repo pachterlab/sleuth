@@ -171,11 +171,10 @@ h5check <- function(fname, group, name) {
 # @return a matrix with each row being a bootstrap sample
 read_bootstrap_mat <- function(fname,
   num_bootstraps,
-  num_transcripts,
-  est_count_sf) {
+  num_transcripts) {
   bs_mat <- matrix(ncol = num_bootstraps, nrow = num_transcripts)
   for (i in 1:ncol(bs_mat)) {
-    bs_mat[, i] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1)) / est_count_sf
+    bs_mat[, i] <- rhdf5::h5read(fname, paste0("bootstrap/bs", i - 1))
   }
   bs_mat <- t(bs_mat)
   target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))

@@ -380,7 +380,7 @@ dcast_bootstrap.kallisto <- function(obj, units, nsamples = NULL) {
 
 # Function to process bootstraps for parallelization
 process_bootstrap <- function(i, samp_name, kal_path,
-                              num_transcripts, est_count_sf,
+                              num_transcripts, est_count_sf, est_tpm_sf,
                               read_bootstrap_tpm, gene_mode,
                               extra_bootstrap_summary,
                               target_id, mappings, which_ids,
@@ -402,8 +402,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
   eff_len <- rhdf5::h5read(kal_path$path, "aux/eff_lengths")
   bs_mat <- read_bootstrap_mat(fname = kal_path$path,
                                num_bootstraps = num_bootstrap,
-                               num_transcripts = num_transcripts,
-                               est_count_sf = est_count_sf)
+                               num_transcripts = num_transcripts)
 
   if (read_bootstrap_tpm) {
     bs_tpm <- t(apply(bs_mat, 1, counts_to_tpm,
@@ -438,7 +437,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
       bs_tpm <- as.matrix(bs_tpm[, -1])
       rm(tidy_tpm) # these tables are very large
     }
-    bs_tpm <- transform_fun_tpm(bs_tpm[, which_ids])
+    bs_tpm <- transform_fun_tpm(bs_tpm[, which_ids], sf = est_tpm_sf)
     bs_quant_tpm <- t(apply(bs_tpm, 2,
                             quantile))
     colnames(bs_quant_tpm) <- c("min", "lower", "mid",
@@ -493,7 +492,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
     rm(tidy_bs, scaled_bs)
   }
 
-  bs_mat <- transform_fun_counts(bs_mat[, which_ids])
+  bs_mat <- transform_fun_counts(bs_mat[, which_ids], sf = est_count_sf)
   if (extra_bootstrap_summary) {
     bs_quant_est_counts <- t(apply(bs_mat, 2,
                                    quantile))

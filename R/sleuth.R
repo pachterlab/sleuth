@@ -35,10 +35,40 @@ basic_filter <- function(row, min_reads = 5, min_prop = 0.47) {
 #'
 #' @param x numeric that must be >=0. represents an individual observed count (one transcript in one sample).
 #' @param offset numeric offset to prevent taking the log of 0.
-#' @return log(x + offset)
+#' @param sf the size factor to normalize the data. Must either be a single number or a numeric vector
+#'  equal in length to the number of samples in x.
+#' @return if sf is NULL, log(x + offset); else log(x / sf + offset)
 #' @export
-log_transform <- function(x, offset=0.5) {
-  log(x + offset)
+log_transform <- function(x, offset = 0.5, sf = 1) {
+  if (length(sf) == 1) {
+    log(x / sf + offset)
+  } else if (length(sf) == ncol(x)) {
+    log(t(t(x) / sf) + offset)
+  } else {
+    stop("please provide a single size factor or a size factor vector equal ",
+         "in length to the number of samples")
+  }
+}
+
+#' Default TPM transformation
+#'
+#' The default transformation for converting the normalized TPMs.
+#'
+#' @param x numeric that must be >=0. represents an individual observed count (one transcript in one sample).
+#' @param offset numeric offset to prevent taking the log of 0.
+#' @param sf the size factor to normalize the data. Must either be a single number or a numeric vector
+#'  equal in length to the number of samples in x.
+#' @return if sf is NULL, log(x + offset); else log(x / sf + offset)
+#' @export
+tpm_transform <- function(x, sf = 1) {
+  if (length(sf) == 1) {
+    x / sf
+  } else if (length(sf) == ncol(x)) {
+    t(t(x) / sf)
+  } else {
+    stop("please provide a single size factor or a size factor vector equal ",
+         "in length to the number of samples")
+  }
 }
 
 # currently defunct
@@ -145,10 +175,17 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #'   Advanced Options for the Transformation Step:
 #'   (NOTE: Be sure you know what you're doing before you use these options)
 #'   \itemize{
-#'     \item \code{transform_fun_counts}: the transformation that should be applied
-#'     to the normalized counts. Default is \code{'log(x+0.5)'} (i.e. natural log with 0.5 offset).
-#'     \item \code{transform_fun_tpm}: the transformation that should be applied
-#'     to the TPM values. Default is \code{'x'} (i.e. the identity function / no transformation)
+#'     \item \code{transform_fun_counts}: the transformation that should be
+#'     applied to the normalized counts. Any custom function must take the
+#'     matrix of raw counts and either a single size factor when normalizing
+#'     bootstrap counts or a vector of size factors when normalizing the
+#'     observed counts. Default is \code{'log(x/sf+0.5)'} (i.e. natural log of
+#'     the normalized counts with 0.5 offset).
+#'     \item \code{transform_fun_tpm}: the transformation that should be
+#'     applied to the TPM values. Any custom function must take the matrix of
+#'     raw TPMs and either a single size factor when normalizing bootstrap TPMs
+#'     or a vector of size factors when normalizing the observed TPMs. Default
+#'     is \code{'x/sf'} (i.e. the normalized TPMs with no further transformation)
 #'   }
 #'
 #'   Advanced Options for Gene Aggregation:
@@ -228,7 +265,7 @@ sleuth_prep <- function(
   if ("transform_fun_tpm" %in% names(extra_opts)) {
     transform_fun_tpm <- extra_opts$transform_fun_tpm
   } else {
-    transform_fun_tpm <- identity
+    transform_fun_tpm <- tpm_transform
   }
   if ("gene_mode" %in% names(extra_opts)) {
     gene_mode <- extra_opts$gene_mode
@@ -620,7 +657,7 @@ sleuth_prep <- function(
       samp_name <- sample_to_covariates$sample[i]
       kal_path <- get_kallisto_path(kal_dirs[i])
       process_bootstrap(i, samp_name, kal_path,
-                        num_transcripts, est_counts_sf[[i]],
+                        num_transcripts, est_counts_sf[[i]], tpm_sf[[i]],
                         read_bootstrap_tpm, ret$gene_mode,
                         extra_bootstrap_summary,
                         target_id, mappings, which_ids, ret$gene_column,
@@ -678,9 +715,9 @@ sleuth_prep <- function(
     }
 
     sigma_q_sq <- sigma_q_sq[order(names(sigma_q_sq))]
-    obs_counts <- ret$transform_fun_counts(obs_counts)
+    obs_counts <- ret$transform_fun_counts(obs_counts, sf = est_counts_sf)
     obs_counts <- obs_counts[order(rownames(obs_counts)),]
-    obs_tpm <- ret$transform_fun_tpm(obs_tpm)
+    obs_tpm <- ret$transform_fun_tpm(obs_tpm, sf = tpm_sf)
     obs_tpm <- obs_tpm[order(rownames(obs_tpm)),]
 
     ret$bs_summary <- list(obs_counts = obs_counts, sigma_q_sq = sigma_q_sq)
@@ -1010,10 +1047,11 @@ kallisto_table <- function(obj,
 #
 # @param obj is a sleuth object
 # @param value_name either "est_counts" or "tpm"
+# @param which_df "obs_raw" or "obs_norm"
 # @return a matrix with the appropriate names
-obs_to_matrix <- function(obj, value_name) {
-
-  obs_counts <- reshape2::dcast(obj$obs_norm, target_id ~ sample,
+obs_to_matrix <- function(obj, value_name, which_df = "obs_raw") {
+  which_df <- match.arg(which_df, c("obs_raw", "obs_norm"))
+  obs_counts <- reshape2::dcast(obj[[which_df]], target_id ~ sample,
     value.var = value_name)
 
   obs_counts <- as.data.frame(obs_counts)
