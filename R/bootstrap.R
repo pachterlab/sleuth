@@ -406,8 +406,8 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                est_count_sf = est_count_sf)
 
   if (read_bootstrap_tpm) {
-    bs_tpm <- aperm(apply(bs_mat, 1, counts_to_tpm,
-                                eff_len))
+    bs_tpm <- t(apply(bs_mat, 1, counts_to_tpm,
+                      eff_len))
     colnames(bs_tpm) <- colnames(bs_mat)
 
     # gene level code is analogous here to below code
@@ -439,8 +439,8 @@ process_bootstrap <- function(i, samp_name, kal_path,
       rm(tidy_tpm) # these tables are very large
     }
     bs_tpm <- transform_fun_tpm(bs_tpm[, which_ids])
-    bs_quant_tpm <- aperm(apply(bs_tpm, 2,
-                                quantile))
+    bs_quant_tpm <- t(apply(bs_tpm, 2,
+                            quantile))
     colnames(bs_quant_tpm) <- c("min", "lower", "mid",
                                 "upper", "max")
     bs_quants$tpm <- bs_quant_tpm
@@ -495,8 +495,8 @@ process_bootstrap <- function(i, samp_name, kal_path,
 
   bs_mat <- transform_fun_counts(bs_mat[, which_ids])
   if (extra_bootstrap_summary) {
-    bs_quant_est_counts <- aperm(apply(bs_mat, 2,
-                                       quantile))
+    bs_quant_est_counts <- t(apply(bs_mat, 2,
+                                   quantile))
     colnames(bs_quant_est_counts) <- c("min", "lower",
                                        "mid", "upper", "max")
     bs_quants$est_counts <- bs_quant_est_counts
