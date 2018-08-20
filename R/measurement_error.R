@@ -169,6 +169,13 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
+  tids <- colnames(mes$models$coefficients)
+  l_smooth <- l_smooth[match(tids, l_smooth$target_id), ]
+  if (!identical(l_smooth$target_id, tids)) {
+    stop("Something went wrong during the shrinkage estimation step. ",
+         "The fit summary target IDs don't match the observed data target IDs")
+  }
+
   msg('computing variance of betas')
   sigma <- rowSums(l_smooth[, c("smooth_sigma_sq_pmax", "sigma_q_sq")])
   beta_covars <- sigma %*% t(diag(A))
