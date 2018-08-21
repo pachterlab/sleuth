@@ -26,6 +26,7 @@
 #' @param options additional options which are sent to shiny
 #' @param ... additional parameters sent to plotting functions
 #' @return a \code{\link{shinyApp}} result
+#' @importFrom rlang eval_tidy
 #' @export
 #' @seealso \code{\link{sleuth_fit}}, \code{\link{sleuth_live_settings}}, \code{\link{sleuth_deploy}}
 sleuth_live <- function(obj, settings = sleuth_live_settings(),
@@ -1205,8 +1206,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         use_filtered = input$scatter_filt,
         offset = as.numeric(input$scatter_offset))
       # get the data in the form that it is displayed in the plot
-      x <- eval(p$mapping$x, envir = p$data)
-      y <- eval(p$mapping$y, envir = p$data)
+      x <- rlang::eval_tidy(p$mapping$x, data = p$data)
+      y <- rlang::eval_tidy(p$mapping$y, data = p$data)
       rv_scatter$data <- data.frame(target_id = p$data$target_id, x = x, y = y,
         stringsAsFactors = FALSE)
       saved_plots_and_tables$scatter_plt <- p

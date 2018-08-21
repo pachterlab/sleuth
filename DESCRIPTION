@@ -21,6 +21,7 @@ Imports:
     tidyr,
     reshape2,
     rhdf5,
+    rlang,
     parallel,
     lazyeval,
     matrixStats,
@@ -33,4 +34,4 @@ Suggests:
     testthat,
     knitr
 VignetteBuilder: knitr
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
