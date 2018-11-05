@@ -394,7 +394,17 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   # }
 
   if (obj$gene_mode && pval_aggregate) {
-    stop("This shouldn't happen. Please report this issue.")
+    if (obj$pval_aggregate) {
+      stop("Both 'gene_mode' and 'pval_aggregate' are TRUE in this sleuth ",
+           "object. This shouldn't happen. Please report this issue.")
+    } else {
+      stop("'pval_aggregate' is set to TRUE, but the sleuth object has ",
+           "already gone through count aggregation when 'gene_mode' was set ",
+           "to TRUE in 'sleuth_prep'. If you intend count aggregation, omit ",
+           "the 'pval_aggregate' argument here. If you intend p-value ",
+           "aggregation, repeat 'sleuth_prep' without the 'gene_mode' ",
+           "argument.")
+    }
   }
 
   if (pval_aggregate && is.null(obj$gene_column)) {
