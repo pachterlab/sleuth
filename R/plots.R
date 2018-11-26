@@ -113,8 +113,10 @@ plot_pca <- function(obj,
   pcs$sample <- rownames(pcs)
   rownames(pcs) <- NULL
 
-  pc_x <- paste0('PC', pc_x)
-  pc_y <- paste0('PC', pc_y)
+  pcav <- pca_res$sdev / sum(pca_res$sdev)
+  pcav <- format( pcav[c(pc_x, pc_y)]*100, digits=3 )
+  pc_x <- paste0('PC', pc_x, ": ", pcav[1], "% variance")
+  pc_y <- paste0('PC', pc_y, ": ", pcav[2], "% variance")
 
   pcs <- dplyr::left_join(pcs, obj$sample_to_covariates,
     by = 'sample')
