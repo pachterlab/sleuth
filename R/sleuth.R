@@ -1007,7 +1007,7 @@ kallisto_table <- function(obj,
 # @return a matrix with the appropriate names
 obs_to_matrix <- function(obj, value_name) {
 
-  data.table::as.data.table(obj$obs_norm) <- data.table::as.data.table(obj$obs_norm)
+  obj$obs_norm <- data.table::as.data.table(obj$obs_norm)
   obs_counts <- data.table::dcast(obj$obs_norm, target_id ~ sample,
     value.var = value_name)
 
