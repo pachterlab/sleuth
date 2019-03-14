@@ -27,7 +27,7 @@
 #' @return a \code{kallisto} object
 #' @export
 read_kallisto <- function(path, read_bootstrap = TRUE, max_bootstrap = NULL) {
-  stopifnot(is(path, "character"))
+  path <- as.character(path)
 
   kal_path <- get_kallisto_path(path)
 
