@@ -118,7 +118,7 @@ subset_kallisto.kallisto <- function(obj, target_ids) {
 
   subset_num <- length(unique(target_ids))
   new_obj <- obj
-  new_obj$abundance <- new_obj$abundance[which(new_obj$abundance %in% target_ids), ]
+  new_obj$abundance <- new_obj$abundance[which(new_obj$abundance$target_id %in% target_ids), ]
   new_obj$bootstrap <- lapply(new_obj$bootstrap, function(bs) {
     bs[which(bs$target_id %in% target_ids), ]
   })
