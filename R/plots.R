@@ -113,7 +113,7 @@ plot_pca <- function(obj,
   pcs$sample <- rownames(pcs)
   rownames(pcs) <- NULL
 
-  pcav <- pca_res$sdev / sum(pca_res$sdev)
+  pcav <- (pca_res$sdev)^2 / sum((pca_res$sdev)^2)
   pcav <- format( pcav[c(pc_x, pc_y)]*100, digits=3 )
   pc_x <- paste0('PC', pc_x, ": ", pcav[1], "% variance")
   pc_y <- paste0('PC', pc_y, ": ", pcav[2], "% variance")
