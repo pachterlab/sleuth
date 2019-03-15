@@ -4,9 +4,9 @@
 \alias{plot_loadings}
 \title{Plot Loadings and Interpretations}
 \usage{
-plot_loadings(obj, use_filtered = TRUE, sample = NULL, pc_input = NULL,
-  units = "est_counts", pc_count = NULL, scale = FALSE,
-  pca_loading_abs = TRUE, ...)
+plot_loadings(obj, use_filtered = TRUE, sample = NULL,
+  pc_input = NULL, units = "est_counts", pc_count = NULL,
+  scale = FALSE, pca_loading_abs = TRUE, ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}

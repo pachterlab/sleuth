@@ -4,9 +4,9 @@
 \alias{sleuth_prep}
 \title{Constructor for a 'sleuth' object}
 \usage{
-sleuth_prep(sample_to_covariates, full_model = NULL, target_mapping = NULL,
-  aggregation_column = NULL, num_cores = max(1L, parallel::detectCores() -
-  1L), ...)
+sleuth_prep(sample_to_covariates, full_model = NULL,
+  target_mapping = NULL, aggregation_column = NULL,
+  num_cores = max(1L, parallel::detectCores() - 1L), ...)
 }
 \arguments{
 \item{sample_to_covariates}{a \code{data.frame} which contains a mapping
@@ -72,7 +72,7 @@ This method takes a list of samples with kallisto results and returns a sleuth
   \itemize{
     \item \code{filter_fun}: the function to use when filtering. This function will be applied to the raw counts
     on a row-wise basis, meaning that each feature will be considered individually. The default is to filter out
-    any features that do not have at least 5 estimated counts in at least 47% of the samples (see \code{\link{basic_filter}}
+    any features that do not have at least 5 estimated counts in at least 47\% of the samples (see \code{\link{basic_filter}}
     for more information). If the preferred filtering method requires a matrix-wide transformation or otherwise
     needs to consider multiple features simultaneously instead of independently, please consider using
     \code{filter_target_id} below.
@@ -105,7 +105,7 @@ This method takes a list of samples with kallisto results and returns a sleuth
   Advanced Options for Gene Aggregation:
   \itemize{
     \item \code{gene_mode}: Set this to \code{TRUE} to get the old counts-aggregation method
-    for doing gene-level analysis. This requires \code{aggregation_column} to be set. If 
+    for doing gene-level analysis. This requires \code{aggregation_column} to be set. If
     \code{TRUE}, this will override the p-value aggregation mode, but will allow for gene-centric
     modeling, plotting, and results.
   }

@@ -16,13 +16,12 @@ sleuth_to_matrix(obj, which_df, which_units)
 or "est_counts")}
 }
 \value{
-a \code{list} with an attribute 'data', which contains a matrix of target_ids
-        and transcript expression in \code{which_units}
+a matrix which contains a matrix of target_ids and transcript expression in \code{which_units}
 }
 \description{
 Convert a sleuth object to a matrix with the condition names.
 }
 \examples{
 sleuth_matrix <- sleuth_to_matrix(sleuth_obj, 'obs_norm', 'tpm')
-head(sleuth_matrix$data) # look at first 5 transcripts, sorted by name
+head(sleuth_matrix) # look at first 5 transcripts, sorted by name
 }

@@ -121,7 +121,7 @@ filter_df_by_groups <- function(df, fun, group_df, ...) {
 #'   \itemize{
 #'     \item \code{filter_fun}: the function to use when filtering. This function will be applied to the raw counts
 #'     on a row-wise basis, meaning that each feature will be considered individually. The default is to filter out
-#'     any features that do not have at least 5 estimated counts in at least 47% of the samples (see \code{\link{basic_filter}}
+#'     any features that do not have at least 5 estimated counts in at least 47\% of the samples (see \code{\link{basic_filter}}
 #'     for more information). If the preferred filtering method requires a matrix-wide transformation or otherwise
 #'     needs to consider multiple features simultaneously instead of independently, please consider using
 #'     \code{filter_target_id} below.

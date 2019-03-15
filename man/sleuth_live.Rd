@@ -4,8 +4,8 @@
 \alias{sleuth_live}
 \title{Interactive sleuth visualization with Shiny}
 \usage{
-sleuth_live(obj, settings = sleuth_live_settings(), options = list(port =
-  42427), ...)
+sleuth_live(obj, settings = sleuth_live_settings(), options = list(port
+  = 42427), ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object already processed and has run

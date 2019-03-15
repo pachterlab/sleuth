@@ -6,8 +6,9 @@
 \usage{
 plot_scatter(obj, sample_x = obj$sample_to_covariates$sample[1],
   sample_y = obj$sample_to_covariates$sample[2], use_filtered = TRUE,
-  units = "est_counts", offset = 1, point_alpha = 0.2, xy_line = TRUE,
-  xy_line_color = "red", trans = "log", xlim = NULL, ylim = NULL)
+  units = "est_counts", offset = 1, point_alpha = 0.2,
+  xy_line = TRUE, xy_line_color = "red", trans = "log",
+  xlim = NULL, ylim = NULL)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
