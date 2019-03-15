@@ -458,7 +458,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               uiOutput('group_by_lrt')
               )
             ),
-          dataTableOutput('lrt_de_dt')
+            dataTableOutput('lrt_de_dt'),
+            fluidRow(
+              div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                  downloadButton("download_test_table",  "Download Table")))
           )
         ),
 
@@ -782,7 +785,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         ),
         fluidRow(
           plotOutput('fld_plt')
-          )
+          ),
+        fluidRow(
+          div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
+            downloadButton("download_fld_plt", "Download Table")))
       ),
 
       ####
@@ -1044,7 +1050,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       sample_table = NULL,
       kallisto_table = NULL,
       hm_plt = NULL,
-      bs_var_plt = NULL
+      bs_var_plt = NULL,
+      fld_plt = NULL
       )
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input
@@ -1461,6 +1468,19 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     output$fld_plt <- renderPlot({
       plot_fld(obj, input$fld_sample)
+      #saved_plots_and_tables$fld_plt <- plot_fld(obj, input$fld_sample)
+      #saved_plots_and_tables$fld_plt
+    })
+
+    output$download_fld_plt <- downloadHandler(
+      filename = function() {
+        "fld_plot.pdf"
+        },
+      content = function(file) {
+         ggsave(file, saved_plots_and_tables$fld_plt,
+           width = user_settings$save_width,
+           height = user_settings$save_height,
+           units = "cm")
     })
 
     output$bias_weights_table <- renderDataTable({
