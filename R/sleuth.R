@@ -1092,6 +1092,7 @@ summary.sleuth <- function(obj, covariates = TRUE) {
 #' head(sleuth_genes) # show info for first 5 genes
 #' sleuth_genes[1:5, 6] # show transcripts for first 5 genes
 #' @export
+#' @importFrom utils head                    
 sleuth_gene_table <- function(obj, test, test_type = 'lrt', which_model = 'full', which_group = 'ens_gene') {
 
   if (is.null(obj$target_mapping)) {
