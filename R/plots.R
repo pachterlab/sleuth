@@ -1049,6 +1049,7 @@ plot_transcript_heatmap <- function(obj,
 
   rownames(tabd_df) <- tabd_df$target_id
   tabd_df$target_id <- NULL
+  tabd_df <- tabd_df[transcripts, ]
 
   if (nchar(trans) > 0 && !is.null(trans)) {
     tFunc <- eval(parse(text = trans))
