@@ -31,6 +31,7 @@
 #' sleuth_matrix <- sleuth_to_matrix(sleuth_obj, 'obs_norm', 'tpm')
 #' head(sleuth_matrix) # look at first 5 transcripts, sorted by name
 #' @export
+#' importFrom utils head
 sleuth_to_matrix <- function(obj, which_df, which_units) {
   if ( !(which_df %in% c("obs_norm", "obs_raw")) ) {
     stop("Invalid object")
