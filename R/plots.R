@@ -1035,13 +1035,13 @@ plot_transcript_heatmap <- function(obj,
 
   if (units == 'tpm') {
     tabd_df <- dplyr::select(tabd_df, target_id, sample, tpm)
-    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
+    tabd_df <- data.table::dcast(tabd_df, target_id ~sample, value.var = 'tpm')
   } else if (units == 'est_counts') {
     tabd_df <- dplyr::select(tabd_df, target_id, sample, est_counts)
-    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
+    tabd_df <- data.table::dcast(tabd_df, target_id ~sample, value.var = 'est_counts')
   } else if (units == 'scaled_reads_per_base') {
     tabd_df <- dplyr::select(tabd_df, target_id, sample, scaled_reads_per_base)
-    tabd_df <- reshape2::dcast(tabd_df, target_id ~sample,
+    tabd_df <- data.table::dcast(tabd_df, target_id ~sample,
                                value.var = 'scaled_reads_per_base')
   } else {
     stop("Didn't recognize the following unit: ", units)
