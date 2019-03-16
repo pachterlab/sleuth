@@ -1049,7 +1049,7 @@ kallisto_table <- function(obj,
 # @param value_name either "est_counts" or "tpm"
 # @param which_df "obs_raw" or "obs_norm"
 # @return a matrix with the appropriate names
-obs_to_matrix <- function(obj, value_name, which_df = "obs_raw") {
+obs_to_matrix <- function(obj, value_name, which_df = "obs_norm") {
   which_df <- match.arg(which_df, c("obs_raw", "obs_norm"))
   obs_counts <- reshape2::dcast(obj[[which_df]], target_id ~ sample,
     value.var = value_name)
