@@ -1075,16 +1075,10 @@ plot_transcript_heatmap <- function(obj,
   colors <- colorRampPalette(c(color_low, color_mid, color_high))(100)
   # the PDF code prevents the heatmap from printing before we modify the plot
   pdf(file = NULL)
-  if (cluster_transcripts) {
-    p <- pheatmap::pheatmap(trans_mat, annotation_col = s2c, color = colors,
-                            cluster_cols = TRUE,
-                            cluster_rows = cluster_transcripts,
-                            ...)
-  } else {
-    p <- pheatmap::pheatmap(trans_mat, annotation_col = s2c, color = colors,
-                            cluster_cols = TRUE,
-                            ...)
-  }
+  p <- pheatmap::pheatmap(trans_mat, annotation_col = s2c, color = colors,
+                          cluster_cols = TRUE,
+                          cluster_rows = cluster_transcripts,
+                          ...)
   invisible(dev.off())
   # modify the column labels with the x_axis_angle
   # subtracting from 360 degrees to get it to align well without modifying
