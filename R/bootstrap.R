@@ -485,6 +485,7 @@ process_bootstrap <- function(i, samp_name, kal_path,
                                           mappings)
     # this step undoes the tidying to get back a matrix format
     # target_ids here are now the aggregation column ids
+    scaled_bs <- data.table::as.data.table(scaled_bs)
     bs_mat <- data.table::dcast(scaled_bs, sample ~ target_id,
                                 value.var = "scaled_reads_per_base")
     # this now has the same format as the transcript matrix

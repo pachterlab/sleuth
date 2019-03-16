@@ -24,12 +24,14 @@
 #' @param which_df character vector of length one. Which type of data to use
 #' ("obs_norm" or "obs_raw")
 #' @param which_units character vector of length one. Which units to use ("tpm"
-#' or "est_counts")
-#' @return a matrix which contains a matrix of target_ids and transcript expression in \code{which_units}
+#' or "est_counts" (for transcript-level analyses) or "scaled_reads_per_base" (for gene-level analyses))
+#' @return a matrix which contains a matrix of target_ids and transcript (or gene) expression in \code{which_units}.
+#'   Note this currently does not support returning raw values for gene-level counts or TPMs.
 #' @examples
 #' sleuth_matrix <- sleuth_to_matrix(sleuth_obj, 'obs_norm', 'tpm')
 #' head(sleuth_matrix) # look at first 5 transcripts, sorted by name
 #' @export
+#' importFrom utils head
 sleuth_to_matrix <- function(obj, which_df, which_units) {
   if ( !(which_df %in% c("obs_norm", "obs_raw")) ) {
     stop("Invalid object")
