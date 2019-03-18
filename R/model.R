@@ -394,7 +394,17 @@ sleuth_results <- function(obj, test, test_type = 'wt',
   # }
 
   if (obj$gene_mode && pval_aggregate) {
-    stop("This shouldn't happen. Please report this issue.")
+    if (obj$pval_aggregate) {
+      stop("Both 'gene_mode' and 'pval_aggregate' are TRUE in this sleuth ",
+           "object. This shouldn't happen. Please report this issue.")
+    } else {
+      stop("'pval_aggregate' is set to TRUE, but the sleuth object has ",
+           "already gone through count aggregation when 'gene_mode' was set ",
+           "to TRUE in 'sleuth_prep'. If you intend count aggregation, omit ",
+           "the 'pval_aggregate' argument here. If you intend p-value ",
+           "aggregation, repeat 'sleuth_prep' without the 'gene_mode' ",
+           "argument.")
+    }
   }
 
   if (pval_aggregate && is.null(obj$gene_column)) {
@@ -537,14 +547,26 @@ extract_model <- function(obj, which_model) {
       ". Please check  models(", substitute(obj), ") for fitted models.")
   }
 
-  res <- lapply(seq_along(obj$fits[[which_model]]$models),
+  fit <- obj$fits[[which_model]]
+  if (names(fit$models)[1] == "coefficients") {
+    coefficients <- fit$models$coefficients
+    target_ids <- rep(colnames(coefficients), each = nrow(coefficients))
+    terms <- rownames(coefficients)
+    sq_std_err <- as.numeric(t(fit$beta_covars[, terms]))
+    res <- data.frame(target_id = as.character(target_ids), term = as.character(terms),
+                      estimate = as.numeric(coefficients), std_error = sqrt(sq_std_err))
+    res
+  } else {
+    # This is retained for backward compatibility with older versions of sleuth
+    res <- lapply(seq_along(fit$models),
     function(i) {
-      x <- obj$fits[[which_model]]$models[[i]]
+      x <- fit$models[[i]]
       coefficients <- coef(x$ols_fit)
       list(
-        target_id = rep_len(names(obj$fits[[which_model]]$models)[i], length(coefficients)),
+        target_id = rep_len(names(fit$models)[i], length(coefficients)),
         term = names(coefficients), estimate = coefficients,
-        std_error = sqrt(diag(obj$fits[[which_model]]$beta_covars[[i]])))
+        std_error = sqrt(diag(fit$beta_covars[[i]])))
     })
-  dplyr::bind_rows(res)
+    as.data.frame(dplyr::bind_rows(res))
+  }
 }

@@ -1,6 +1,6 @@
 Package: sleuth
 Title: Tools for investigating RNA-Seq
-Version: 0.30.0
+Version: 0.30.0-1
 Authors@R: c(
   person("Harold", "Pimentel", , "haroldpimentel@gmail.com", role = c("aut", "cre")),
   person("Warren", "McGee", , "warren-mcgee@fsm.northwestern.edu", role = "aut"))
@@ -21,16 +21,18 @@ Imports:
     tidyr,
     reshape2,
     rhdf5,
+    rlang,
     parallel,
     lazyeval,
     matrixStats,
     pheatmap,
     shiny,
-    aggregation
+    aggregation,
+    limma
 Suggests:
     MASS,
     lintr,
     testthat,
     knitr
 VignetteBuilder: knitr
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0

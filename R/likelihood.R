@@ -4,34 +4,39 @@ compute_likelihood <- function(obj, which_model) {
   stopifnot(is(obj, "sleuth"))
   model_exists(obj, which_model)
 
-  # we basically do lapply on all of the models
-  #
   # the fitted values are here:
-  #   obj$fits[[which_model]]$models$ols_fit$fitted.values
+  #   obj$fits[[which_model]]$models$fitted.values
   #
   # the observations can be recovered by:
-  #   obj$fits$full$models[[1]]$ols_fit$residuals + fitted values
+  #   obj$fits[[which_model]]$models$residuals + fitted values
 
-  # TODO: move this elsewhere
-  obj$fits[[which_model]]$summary <- obj$fits[[which_model]]$summary[
-    match(names(obj$fits[[which_model]]$models),
-      obj$fits[[which_model]]$summary$target_id), ]
+  models <- obj$fits[[which_model]]$models
+  if (names(models)[1] == "coefficients") {
+    cur_model <- models
+    cur_mu <- cur_model$fitted.values
+    obs <- cur_model$residuals + cur_mu
+    cur_summary <- obj$fits[[which_model]]$summary
+    cur_var <- cur_summary$smooth_sigma_sq_pmax + cur_summary$sigma_q_sq
+    cur_var <- matrix(rep(cur_var, nrow(obs)), nrow = nrow(obs), byrow = TRUE)
 
-  all_likelihood <- sapply(seq_along(obj$fits[[which_model]]$models),
-    function( i ) {
-      cur_model <- obj$fits[[which_model]]$models[[ i ]]
-      cur_mu <- cur_model$ols_fit$fitted.values
-      obs <- cur_model$ols_fit$residuals + cur_mu
+    all_likelihood <- colSums(dnorm(obs, mean = cur_mu, sd = sqrt(cur_var), log = TRUE))
+  } else {
+    # This is retained for backward compatibility with older versions of sleuth
+    all_likelihood <- sapply(seq_along(models),
+      function(i) {
+        cur_model <- models[[i]]
+        cur_mu <- cur_model$ols_fit$fitted.values
+        obs <- cur_model$ols_fit$residuals + cur_mu
 
-      cur_summary <- obj$fits[[which_model]]$summary
+        cur_summary <- obj$fits[[which_model]]$summary
 
-      cur_var <- cur_summary[i, "smooth_sigma_sq_pmax"] +
-        cur_summary[i, "sigma_q_sq"]
+        cur_var <- cur_summary[i, "smooth_sigma_sq_pmax"] +
+          cur_summary[i, "sigma_q_sq"]
 
-      sum(dnorm(obs, mean = cur_mu, sd = sqrt(cur_var), log = TRUE))
+        sum(dnorm(obs, mean = cur_mu, sd = sqrt(cur_var), log = TRUE))
     })
-
-  names(all_likelihood) <- names(obj$fits[[which_model]]$models)
+    names(all_likelihood) <- names(models)
+  }
 
   obj$fits[[which_model]]$likelihood <- all_likelihood
 
@@ -91,8 +96,13 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
 
   test_statistic <- 2 * (a_ll - n_ll)
 
-  degrees_free <- obj$fits[[null_model]]$models[[1]]$ols_fit$df.residual -
-    obj$fits[[alt_model]]$models[[1]]$ols_fit$df.residual
+  if (names(obj$fits[[alt_model]]$models)[1] == "coefficients") {
+    degrees_free <- obj$fits[[null_model]]$models$df.residual -
+      obj$fits[[alt_model]]$models$df.residual
+  } else {
+    degrees_free <- obj$fits[[null_model]]$models[[1]]$ols_fit$df.residual -
+      obj$fits[[alt_model]]$models[[1]]$ols_fit$df.residual
+  }
 
   # P(chisq > test_statistic)
   p_value <- pchisq(test_statistic, degrees_free, lower.tail = FALSE)
@@ -100,7 +110,6 @@ sleuth_lrt <- function(obj, null_model, alt_model) {
     test_stat = test_statistic, pval = p_value)
   result <- dplyr::mutate(result, qval = p.adjust(pval, method = "BH"))
   model_info <- data.table::data.table(obj$fits[[null_model]]$summary)
-  model_info <- dplyr::select(model_info, -c(iqr))
   result <- dplyr::left_join(
     data.table::data.table(result),
     model_info,

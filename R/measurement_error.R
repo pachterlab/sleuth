@@ -51,8 +51,19 @@
 #'   the \code{'scaled_reads_per_base'} summary statistic.
 #' }
 #'
-#' Advanced options for the sliding window shrinkage procedure (these options are passed to
-#' \code{\link{sliding_window_grouping}}):
+#' Advanced options for the shrinkage procedure:
+#'
+#' \itemize{
+#'   \item \code{shrink_fun}: this function does the shrinkage procedure. It must take the list produced
+#'   by \code{\link{me_model}}, with the full model and the data.frame with means (the \code{'mean_obs'}
+#'   column) and variances (the \code{'sigma_sq_pmax'} column), as input, and must output a modified
+#'   data.frame from list$mes_df, with the required column \code{'smooth_sigma_sq'} containing the
+#'   smoothed variances. Additional columns are allowed, but will not be directly processed by
+#'   \code{\link{sleuth_results}}. The default option for this option is \code{\link{basic_shrink_fun}},
+#'   which is the procedure described in the original sleuth paper.
+#' }
+#'
+#' Advanced options for the default sleuth shrinkage procedure (see \code{\link{basic_shrink_fun}}):
 #'
 #' \itemize{
 #'   \item \code{n_bins}: the number of bins that the data should be split for the sliding window shrinkage
@@ -70,6 +81,7 @@
 #' so <- sleuth_fit(so, ~1, 'reduced')
 #' @seealso \code{\link{models}} for seeing which models have been fit,
 #' \code{\link{sleuth_prep}} for creating a sleuth object,
+#' \code{\link{basic_shrink_fun}} for the sleuth variance shrinkage procedure,
 #' \code{\link{sleuth_wt}} to test whether a coefficient is zero,
 #' \code{\link{sleuth_lrt}} to test nested models.
 #' @export
@@ -80,26 +92,22 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   extra_opts <- list(...)
   if ('which_var' %in% names(extra_opts)) {
     which_var <- extra_opts$which_var
+    which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
+    extra_opts$which_var <- NULL
   } else {
     which_var <- 'obs_counts'
   }
-  if ('n_bins' %in% names(extra_opts)) {
-    n_bins <- extra_opts$n_bins
+
+  if ('shrink_fun' %in% names(extra_opts)) {
+    shrink_fun <- extra_opts$shrink_fun
+    extra_opts$shrink_fun <- NULL
   } else {
-    n_bins <- 100
-  }
-  if ('lwr' %in% names(extra_opts)) {
-    lwr <- extra_opts$lwr
-  } else {
-    lwr <- 0.25
-  }
-  if ('upr' %in% names(extra_opts)) {
-    upr <- extra_opts$lwr
-  } else {
-    upr <- 0.75
+    shrink_fun <- basic_shrink_fun
   }
 
-  which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
+  if (!is(shrink_fun, 'function')) {
+    stop("The advanced 'shrink_fun' argument must be a function.")
+  }
 
   if (!is.null(obj$fits) && any(sapply(obj$fits, function(x) !x$transform_synced))) {
     stop("Your sleuth has fits which are not based on the current transform function. ",
@@ -140,6 +148,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   # TODO: check if model matrix is full rank
   X <- NULL
   if ( is(formula, 'formula') ) {
+    environment(formula) <- new.env()
     X <- model.matrix(formula, obj$sample_to_covariates)
   } else {
     if ( is.null(colnames(formula)) ) {
@@ -151,55 +160,59 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
   A <- solve(t(X) %*% X)
 
   msg("fitting measurement error models")
-  mes <- me_model_by_row(obj, X, obj$bs_summary, which_var)
-  tid <- names(mes)
+  mes <- me_model(obj, X, obj$bs_summary, which_var)
 
-  mes_df <- dplyr::bind_rows(lapply(mes,
-    function(x) {
-      data.frame(rss = x$rss, sigma_sq = x$sigma_sq, sigma_q_sq = x$sigma_q_sq,
-        mean_obs = x$mean_obs, var_obs = x$var_obs)
-    }))
-
-  mes_df$target_id <- tid
-  rm(tid)
-
-  mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
-
-  # FIXME: sometimes when sigma is negative the shrinkage estimation becomes NA
-  # this is for the few set of transcripts, but should be able to just do some
-  # simple fix
   msg('shrinkage estimation')
-  swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
-    n_bins = n_bins, lwr = lwr, upr = upr, ignore_zeroes = TRUE)
-  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr')
-  l_smooth <- dplyr::select(
-    dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
-    -shrink)
-
+  shrink_opts <- list(mes)
+  shrink_opts <- append(shrink_opts, extra_opts)
+  l_smooth <- do.call(shrink_fun, shrink_opts)
   l_smooth <- dplyr::mutate(l_smooth,
     smooth_sigma_sq_pmax = pmax(smooth_sigma_sq, sigma_sq))
 
+  tids <- colnames(mes$models$coefficients)
+  l_smooth <- l_smooth[match(tids, l_smooth$target_id), ]
+  if (!identical(l_smooth$target_id, tids)) {
+    stop("Something went wrong during the shrinkage estimation step. ",
+         "The fit summary target IDs don't match the observed data target IDs")
+  }
+
   msg('computing variance of betas')
-  beta_covars <- lapply(1:nrow(l_smooth),
-    function(i) {
-      row <- l_smooth[i, ]
-      with(row,
-          covar_beta(smooth_sigma_sq_pmax + sigma_q_sq, X, A)
-        )
-    })
-  names(beta_covars) <- l_smooth$target_id
+  sigma <- rowSums(l_smooth[, c("smooth_sigma_sq_pmax", "sigma_q_sq")])
+  beta_covars <- sigma %*% t(diag(A))
+  # the full beta covariance matrix is symmetric
+  # so we just need one set of off-diagonals
+  if (nrow(A) > 1) {
+    off_diag_covars <- sigma %*% t(A[lower.tri(A)])
+    # we set the column names of the off-diagonal covariances
+    # as (beta #1):(beta #2)
+    # for example, if the formula is ~condition and
+    # the experiment has two conditions -- "A" and "B" --
+    # there would be one off-diagonal column with the label
+    # "(Intercept):conditionB"
+    colnames(off_diag_covars) <- unlist(lapply(1:(nrow(A)-1),
+      function(i) {
+        c_names <- colnames(A)[(i+1):ncol(A)]
+        r_name <- rownames(A)[i]
+        if (r_name == "(Intercept)") r_name <- "Intercept"
+        paste0("(", r_name, "):(", c_names, ")")
+      })
+    )
+    beta_covars <- cbind(beta_covars, off_diag_covars)
+  }
+  rownames(beta_covars) <- l_smooth$target_id
 
   if ( is.null(obj$fits) ) {
     obj$fits <- list()
   }
 
   obj$fits[[fit_name]] <- list(
-    models = mes,
+    models = mes$models,
     summary = l_smooth,
     beta_covars = beta_covars,
     formula = formula,
     design_matrix = X,
     transform_synced = TRUE,
+    shrink_fun = shrink_fun,
     which_var = which_var)
 
   class(obj$fits[[fit_name]]) <- 'sleuth_model'
@@ -274,26 +287,33 @@ sleuth_wt <- function(obj, which_beta, which_model = 'full') {
         paste(colnames(d_matrix[beta_i]), collapse = ' ')))
   }
 
-  b <- sapply(obj$fits[[ which_model ]]$models,
-    function(x) {
+  fit <- obj$fits[[which_model]]$models
+  if (names(fit)[1] == "coefficients") {
+    b <- fit$coefficients[beta_i, ]
+    names(b) <- colnames(fit$coefficients)
+    se <- obj$fits[[which_model]]$beta_covars[, beta_i]
+  } else {
+    # This is retained for backward compatibility with older versions of sleuth
+    b <- sapply(fit, function(x) {
       x$ols_fit$coefficients[ beta_i ]
     })
-  names(b) <- names(obj$fits[[ which_model ]]$models)
+    names(b) <- names(obj$fits[[ which_model ]]$models)
+    se <- sapply(obj$fits[[ which_model ]]$beta_covars,
+      function(x) {
+        x[beta_i, beta_i]
+      })
+  }
+
+  se <- sqrt( se )
+  se <- se[ names(b) ]
+
+  stopifnot( all.equal(names(b), names(se)) )
 
   res <- obj$fits[[ which_model ]]$summary
   res$target_id <- as.character(res$target_id)
   res <- res[match(names(b), res$target_id), ]
 
   stopifnot( all.equal(res$target_id, names(b)) )
-
-  se <- sapply(obj$fits[[ which_model ]]$beta_covars,
-    function(x) {
-      x[beta_i, beta_i]
-    })
-  se <- sqrt( se )
-  se <- se[ names(b) ]
-
-  stopifnot( all.equal(names(b), names(se)) )
 
   res <- dplyr::mutate(res,
     b = b,
@@ -323,33 +343,6 @@ covar_beta <- function(sigma, X, A) {
 
   # sammich!
   A %*% (t(X) %*% diag(sigma) %*% X) %*% A
-}
-
-# Measurement error model
-#
-# Fit the measurement error model across all samples
-#
-# @param obj a \code{sleuth} object
-# @param design a design matrix
-# @param bs_summary a list from \code{bs_sigma_summary}
-# @return a list with a bunch of objects that are useful for shrinking
-me_model_by_row <- function(obj, design, bs_summary, which_var = 'obs_counts') {
-  which_var <- match.arg(which_var, c('obs_counts', 'obs_tpm'))
-  if (which_var == "obs_counts")
-    sigma_var <- "sigma_q_sq"
-  else
-    sigma_var <- "sigma_q_sq_tpm"
-
-  stopifnot( all.equal(names(bs_summary[[sigma_var]]), rownames(bs_summary[[which_var]])) )
-  stopifnot( length(bs_summary[[sigma_var]]) == nrow(bs_summary[[which_var]]))
-
-  models <- lapply(1:nrow(bs_summary[[which_var]]),
-    function(i) {
-      me_model(design, bs_summary[[which_var]][i, ], bs_summary[[sigma_var]][i])
-    })
-  names(models) <- rownames(bs_summary[[which_var]])
-
-  models
 }
 
 # non-equal var
@@ -565,24 +558,198 @@ gene_summary <- function(obj, which_column, transform = identity,
   list(obs_counts = obs_counts, sigma_q_sq = bs_sigma)
 }
 
-me_model <- function(X, y, sigma_q_sq) {
+#' Measurement error model
+#'
+#' Fit the measurement error model across all samples. This is an internal function
+#' called by \code{sleuth_fit}, and is not intended to be used directly by users.
+#'
+#' @param obj a \code{sleuth} object
+#' @param design a design matrix
+#' @param bs_summary a list from \code{bs_sigma_summary}
+#' @param which_var "obs_counts" (default) to model estimated counts;
+#'  "obs_tpm" to model TPMs
+#' @return a list with two items:
+#'    \itemize{
+#'       \item models the list of values returned by lm.fit. At the end of \code{sleuth_fit},
+#'         this object is found here: obj$fits$[[<model_name>]]$models
+#'       \item mes_df this data frame contains all of the important variables that are used for
+#'         variance shrinkage estimation and for testing. The final result of this table
+#'         is found here: obj$fits[[<model_name>]]$summary. This data.frame contains the
+#'         the following columns:
+#'         \itemize{
+#'           \item \code{target_id}: the feature ID (transcript or gene, depending on
+#'           \code{obj$gene_mode})
+#'           \item \code{rss}: the residual sum of squares from the linear model
+#'           \item \code{sigma_sq}: the estimated biological variance from the linear model
+#'           \item \code{mean_obs}: the mean of the transformed observations
+#'           \item \code{var_obs}: the raw variance of the transformed observations
+#'           \item \code{sigma_sq_pmax}: the greater of sigma_sq or 0. This prevents
+#'           negative estimates for the biological variance
+#'         }
+#'    }
+me_model <- function (obj, design, bs_summary, which_var = "obs_counts") {
+  which_var <- match.arg(which_var, c("obs_counts", "obs_tpm"))
+  if (which_var == "obs_counts")
+    sigma_var <- "sigma_q_sq"
+  else sigma_var <- "sigma_q_sq_tpm"
+
+  stopifnot(all.equal(names(bs_summary[[sigma_var]]), rownames(bs_summary[[which_var]])))
+  stopifnot(length(bs_summary[[sigma_var]]) == nrow(bs_summary[[which_var]]))
+  sigma_q_sq <- bs_summary[[sigma_var]]
+  y <- t(bs_summary[[which_var]])
+  X <- design
   n <- nrow(X)
   degrees_free <- n - ncol(X)
-
   ols_fit <- lm.fit(X, y)
-  rss <- sum(ols_fit$residuals ^ 2)
-  sigma_sq <- rss / (degrees_free) - sigma_q_sq
+  rss <- colSums(ols_fit$residuals^2)
+  sigma_sq <- rss/(degrees_free) - sigma_q_sq
+  mean_obs <- colMeans(y)
+  var_obs <- matrixStats::colVars(y)
+  mes_df <- data.frame(rss = rss, sigma_sq = sigma_sq, sigma_q_sq = sigma_q_sq,
+                       mean_obs = mean_obs, var_obs = var_obs)
+  mes_df <- data.frame(target_id = rownames(mes_df), mes_df)
+  mes_df$target_id <- as.character(mes_df$target_id)
+  rownames(mes_df) <- NULL
+  mes_df <- dplyr::mutate(mes_df, sigma_sq_pmax = pmax(sigma_sq, 0))
+  list(models = ols_fit, mes_df = mes_df)
+}
 
-  mean_obs <- mean(y)
-  var_obs <- var(y)
+#' Default Sleuth Variance Shrinkage Estimation
+#'
+#' This function performs the default procedure to shrink variance estimation.
+#'
+#' @param me_list the list produced by \code{\link{me_model}}.
+#' @param ... advanced options to tweak the shrinkage procedure. See "details"
+#' for more information.
+#'
+#' @return a modified data.frame with the following additional columns:
+#'
+#' \itemize{
+#'   \item \code{'iqr'}: boolean for whether this feature was within the interquartile
+#'   range and used for shrinkage estimation
+#'   \item \code{'failed_ise'}: boolean for whether this feature failed the initial
+#'   round of shrinkage estimation using interpolation from the LOESS curve. This feature's
+#'   shrunken variance was estimated using the 'exact' option for LOESS.
+#'   \item \code{'smooth_sigma_sq'}: the estimated biological variance after the shrinkage
+#'   procedure
+#' }
+#'
+#' @details The default procedure does the following steps: it first bins the
+#' features by the mean of each feature's observations. It then takes the
+#' interquartile (25th-75th percentile) of variances within each bin.
+#' Those means and variances are then input into a LOESS to calculate
+#' a curve using the function mean ~ (variance)^1/4. The LOESS is then used
+#' to interpolate the shrunken variance for all features. The larger of the
+#' variance estimated from the bootstraps or the variance from the shrinkage procedure is used.
+#'
+#' Advanced options for the shrinkage procedure (these options are passed to
+#' \code{\link{sliding_window_grouping}}):
+#'
+#' \itemize{
+#'   \item \code{n_bins}: the number of bins that the data should be split for the sliding window shrinkage
+#'   using the mean-variance curve. The default is 100.
+#'   \item \code{lwr}: the lower range of variances within each bin that should be included for the shrinkage
+#'   procedure. The default is 0.25 (meaning the 25th percentile).
+#'   \item \code{upr}: the upper range of variances within each bin that should be included for the shrinkage
+#'   procedure. The default is 0.75 (meaning the 75th percentile).
+#' }
+#' @export
+basic_shrink_fun <- function(me_list, ...) {
+  extra_opts <- list(...)
+  mes_df <- me_list$mes_df
+  good_opts <- c('n_bins', 'lwr', 'upr')
+  if (any(!(names(extra_opts) %in% good_opts))) {
+    bad_opts <- names(extra_opts)[which(!(names(extra_opts) %in% good_opts))]
+    warning("Some unrecognized options were passed to 'basic_shrink_fun': ", paste(bad_opts, sep = ", "),
+            ". These are being ignored.")
+  }
 
-  list(
-    ols_fit = ols_fit,
-    b1 = ols_fit$coefficients[2],
-    rss = rss,
-    sigma_sq = sigma_sq,
-    sigma_q_sq = sigma_q_sq,
-    mean_obs = mean_obs,
-    var_obs = var_obs
-    )
+  if ('n_bins' %in% names(extra_opts)) {
+    n_bins <- extra_opts$n_bins
+  } else {
+    n_bins <- 100
+  }
+  if ('lwr' %in% names(extra_opts)) {
+    lwr <- extra_opts$lwr
+  } else {
+    lwr <- 0.25
+  }
+  if ('upr' %in% names(extra_opts)) {
+    upr <- extra_opts$lwr
+  } else {
+    upr <- 0.75
+  }
+
+  swg <- sliding_window_grouping(mes_df, 'mean_obs', 'sigma_sq_pmax',
+    n_bins = n_bins, lwr = lwr, upr = upr, ignore_zeroes = TRUE)
+  l_smooth <- shrink_df(swg, sqrt(sqrt(sigma_sq_pmax)) ~ mean_obs, 'iqr')
+  l_smooth <- dplyr::select(
+    dplyr::mutate(l_smooth, smooth_sigma_sq = shrink ^ 4),
+    -shrink)
+
+  l_smooth
+}
+
+#' Limma-style variance shrinkage estimation
+#'
+#' This function uses limma's procedure for variance shrinkage estimation
+#' See ?limma::squeezeVar for more details for how it works and advanced options
+#' available.
+#'
+#' @param me_list the list produced by \code{link{me_model}}
+#' @param ... advanced options that will be passed to the squeezeVar function from limma.
+#'   the two advanced options available are:
+#'   \itemize{
+#'     \item \code{robust}: boolean for whether the estimation should be made robust to
+#'     outlier variances. The default is \code{FALSE}.
+#'     \item \code{winsor.tail.p}: if robust is \code{TRUE}, this is a numeric vector of
+#'     length 1 or 2 to give the left and right tail proportions of 'x' to Winsorize.
+#'   }
+#'   please see ?limma::squeezeVar for more information.
+#'
+#' @return a data.frame taken from me_list$mes_df and modified to have the additional
+#' columns:
+#'   \itemize{
+#'     \item \code{'limma_s2_prior'}: contains the location of the distribution; this
+#'     corresponds to the 's2.prior' output by 'limma::eBayes'.
+#'     \item \code{'limma_df_prior'}: contains the degrees of freedom for the
+#'     prior distribution. This will be the same if robust is \code{FALSE} and
+#'     different for each feature if robust is \code{TRUE}.
+#'     \item \code{'smooth_sigma_sq'}: contains limma's estimated shrunken variances.
+#'     This corresponds to the 's2.post' output by 'limma::eBayes'.
+#'   }
+#' @seealso \code{\link{me_model}} for the measurement error model function
+#' @importFrom limma squeezeVar
+#' @export
+limma_shrink_fun <- function(me_list, ...) {
+  extra_opts <- list(...)
+  good_opts <- c('robust', 'winsor.tail.p')
+  if (any(!(names(extra_opts) %in% good_opts))) {
+    bad_opts <- names(extra_opts)[which(!(names(extra_opts) %in% good_opts))]
+    warning("Some unrecognized options were passed to 'limma_shrink_fun': ", paste(bad_opts, sep = ", "),
+            ". These are being ignored.")
+  }
+
+  if ('robust' %in% names(extra_opts)) {
+    robust <- extra_opts$robust
+  } else {
+    robust <- FALSE
+  }
+  if ('winsor.tail.p' %in% names(extra_opts)) {
+    winsor.tail.p <- extra_opts$winsor.tail.p
+  } else {
+    winsor.tail.p <- c(0.05, 0.1)
+  }
+
+  limma_sv <- suppressWarnings(limma::squeezeVar(
+    var = me_list$mes_df$sigma_sq_pmax,
+    df = me_list$models$df.residual,
+    covariate = me_list$mes_df$mean_obs,
+    robust = robust,
+    winsor.tail.p = winsor.tail.p))
+  l_smooth <- dplyr::mutate(me_list$mes_df,
+                            limma_s2_prior = limma_sv$var.prior,
+                            limma_df_prior = limma_sv$df.prior,
+                            smooth_sigma_sq = limma_sv$var.post)
+  l_smooth
 }
