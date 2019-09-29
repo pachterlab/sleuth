@@ -11,9 +11,11 @@ Scripts reproducing all the results of the paper are available [here](https://gi
 The easiest way to install is using the `devtools` package through Bioconductor.
 
 ```{r}
-source("http://bioconductor.org/biocLite.R")
-biocLite("devtools")    # only if devtools not yet installed
-biocLite("pachterlab/sleuth")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install()
+BiocManager::install("devtools")    # only if devtools not yet installed
+BiocManager::install("pachterlab/sleuth")
 ```
 
 These commands will install `sleuth` along with all of its dependencies. You
