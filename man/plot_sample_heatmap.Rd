@@ -6,8 +6,8 @@
 \usage{
 plot_sample_heatmap(obj, use_filtered = TRUE, color_high = "white",
   color_low = "dodgerblue", x_axis_angle = 50,
-  annotation_cols = setdiff(colnames(obj$sample_to_covariates), "sample"),
-  cluster_bool = TRUE, ...)
+  annotation_cols = setdiff(colnames(obj$sample_to_covariates),
+  "sample"), cluster_bool = TRUE, ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}

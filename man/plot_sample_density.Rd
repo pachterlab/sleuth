@@ -4,8 +4,10 @@
 \alias{plot_sample_density}
 \title{Plot sample density}
 \usage{
-plot_sample_density(obj, which_sample = obj$sample_to_covariates$sample[1],
-  use_filtered = TRUE, units = "est_counts", trans = "log", offset = 1)
+plot_sample_density(obj,
+  which_sample = obj$sample_to_covariates$sample[1],
+  use_filtered = TRUE, units = "est_counts", trans = "log",
+  offset = 1)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}

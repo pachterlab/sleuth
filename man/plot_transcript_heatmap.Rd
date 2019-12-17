@@ -7,8 +7,8 @@
 plot_transcript_heatmap(obj, transcripts, units = "tpm", trans = "log",
   cluster_transcripts = FALSE, offset = 1, color_high = "#581845",
   color_mid = "#FFC300", color_low = "#DAF7A6", x_axis_angle = 50,
-  annotation_cols = setdiff(colnames(obj$sample_to_covariates), "sample"),
-  ...)
+  annotation_cols = setdiff(colnames(obj$sample_to_covariates),
+  "sample"), ...)
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}

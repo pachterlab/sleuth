@@ -140,7 +140,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                                    'enter a gene identifier that matches that column.',
                                    'The most significant gene by q-value for the first test within the currently selected test type is already entered.");',
                                    '} </script>'),
-                      value = textOutput("default_top_hit"))
+                      value = '')
             ),
             column(3,
                    selectInput('bsg_var_color_by',
@@ -277,7 +277,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
             'alert("Enter a space-separated list of transcript names here to view a hierarchical clustering of those transcripts.",
                    "The ten most significant transcripts for the first test of the currently selected test type have been listed for you by default.");',
             '} </script>'),
-            value = textOutput("default_top_ten"))
+            value = '')
               ),
           column(8, style = "margin-top:15px;",
             checkboxGroupInput('hm_covars',
@@ -458,7 +458,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
               uiOutput('group_by_lrt')
               )
             ),
-          dataTableOutput('lrt_de_dt')
+            dataTableOutput('lrt_de_dt'),
+            fluidRow(
+              div(align = "right", style = "margin-right:15px; margin-bottom:10px",
+                  downloadButton("download_test_table",  "Download Table")))
           )
         ),
 
@@ -782,7 +785,10 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
         ),
         fluidRow(
           plotOutput('fld_plt')
-          )
+          ),
+        fluidRow(
+          div(align = "right", style = "margin-right:15px; margin-bottom: 10px",
+            downloadButton("download_fld_plt", "Download Table")))
       ),
 
       ####
@@ -1044,7 +1050,8 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       sample_table = NULL,
       kallisto_table = NULL,
       hm_plt = NULL,
-      bs_var_plt = NULL
+      bs_var_plt = NULL,
+      fld_plt = NULL
       )
     user_settings <- reactiveValues(save_width = 45, save_height = 11)
     # TODO: Once user settings are available, read these values from input
@@ -1065,28 +1072,111 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
       current_ui
     })
 
-    output$default_top_hit <- renderText({
-      default_test <- ifelse(length(valid_test_types) == 0, NULL,
-                             ifelse(input$settings_test_type == 'wt',
-                                    obj$tests[['wt']][[1]][[1]],
-                                    obj$tests[['lrt']][[1]])
-                            )
+    ### CODE TO FILL IN DEFAULT VALUES FOR TEXT BOXES
+    defaults <- reactiveValues(
+      top_hit = '',
+      top_gene = '',
+      top_ten = ''
+    )
+
+    ## Observe to see if the test type changes
+    ## Pick the top transcript for the first test of that type
+    observe({
+      test_type <- input$settings_test_type
+      default_test <- if (length(valid_test_types) == 0) {
+        NULL
+      } else if (test_type == "wt") {
+        obj$tests[["wt"]][[1]][[1]]
+      } else {
+        obj$tests[["lrt"]][[1]]
+      }
+
       default_id <- ifelse(is.null(default_test), "No tests found. This feature won't work",
-                            default_test[order(default_test$qval), "target_id"][1])
-      default_id
+        default_test[order(default_test$qval), "target_id"][1])
+      defaults$top_hit <- default_id
     })
 
-    output$default_top_ten <- renderText({
-      default_test <- ifelse(length(valid_test_types) == 0, NULL,
-                             ifelse(input$settings_test_type == 'wt',
-                                    obj$tests[['wt']][[1]][[1]],
-                                    obj$tests[['lrt']][[1]])
-                            )
-      default_ids <- ifelse(is.null(default_test), "No tests found. This feature won't work",
-                            default_test[order(default_test$qval), "target_id"][1:10])
-      default_ids <- paste(default_ids, collapse = " ")
-      default_ids
+    ## Observe to see if the test type changes
+    ## Pick the top 10 hits for the first test of that type
+    observe({
+      test_type <- input$settings_test_type
+      default_test <- if (length(valid_test_types) == 0) {
+        NULL
+      } else if (test_type == "wt") {
+        obj$tests[["wt"]][[1]][[1]]
+      } else {
+        obj$tests[["lrt"]][[1]]
+      }
+
+      default_ids <- if (is.null(default_test)) {
+        c("No tests found. This feature won't work")
+      } else {
+        default_test[order(default_test$qval), "target_id"][1:10]
+      }
+
+      defaults$top_ten <- paste(default_ids, collapse = " ")
     })
+
+    ## Observe to see if the test type changes or the gene column changes
+    ## Pick the gene with the most significant transcript for the first test of that type
+    observe({
+      gene_col <- input$gv_gene_colname
+      test_type <- input$settings_test_type
+      default_test <- if (length(valid_test_types) == 0) {
+        NULL
+      } else if (test_type == "wt") {
+        obj$tests[["wt"]][[1]][[1]]
+      } else {
+        obj$tests[["lrt"]][[1]]
+      }
+      default_id <- ifelse(is.null(default_test), "No tests found. This feature won't work",
+        default_test[order(default_test$qval), "target_id"][1])
+      id_row <- which(obj$target_mapping$target_id == default_id)
+      defaults$top_gene <- obj$target_mapping[id_row, gene_col]
+    })
+
+    ## Check if the transcript input is empty or invalid
+    ## Fill in with default value if either of above are true
+    observe({
+      var_input <- input$bs_var_input
+      if (is.null(var_input) || !var_input %in% obj$target_mapping$target_id) {
+        updateTextInput(session, "bs_var_input", value = defaults$top_hit)
+      }
+    })
+
+    ## Check if the gene input is empty or invalid
+    ## Fill in with default value if either of above are true
+    observe({
+      var_input <- input$bsg_var_input
+      gene_col <- obj$gene_column
+      genes <- obj$target_mapping[, gene_col]
+      if (is.null(genes)) {
+        updateTextInput(session, "bsg_var_input", value = "This won't work")
+      } else if (is.null(var_input) || !var_input %in% genes) {
+        updateTextInput(session, "bsg_var_input", value = defaults$top_hit)
+      }
+    })
+
+    ## Check if the gene input is empty or invalid
+    ## Fill in with default value if either of above are true
+    observe({
+      var_input <- input$gv_var_input
+      gene_col <- input$gene_col
+      genes <- obj$target_mapping[, gene_col]
+      if (is.null(var_input) || !var_input %in% genes) {
+        updateTextInput(session, "gv_var_input", value = defaults$top_gene)
+      }
+    })
+
+    ## Check if the list of inputs is empty
+    ## Fill in with default top 10 if either of above are true
+    observe({
+      hm_input <- input$hm_transcripts
+      if (is.null(hm_input) || hm_input == "") {
+        updateTextInput(session, "hm_transcripts", value = defaults$top_ten)
+      }
+    })
+    ### END OF CODE FOR DEFAULT VALUES
 
     output$qqplot <- renderPlot({
       poss_tests <- list_tests(obj, input$settings_test_type)
@@ -1378,6 +1468,19 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
 
     output$fld_plt <- renderPlot({
       plot_fld(obj, input$fld_sample)
+      #saved_plots_and_tables$fld_plt <- plot_fld(obj, input$fld_sample)
+      #saved_plots_and_tables$fld_plt
+    })
+
+    output$download_fld_plt <- downloadHandler(
+      filename = function() {
+        "fld_plot.pdf"
+        },
+      content = function(file) {
+         ggsave(file, saved_plots_and_tables$fld_plt,
+           width = user_settings$save_width,
+           height = user_settings$save_height,
+           units = "cm")
     })
 
     output$bias_weights_table <- renderDataTable({
@@ -1700,7 +1803,7 @@ sleuth_live <- function(obj, settings = sleuth_live_settings(),
                                           'You can find target_ids in the test table under Analyses. The most significant transcript',
                                           'by q-value for the first test within the currently selected test type is already entered.");',
                                           '} </script>'),
-                             value = textOutput("default_top_hit"))
+                             value = '')
             ),
             column(4,
                    selectInput('bs_var_color_by',

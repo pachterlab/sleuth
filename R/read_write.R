@@ -27,7 +27,7 @@
 #' @return a \code{kallisto} object
 #' @export
 read_kallisto <- function(path, read_bootstrap = TRUE, max_bootstrap = NULL) {
-  stopifnot(is(path, "character"))
+  path <- as.character(path)
 
   kal_path <- get_kallisto_path(path)
 
@@ -62,13 +62,36 @@ read_kallisto_h5 <- function(fname, read_bootstrap = TRUE, max_bootstrap = NULL)
     is(max_bootstrap, "numeric") ||
     is(max_bootstrap, "integer") )
 
+  kal_path <- get_kallisto_path(fname)
+  if (kal_path$ext != "h5") {
+    stop(paste0("File '", fname, "' does not appear to be an HDF5 file"))
+  }
+
   fname <- path.expand(fname)
 
   if (!file.exists(fname)) {
     stop("Can't find file: '", fname, "'")
   }
 
-  target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  tryCatch({
+    target_id <- as.character(rhdf5::h5read(fname, "aux/ids"))
+  }, error = function(e) {
+    msg <- conditionMessage(e)
+    err_msg <- paste0("The HDF5 file '", fname, "' exists but could not be ",
+                      "read. The most common reason is that the rdhf5 and ",
+                      "Rhdf5lib were built using bioconda without support ",
+                      "to read zlib-compressed HDF5 files, which is used ",
+                      "by kallisto to save space.\nPlease update R, rdhf5, ",
+                      "and Rhdf5lib to latest versions on bioconda, or ",
+                      "consider doing a Bioconductor installation of ",
+                      "Rhdf5lib, which usually automatically includes zlib ",
+                      "support.")
+    err_msg <- paste0(err_msg, "\nThe actual error thrown was '", msg, "'")
+    stop(err_msg)
+  }, finally = {
+    rhdf5::H5close()
+  })
+
   if ( length(target_id) != length(unique(target_id))) {
     tid_counts <- table(target_id)
     warning(

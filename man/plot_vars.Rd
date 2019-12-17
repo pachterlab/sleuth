@@ -5,8 +5,9 @@
 \title{Plot technical variance versus observed variance}
 \usage{
 plot_vars(obj, test = NULL, test_type = "wt", which_model = "full",
-  sig_level = 0.1, point_alpha = 0.2, sig_color = "red", xy_line = TRUE,
-  xy_line_color = "red", highlight = NULL, highlight_color = "green")
+  sig_level = 0.1, point_alpha = 0.2, sig_color = "red",
+  xy_line = TRUE, xy_line_color = "red", highlight = NULL,
+  highlight_color = "green")
 }
 \arguments{
 \item{obj}{a \code{sleuth} object}
