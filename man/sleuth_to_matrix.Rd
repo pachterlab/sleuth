@@ -13,10 +13,11 @@ sleuth_to_matrix(obj, which_df, which_units)
 ("obs_norm" or "obs_raw")}
 
 \item{which_units}{character vector of length one. Which units to use ("tpm"
-or "est_counts")}
+or "est_counts" (for transcript-level analyses) or "scaled_reads_per_base" (for gene-level analyses))}
 }
 \value{
-a matrix which contains a matrix of target_ids and transcript expression in \code{which_units}
+a matrix which contains a matrix of target_ids and transcript (or gene) expression in \code{which_units}.
+  Note this currently does not support returning raw values for gene-level counts or TPMs.
 }
 \description{
 Convert a sleuth object to a matrix with the condition names.
