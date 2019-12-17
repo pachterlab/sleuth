@@ -1173,13 +1173,13 @@ transcripts_from_gene <- function(obj, test, test_type,
 #' @export
 gene_from_gene <- function(obj, gene_colname, gene_name) {
 
-  if (!obj$gene_mode) {
+  if (is.null(obj$gene_column)) {
     stop("this sleuth object is in transcript mode. Please use 'transcripts_from_gene' instead.")
   }
 
   table <- as.data.frame(obj$target_mapping)
   if (gene_colname == obj$gene_column) {
-    if (!(gene_name %in% table[, eval(parse(text = obj$gene_column))])) {
+    if (!(gene_name %in% table[, obj$gene_column])) {
       stop("Couldn't find gene ", gene_name)
     } else {
       return(gene_name)
