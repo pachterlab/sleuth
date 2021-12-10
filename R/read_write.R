@@ -358,7 +358,6 @@ trans_to_genes_from_gtf <- function(fname) {
 #'    to use, with 0 being no compression and 7 being the highest supported by this method.
 #'    The default of 6 is a good choice for most applications.
 #' @return the kallisto object \code{kal} invisibly.
-#' @importFrom rhdf5 h5write.default
 #' @importFrom rhdf5 h5write
 #' @export
 write_kallisto_hdf5 <- function(kal, fname, overwrite = TRUE,
