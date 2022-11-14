@@ -1,6 +1,6 @@
 Package: sleuth
 Title: Tools for investigating RNA-Seq
-Version: 0.30.0
+Version: 0.30.1
 Authors@R: c(
   person("Harold", "Pimentel", , "haroldpimentel@gmail.com", role = c("aut", "cre")),
   person("Warren", "McGee", , "warren-mcgee@fsm.northwestern.edu", role = "aut"))
