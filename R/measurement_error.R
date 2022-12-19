@@ -94,7 +94,7 @@ sleuth_fit <- function(obj, formula = NULL, fit_name = NULL, ...) {
     lwr <- 0.25
   }
   if ('upr' %in% names(extra_opts)) {
-    upr <- extra_opts$lwr
+    upr <- extra_opts$upr
   } else {
     upr <- 0.75
   }
