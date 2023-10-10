@@ -41,12 +41,6 @@ sleuth_to_matrix <- function(obj, which_df, which_units) {
 
   which_units <- check_quant_mode(obj, which_units)
 
-  if (obj$gene_mode && which_df == "obs_raw") {
-    warning("This object is in gene mode, and the raw values are ",
-            "transcripts. Using 'obs_norm' instead.")
-    which_df <- "obs_norm"
-  }
-
   data <- as.data.frame(obj[[which_df]])
 
   res <- list()
@@ -56,6 +50,14 @@ sleuth_to_matrix <- function(obj, which_df, which_units) {
   rownames(s_data) <- s_data$target_id
   s_data$target_id <- NULL
   s_data <- as.matrix(s_data)
+
+  if (obj$gene_mode && which_df == "obs_raw") {
+    if (which_units == "scaled_reads_per_base") {
+      s_data <- t(t(s_data)*obj$est_counts_sf)
+    } else {
+      s_data <- t(t(s_data)*obj$tpm_sf)
+    }
+  }
 
   s_data
 }
