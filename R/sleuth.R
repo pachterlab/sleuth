@@ -22,7 +22,7 @@
 #'
 #' @param row this is a vector of numerics that will be passedin
 #' @param min_reads the minimum mean number of reads
-#' @param min_prop the minimum proportion of reads to pass this filter
+#' @param min_prop the minimum proportion of samples to pass this filter
 #' @return a logical of length 1
 #' @export
 basic_filter <- function(row, min_reads = 5, min_prop = 0.47) {
