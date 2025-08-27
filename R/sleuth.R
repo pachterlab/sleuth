@@ -1291,7 +1291,7 @@ gene_from_gene <- function(obj, gene_colname, gene_name) {
     } else {
       obj[[name]] <- value
     }
-  } else if (name == "pval_aggregate" && value && !is.null(obj$gene_column)) {
+  } else if (name == "pval_aggregate" && value && is.null(obj$gene_column)) {
     stop("You set 'pval_aggregate' to TRUE, but no 'gene_column' is set. Please set a 'gene_column' first.")
   } else if (name == "pval_aggregate" && value && obj$gene_mode) {
     warning("You set 'pval_aggregate' to TRUE, but 'gene_mode' is also TRUE. Setting 'gene_mode' to FALSE.",
