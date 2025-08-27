@@ -65,7 +65,7 @@ any other function in R:
 
 Please visit the [sleuth website](https://pachterlab.github.io/sleuth) for ways to get help.
 We have several new [walk-throughs](https://pachterlab.github.io/sleuth/walkthroughs) at the main sleuth website.
-In particular, you might find the [kallisto-sleuth users](https://groups.google.com/forum/#!forum/kallisto-sleuth-users) Google group helpful.
+In particular, you might find the [kallisto-sleuth users](https://groups.google.com/g/kallisto-and-applications) Google group helpful.
 
 Please post bug reports [on GitHub](https://github.com/pachterlab/sleuth/issues).
 
